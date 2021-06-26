@@ -8,13 +8,13 @@ Handles the rental of bicycles from Orcabikes
 /start initializes the bot
 
 # Commands (to be added)
-/routes get routes
-/status check rental
-/rent start rentap
-/return stop rental
-/availability check availability 
-/report reports damages or missing bikes 
+/routes get routes <br />
+/status check rental <br />
+/rent start rentap <br />
+/return stop rental <br />
+/availability check availability <br />
+/report reports damages or missing bikes <br />
 
 # Requirements
-This projects uses python-telegram-bot, before running please install it using this command:
+This projects uses python-telegram-bot, before running please install it using this command: <br />
 pip install python-telegram-bot
