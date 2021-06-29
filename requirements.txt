@@ -1,0 +1,5 @@
+# Orcabikes Telegram Bot Project: Python libraries we'll be using for this project.
+
+# Python Version
+python~=3.9.4
+
