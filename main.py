@@ -13,7 +13,8 @@ from telegram.ext import ConversationHandler
 #import logging
 
 
-API_KEY = '1722354435:AAHAFxP6_sIf_P4hdQJ7Y5EsH64PtyWwWo8'
+API_KEY = '1722354435:AAHAFxP6_sIf_P4hdQJ7Y5EsH64PtyWwWo8' #this is old api for orcabikes_bot
+API_KEY = '1705378721:AAEbSmhxNhAY4s5eqWMSmxdCxkf44O7_nss' #new key for orc4bikes_bot
 
 routes_list = ["From RC4 B1 to Utown",
                "From RC4 Level 1 to Utown",
@@ -53,6 +54,9 @@ def help_command(update,context):
 /routes - Get Orcabikes routes
 /doggo - Get a random dog!
 /neko - Get a random cat!
+/my_dogs - See your saved collection of doggos
+/my_cats - See your saved collection of nekos
+/payment - Pay for your bike rental!
 """
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -78,20 +82,34 @@ dispatcher.add_handler(routes_handler)
 def doggo_command(update,context):
     """Shows you a few cute dogs!"""
     url = requests.get('https://random.dog/woof.json').json()['url']
+    buttons=[[InlineKeyboardButton(text="Save this picture to your favourites",
+                                    callback_data={"action":"save","url":url,"save_list":"dogs"})],
+             [InlineKeyboardButton(text="Another dog!",
+                                    callback_data={"action":"/doggo"}),
+              ]]
     context.bot.send_photo(
         chat_id=update.effective_chat.id,
         caption = random.choice(cheer_list),
-        photo = url
+        photo = url,
+        #reply_markup=InlineKeyboardMarkup(buttons)
         )
+
     
 def neko_command(update,context):
     """Shows you a few cute cats!"""
     url = requests.get('https://aws.random.cat/meow').json()['file']
+    buttons=[[InlineKeyboardButton(text="Save this picture to your favourites",
+                                    callback_data={"action":"save","url":url,"save_list":"cats"})],
+             [InlineKeyboardButton(text="Another cat!",
+                                    callback_data={"action":"/neko"}),
+              ]]
     context.bot.send_photo(
         chat_id=update.effective_chat.id,
         caption = random.choice(cheer_list),
-        photo = url
+        photo = url,
+        #reply_markup=InlineKeyboardMarkup(buttons)
         )
+
 
 doggo_handler = CommandHandler('doggo',doggo_command)
 dispatcher.add_handler(doggo_handler)
@@ -99,6 +117,68 @@ dispatcher.add_handler(doggo_handler)
 neko_handler = CommandHandler('neko',neko_command)
 dispatcher.add_handler(neko_handler)
 
+def all_cats_command(update,context):
+    """Get all my cats"""
+    for url in context.user_data.get("cats",[]):
+        context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=url)
+    if not context.user_data.get("cats"):
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="You have no cats, /neko to see one now!"
+            )
+        
+cats_handler = CommandHandler('my_cats',all_cats_command)
+dispatcher.add_handler(cats_handler)
+
+def all_dogs_command(update,context):
+    """Get all my dogs"""
+    for url in context.user_data.get("dogs",[]):
+        context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=url)
+    if not context.user_data.get("dogs"):
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="You have no dogs, /doggo to see one now!"
+            )
+        
+dogs_handler = CommandHandler('my_dogs',all_dogs_command)
+dispatcher.add_handler(dogs_handler)
+
+    
+def payment_command(update,context):
+    """Payment using Stripe API
+       Currently not ready yet, will work on it soon"""
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text = "Payment methods will be available soon!"
+        )
+payment_handler = CommandHandler('payment',payment_command)
+dispatcher.add_handler(payment_handler)
+
+
+def test_command(update,context):
+    """for testing only"""
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text = "testing"
+        )
+test_handler = CommandHandler('test',test_command)
+dispatcher.add_handler(test_handler)
+
+def save_callback(update,context):
+    data = update.callback_query.data
+    action = data.get("action")
+    if action == "save":
+        url = data["url"]
+        save_list = data["save_list"]
+        context.user_data[save_list] = context.user_data.get(save_list, []) + [url]
+    if action == "/doggo":
+        doggo_command(update,context)
+    if action == "/neko":
+        neko_command(update,context)
 
 updater.start_polling()
 #print('started')
