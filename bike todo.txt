@@ -1,0 +1,66 @@
+offhand, it shld be able to:
+1) view credits
+2) book trip
+3) start trip and end trip
+4) obtain PIN to unlock
+5) collect pictures from users
+6) detect late returns
+
+/start print hello
+
+class Commands
+def command(updater dispatcher)
+  check user id
+  get user data
+  make new dictionary containing user data
+  return user data
+
+  
+def neko_command (u,d)
+ user data = super().command(u, d)
+ 
+
+  
+
+Make user with ID
+credits: float
+status: time or bool
+  if not time, say not renting
+
+start_time - time.time
+end_time - time.time
+
+logs - list of times that user rented
+
+/credits get current credits
+/status check rental
+
+For booking trip
+/rent start rental??
+check 
+list of avail bikes - get from bicycles folder
+check current credits
+if no credit just say u cannot rent kthxbye
+
+/getpin
+access the bicycles folder and get the pin for bike
+start the user timer
+
+/return 
+
+
+/availability check availability  - access all bikes json
+
+FUTURE DEV
+/return stop rental - collect picture
+need to get time
+need to take this pic and send to our dev group  - what is our chat id
+for us to check manually
+group chat function
+
+
+/report reports damages or missing bikes
+
+
+/routes get routes
++ broadcasting
