@@ -7,19 +7,6 @@ offhand, it shld be able to:
 6) detect late returns
 
 /start print hello
-
-class Commands
-def command(updater dispatcher)
-  check user id
-  get user data
-  make new dictionary containing user data
-  return user data
-
-  
-def neko_command (u,d)
- user data = super().command(u, d)
- 
-
   
 
 Make user with ID
