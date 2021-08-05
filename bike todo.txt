@@ -36,6 +36,14 @@ start the user timer
 /return 
 
 
+/admin commands
+/admin addcredit username amount
+/admin deduct username amount 
+/admin setcredit username amount
+/admin viewcredit username
+
+5 credit per minute
+
 /availability check availability  - access all bikes json
 
 FUTURE DEV

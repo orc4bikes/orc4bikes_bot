@@ -61,9 +61,22 @@ class TeleBot:
             user_data = None
             #print('no data found')
         return user_data
+    
+    def get_user_table(self):
+        with open('users/table.json', 'r') as f:
+            table_data = json.load(f)
+        return table_data
+    
+    def update_user_table(self, update_field):
+        with open('users/table.json', 'w') as f:
+            json.dump(update_field, f)
 
     def addnew(self, command, methodname):
         handler = CommandHandler(command,methodname)
+        self.dispatcher.add_handler(handler)
+
+    def addmessage(self, filters, methodname):
+        handler = MessageHandler(filters, methodname)
         self.dispatcher.add_handler(handler)
 
     def main(self):
@@ -101,6 +114,10 @@ class OrcaBot(TeleBot):
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=text)
+
+        table_data = super().get_user_table()
+        table_data[update.message.from_user.username] = update.effective_chat.id
+        super().update_user_table(table_data)
         
     def info_command(self, update, context):
         """This is for debugging purposes"""
@@ -181,7 +198,25 @@ class OrcaBot(TeleBot):
             chat_id=update.effective_chat.id,
             text = text,
         )
+
+
+    def rent_command(self,update,context):
+        """Start a rental service"""
+        pass    
+    
+    def admin_command(self,update,context):
+        """Start a rental service
+        commands is a list of strings that the user sends
+        e.g. /admin addcredit username amount
+        commands => ['addcredit','username','amount']"""
+        commands = context.args
+        update.message.reply_text(str(commands))
         
+        
+    
+    def echo_command(self,update,context):
+        update.message.reply_text(update.message.text)
+
     def main(self):
         self.addnew('start',self.start_command)
         self.addnew('myinfo',self.info_command)
@@ -191,9 +226,16 @@ class OrcaBot(TeleBot):
         self.addnew('neko', self.neko_command)
         self.addnew('payment', self.payment_command)
         self.addnew('credits', self.credits_command)
+        self.addnew('rent', self.rent_command)
+        self.addnew('admin', self.admin_command)
+        self.addmessage(Filters.text & (~Filters.command), self.echo_command)
 
         super().main()
 
         
+
+
+
+
 if __name__=="__main__":
     print('Run the main python file!')
