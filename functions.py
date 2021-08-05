@@ -26,9 +26,11 @@ HELP_TEXT = """List of commands:
 /routes - Get orc4bikes routes
 /doggo - Get a random dog!
 /neko - Get a random cat!
+/credits - See your current credits
+"""
 
+"""
 To be added:
-/credits - See my credits
 /rent - Rent a bike
 /getpin - Get the pin for specific bikes
 /return - Return the current bicycle
