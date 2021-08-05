@@ -97,18 +97,16 @@ def doggo_command(update,context):
     
 def neko_command(update,context):
     """Shows you a few cute cats!"""
-    url = requests.get('https://aws.random.cat/meow').json()['file']
-    buttons=[[InlineKeyboardButton(text="Save this picture to your favourites",
-                                    callback_data={"action":"save","url":url,"save_list":"cats"})],
-             [InlineKeyboardButton(text="Another cat!",
-                                    callback_data={"action":"/neko"}),
-              ]]
-    context.bot.send_photo(
-        chat_id=update.effective_chat.id,
-        caption = random.choice(cheer_list),
-        photo = url,
-        #reply_markup=InlineKeyboardMarkup(buttons)
-        )
+    try:
+        url = requests.get('https://aws.random.cat/meow').json()['file']
+        context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            caption = random.choice(cheer_list),
+            photo = url,
+            #reply_markup=InlineKeyboardMarkup(buttons)
+            )
+    except:
+        return
 
 
 doggo_handler = CommandHandler('doggo',doggo_command)
