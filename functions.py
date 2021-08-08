@@ -1,10 +1,12 @@
 import random
 import json
+import time
+import datetime
 
 import requests
 import re
 
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode, ReplyKeyboardMarkup, KeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode, ReplyKeyboardMarkup, KeyboardButton, parsemode
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 
@@ -24,9 +26,16 @@ HELP_TEXT = """List of commands:
 /start - Initializes the bot
 /help - Get all available commands
 /routes - Get orc4bikes routes
+/credits - View your current credits
+
 /doggo - Get a random dog!
 /neko - Get a random cat!
-/credits - View your current credits
+
+/rent - This features is still under development
+/getpin - This features is still under development
+/return - This features is still under development
+/availability - This features is still under development
+/report - This features is still under development
 """
 
 """
@@ -40,15 +49,27 @@ To be added:
 """
 
 ADMIN_LIST = [
+    #devs
     260281460, # yew chong
+
+    #current comm
     253089925, # jin ming
+    482226461, # bo yi
+    451582425, # gordon
+    292257566, # jolene
+    
+    #old comm
+    185995813, # fangxin
+    50545125,  # kai en
+    248853832, # brendan
+    446305048, # jovi
 ]
 ADMIN_TEXT = """List of admin commands:
 Please do NOT add @ before a username. Usernames are case sensitive.
-"/admin viewcredit username" - View the user's credits
-"/admin setcredit username amount" - Set the user's credit to an integer amount.
-"/admin topup username amount" - Top up the user's credit by an integer amount.
-"/admin deduct username amount" - Deduct the user's credit by an integer amount.
+/admin `viewcredit username` - View the user's credits
+/admin `setcredit username amount` - Set the user's credit to an integer amount.
+/admin `topup username amount` - Top up the user's credit by an integer amount.
+/admin `deduct username amount` - Deduct the user's credit by an integer amount.
 """
 
 
@@ -74,7 +95,7 @@ class TeleBot:
         if not chat_id:
             return None
         with open(f'users/{chat_id}.json', 'w') as f:
-            json.dump(user_data, f)
+            json.dump(user_data, f, sort_keys=True, indent=4)
     
     def get_user_table(self):
         with open('users/table.json', 'r') as f:
@@ -83,7 +104,7 @@ class TeleBot:
     
     def update_user_table(self, update_field):
         with open('users/table.json', 'w') as f:
-            json.dump(update_field, f)
+            json.dump(update_field, f, sort_keys=True, indent=4)
 
     def addnew(self, command, methodname):
         handler = CommandHandler(command,methodname)
@@ -98,6 +119,8 @@ class TeleBot:
         self.updater.start_polling()
         self.updater.idle()
 
+
+
 class OrcaBot(TeleBot):
     def __init__(self,
             api_key, 
@@ -108,6 +131,15 @@ class OrcaBot(TeleBot):
         self.help_text = help_text
         self.admin_list = admin_list
         self.admin_text = admin_text
+
+    def get_bikes(self):
+        with open('bicycles.json', 'r') as f:
+            bikes_data = json.load(f)
+        return bikes_data
+
+    def update_bikes(self, bikes_data):
+        with open(f'bicycles.json', 'w') as f:
+            json.dump(bikes_data, f, sort_keys=True, indent=4)
 
     def start_command(self,update,context):
         """Initializes the bot
@@ -135,9 +167,10 @@ class OrcaBot(TeleBot):
             chat_id=update.effective_chat.id,
             text=text)
 
-        table_data = super().get_user_table()
-        table_data[update.message.from_user.username] = update.effective_chat.id
-        super().update_user_table(table_data)
+        if update.effective_chat.id > 0:
+            table_data = super().get_user_table()
+            table_data[update.message.from_user.username] = update.effective_chat.id
+            super().update_user_table(table_data)
         
     def info_command(self, update, context):
         """This is for debugging purposes"""
@@ -151,7 +184,8 @@ class OrcaBot(TeleBot):
         """Show a list of possible commands"""
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text = self.help_text)
+            text = self.help_text,
+            parse_mode=ParseMode.MARKDOWN)
     
     def routes_command(self,update,context):
         """Returns all routes from the list of routes"""
@@ -224,7 +258,78 @@ class OrcaBot(TeleBot):
 
     def rent_command(self,update,context):
         """Start a rental service"""
-        pass    
+        user_data = super().get_user(update,context)
+        status = user_data.get('status',None)
+        if status is not None: #rental in progress
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="You are already renting! Please return your current bike first"
+            )
+        else: 
+            user_data['status'] = datetime.datetime.now().isoformat()
+            super().update_user(user_data)
+            context.bot.send_message(
+                chat_id=update.effective_chat.id, 
+                text=f"Rental started! Time of rental, {datetime.datetime.now()}")
+
+    def status_command(self,update,context):
+        """Check the user rental status"""
+        try:
+            user_data = super().get_user(update,context)
+            status = user_data.get('status',None)
+            if status is not None:
+                status = datetime.datetime.fromisoformat(status)
+                curr = datetime.datetime.now()
+                diff = curr - status
+                if diff.days:
+                    strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
+                else:
+                    strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
+                status_text = f'You have been renting for {strdiff}'
+            else: 
+                status_text = "You are not renting..."
+            context.bot.send_message(chat_id=update.effective_chat.id,
+                text=status_text)
+        except AssertionError as e:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Error, {e}'
+            )
+    
+    def return_command(self,update,context):
+        """Return the current bike"""
+        user_data = super().get_user(update,context)
+        status = user_data.get('status', None)
+        if status is not None: #rental in progress
+            diff = datetime.datetime.now() - datetime.datetime.fromisoformat(status)
+            if diff.days:
+                strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
+            else:
+                strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
+            d = {
+                'start': status,
+                'end': datetime.datetime.now().isoformat(),
+                'time': strdiff,
+            }
+            log = user_data.get('log',[])
+            log.append(d)
+            user_data["status"] = None
+            user_data["log"] = log
+            super().update_user(user_data)
+            
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"Successfully returned! Your total rental time is {strdiff}"
+            )
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="You are not renting..."
+            )
+
+        
+
+
 
     def handle_admin(self, update, context, keywords):
         """Handle the admin commands after /admin"""
@@ -308,9 +413,14 @@ class OrcaBot(TeleBot):
             if commands:
                 self.handle_admin(update,context,commands)
             else:
-                update.message.reply_text(self.admin_text)
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=self.admin_text,
+                    parse_mode=ParseMode.MARKDOWN)
         else:
             update.message.reply_text('You are not authorized admin commands!')
+
+
 
     def echo_command(self,update,context):
         update.message.reply_text(update.message.text)
@@ -327,6 +437,12 @@ class OrcaBot(TeleBot):
         self.addnew('payment', self.payment_command)
         self.addnew('credits', self.credits_command)
         self.addnew('rent', self.rent_command)
+        self.addnew('status', self.status_command)
+        self.addnew('return', self.return_command)
+
+
+
+        #admin handler
         self.addnew('admin', self.admin_command)
 
         # This part is a message command

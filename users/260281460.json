@@ -1,1 +1,8 @@
-{"chat_id": 260281460, "first_name": "yewchong", "last_name": null, "username": "fluffballz", "credits": 48}
+{
+    "chat_id": 260281460,
+    "credits": 48,
+    "first_name": "yewchong",
+    "last_name": null,
+    "status": null,
+    "username": "fluffballz"
+}

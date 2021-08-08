@@ -1,0 +1,12 @@
+{
+    "1": {
+        "name":"bike1",
+        "type":"mountain",
+        "pin": "0000"
+    },
+    "2":{
+        "name":"bike2",
+        "type":"mountain",
+        "pin": "1234"
+    }
+}
