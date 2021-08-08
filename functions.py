@@ -319,6 +319,13 @@ class OrcaBot(TeleBot):
                         chat_id=update.effective_chat.id,
                         text="You are already renting! Please return your current bike first"
                     )
+                    return
+                elif user_data.get('credits') < 1: #not enough credits
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id, 
+                        text=f"You cannot rent, as you do not have enough credits! Current credits: {user_data.get('credits')}"
+                    )
+                    return
                 else: 
                     curr_time = datetime.datetime.now().isoformat()
                     user_data['status'] = curr_time
@@ -338,16 +345,19 @@ class OrcaBot(TeleBot):
                         chat_id=ADMIN_GROUP_ID,
                         text=f'@{user_data["username"]} rented {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
                     )
+                    return
             else: #bike is not available
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=f'Sorry, {bike_name} is not available. Please indicate which bike you would like to rent.')
                 self.bikes_command(update,context)
+                return
         else:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'No such bike {bike_name} found. Please indicate which bike you would like to rent.')
             self.bikes_command(update,context)
+            return
             
 
     def status_command(self,update,context):
