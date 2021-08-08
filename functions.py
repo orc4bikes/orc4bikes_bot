@@ -10,6 +10,10 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode, Repl
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 
+DEDUCT_RATE = 60 # deduct 1 credit every 60 seconds or part thereof
+
+ADMIN_GROUP_ID = -580241456
+
 ROUTES_LIST = ["From RC4 B1 to Utown",
                "From RC4 Level 1 to Utown",
                "From RC4 to Clementi",
@@ -76,6 +80,8 @@ Please do NOT add @ before a username. Usernames are case sensitive.
 /admin `topup username amount` - Top up the user's credit by an integer amount.
 /admin `deduct username amount` - Deduct the user's credit by an integer amount.
 """
+
+START_MESSAGE = "Please /start me privately to access this service!"
 
 
 class TeleBot:
@@ -168,6 +174,7 @@ class OrcaBot(TeleBot):
         self.help_text = help_text
         self.admin_list = admin_list
         self.admin_text = admin_text
+        self.deduct_rate = DEDUCT_RATE
 
     def get_bikes(self):
         with open('bicycles.json', 'r') as f:
@@ -188,15 +195,22 @@ class OrcaBot(TeleBot):
             text = f'Welcome back, {update.message.from_user.first_name}! '
         else:
             chat_id = update.effective_chat.id
-            user_data = {'chat_id': chat_id,
-                         'first_name': update.message.from_user.first_name,
-                         'last_name' : update.message.from_user.last_name,
-                         'username':   update.message.from_user.username,
-                         'credits': 0,
-                        }
-            super().update_user(user_data)
+            if chat_id>0:
+                user_data = {'chat_id': chat_id,
+                            'first_name': update.message.from_user.first_name,
+                            'last_name' : update.message.from_user.last_name,
+                            'username':   update.message.from_user.username,
+                            'credits': 0,
+                            }
+                super().update_user(user_data)
+            else:
+                context.bot.send_message(
+                    chat_id=chat_id,
+                    text=f'Hi @{update.message.from_user.username}, please start the bot privately, and not in groups!!'
+                )
+                return
                 
-            text =  f'Hello, {update.message.from_user.first_name}! '
+            text = f'Hello, {update.message.from_user.first_name}! '
         text+='This is your orc4bikes friendly neighbourhood bot :)'
         text += "\nFor more info, send /help"
         
@@ -211,7 +225,12 @@ class OrcaBot(TeleBot):
         
     def info_command(self, update, context):
         """This is for debugging purposes"""
-        user_data = super().get_user(update, context)
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
         context.bot.send_message(
             chat_id = update.effective_chat.id,
             text=str(user_data)
@@ -238,6 +257,12 @@ class OrcaBot(TeleBot):
     def payment_command(self,update,context):
         """Payment using Stripe API
            Currently not ready yet, will work on it soon"""
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text = "Payment methods will be available soon!"
@@ -246,6 +271,11 @@ class OrcaBot(TeleBot):
     def credits_command(self,update,context):
         """Show your current available credits"""
         user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
         credits =  user_data["credits"]
         text = f'Your remaining credits is: {credits}.'
         if credits < 10:
@@ -257,13 +287,19 @@ class OrcaBot(TeleBot):
 
     def deduct_credits(self,update,context,time_diff):
         user_data = super().get_user(update,context)
-        deduction = time_diff.seconds // 60 + int(time_diff.seconds%60 > 0)
+        deduction = time_diff.seconds // self.deduct_rate + int(time_diff.seconds%self.deduct_rate > 0)
         user_data['credits'] -= deduction
         super().update_user(user_data)
         return deduction
 
     def rent_command(self,update,context):
         """Start a rental service"""
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
         if len(context.args) < 1:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -292,9 +328,16 @@ class OrcaBot(TeleBot):
                     bikes_data[bike_name]['status'] = curr_time
                     self.update_bikes(bikes_data)
                         
+                    # Notify user
                     context.bot.send_message(
                         chat_id=update.effective_chat.id, 
                         text=f"Rental started! Time of rental, {datetime.datetime.now()}")
+
+                    # Notify Admin group
+                    context.bot.send_message(
+                        chat_id=ADMIN_GROUP_ID,
+                        text=f'@{user_data["username"]} rented {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+                    )
             else: #bike is not available
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
@@ -309,8 +352,13 @@ class OrcaBot(TeleBot):
 
     def status_command(self,update,context):
         """Check the user rental status"""
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
         try:
-            user_data = super().get_user(update,context)
             status = user_data.get('status',None)
             if status is not None:
                 status = datetime.datetime.fromisoformat(status)
@@ -334,6 +382,11 @@ class OrcaBot(TeleBot):
     def return_command(self,update,context):
         """Return the current bike"""
         user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
         status = user_data.get('status', None)
         if status is not None: #rental in progress
             diff = datetime.datetime.now() - datetime.datetime.fromisoformat(status)
@@ -350,8 +403,9 @@ class OrcaBot(TeleBot):
             log.append(d)
             
             #update bike first, because bike uses user_data.bike_name
+            bike_name = user_data['bike_name']  
             bikes_data = self.get_bikes()
-            bikes_data[user_data['bike_name']]['status'] = 0
+            bikes_data[bike_name]['status'] = 0
             self.update_bikes(bikes_data)
 
             user_data["status"] = None
@@ -370,6 +424,11 @@ class OrcaBot(TeleBot):
                 chat_id=update.effective_chat.id,
                 text=f"{deduction} was deducted from your credits. Your remaining credit is {user_data['credits']-deduction}"
             )
+            # Notify Admin group
+            context.bot.send_message(
+                chat_id=ADMIN_GROUP_ID,
+                text=f'@{user_data["username"]} returned {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+            )
         else:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -377,6 +436,12 @@ class OrcaBot(TeleBot):
             )
 
     def getpin_command(self,update,context):
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
         pass
         
     def bikes_command(self,update,context):
