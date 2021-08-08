@@ -1,12 +1,18 @@
 import random
 import json
+import time
+import datetime
 
 import requests
 import re
 
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode, ReplyKeyboardMarkup, KeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode, ReplyKeyboardMarkup, KeyboardButton, parsemode
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
+
+DEDUCT_RATE = 60 # deduct 1 credit every 60 seconds or part thereof
+
+ADMIN_GROUP_ID = -580241456
 
 ROUTES_LIST = ["From RC4 B1 to Utown",
                "From RC4 Level 1 to Utown",
@@ -24,9 +30,17 @@ HELP_TEXT = """List of commands:
 /start - Initializes the bot
 /help - Get all available commands
 /routes - Get orc4bikes routes
+/credits - View your current credits
+
 /doggo - Get a random dog!
 /neko - Get a random cat!
-/credits - View your current credits
+
+/rent - This feature is still under development
+/getpin - This feature is still under development
+/status - This feature is still under development
+/return - This feature is still under development
+/bikes - This feature is still under development
+/report - This feature is still under development
 """
 
 """
@@ -34,22 +48,40 @@ To be added:
 /rent - Rent a bike
 /getpin - Get the pin for specific bikes
 /return - Return the current bicycle
-/availability - List of currently available bikes
+/bikes - List of currently available bikes
 /report - Report damages of our bikes
 /routes - To add more new routes!
 """
 
 ADMIN_LIST = [
+    #devs
     260281460, # yew chong
+
+    #current comm
     253089925, # jin ming
+    482226461, # bo yi
+    451582425, # gordon
+    292257566, # jolene
+    1018419264,# yuya
+    42444844,  # nic tan
+    197473636, # nic ang
+    
+    #old comm
+    185995813, # fangxin
+    50545125,  # kai en
+    248853832, # brendan
+    446305048, # jovi
+    
 ]
 ADMIN_TEXT = """List of admin commands:
 Please do NOT add @ before a username. Usernames are case sensitive.
-"/admin viewcredit username" - View the user's credits
-"/admin setcredit username amount" - Set the user's credit to an integer amount.
-"/admin topup username amount" - Top up the user's credit by an integer amount.
-"/admin deduct username amount" - Deduct the user's credit by an integer amount.
+/admin `viewcredit username` - View the user's credits
+/admin `setcredit username amount` - Set the user's credit to an integer amount.
+/admin `topup username amount` - Top up the user's credit by an integer amount.
+/admin `deduct username amount` - Deduct the user's credit by an integer amount.
 """
+
+START_MESSAGE = "Please /start me privately to access this service!"
 
 
 class TeleBot:
@@ -74,7 +106,7 @@ class TeleBot:
         if not chat_id:
             return None
         with open(f'users/{chat_id}.json', 'w') as f:
-            json.dump(user_data, f)
+            json.dump(user_data, f, sort_keys=True, indent=4)
     
     def get_user_table(self):
         with open('users/table.json', 'r') as f:
@@ -83,7 +115,7 @@ class TeleBot:
     
     def update_user_table(self, update_field):
         with open('users/table.json', 'w') as f:
-            json.dump(update_field, f)
+            json.dump(update_field, f, sort_keys=True, indent=4)
 
     def addnew(self, command, methodname):
         handler = CommandHandler(command,methodname)
@@ -97,73 +129,6 @@ class TeleBot:
         print('Initializing bot...')
         self.updater.start_polling()
         self.updater.idle()
-
-class OrcaBot(TeleBot):
-    def __init__(self,
-            api_key, 
-            help_text=HELP_TEXT, 
-            admin_list=ADMIN_LIST,
-            admin_text=ADMIN_TEXT):
-        super().__init__(api_key)
-        self.help_text = help_text
-        self.admin_list = admin_list
-        self.admin_text = admin_text
-
-    def start_command(self,update,context):
-        """Initializes the bot
-            This is where we initialize a new user
-            If the user is not created, a new json is created
-            with json name as chatid.json"""
-        user_data = super().get_user(update,context)
-        if user_data is not None:
-            text = f'Welcome back, {update.message.from_user.first_name}! '
-        else:
-            chat_id = update.effective_chat.id
-            user_data = {'chat_id': chat_id,
-                         'first_name': update.message.from_user.first_name,
-                         'last_name' : update.message.from_user.last_name,
-                         'username':   update.message.from_user.username,
-                         'credits': 0,
-                        }
-            super().update_user(user_data)
-                
-            text =  f'Hello, {update.message.from_user.first_name}! '
-        text+='This is your orc4bikes friendly neighbourhood bot :)'
-        text += "\nFor more info, send /help"
-        
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=text)
-
-        table_data = super().get_user_table()
-        table_data[update.message.from_user.username] = update.effective_chat.id
-        super().update_user_table(table_data)
-        
-    def info_command(self, update, context):
-        """This is for debugging purposes"""
-        user_data = super().get_user(update, context)
-        context.bot.send_message(
-            chat_id = update.effective_chat.id,
-            text=str(user_data)
-            )
-    
-    def help_command(self,update,context):
-        """Show a list of possible commands"""
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text = self.help_text)
-    
-    def routes_command(self,update,context):
-        """Returns all routes from the list of routes"""
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text = "Here are some available routes for you!"
-            )
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text='\n'.join(ROUTES_LIST)
-            )
-
 
 
     #fun stuff
@@ -199,9 +164,105 @@ class OrcaBot(TeleBot):
     
 
 
+class OrcaBot(TeleBot):
+    def __init__(self,
+            api_key, 
+            help_text=HELP_TEXT, 
+            admin_list=ADMIN_LIST,
+            admin_text=ADMIN_TEXT):
+        super().__init__(api_key)
+        self.help_text = help_text
+        self.admin_list = admin_list
+        self.admin_text = admin_text
+        self.deduct_rate = DEDUCT_RATE
+
+    def get_bikes(self):
+        with open('bicycles.json', 'r') as f:
+            bikes_data = json.load(f)
+        return bikes_data
+
+    def update_bikes(self, bikes_data):
+        with open('bicycles.json', 'w') as f:
+            json.dump(bikes_data, f, sort_keys=True, indent=4)
+
+    def start_command(self,update,context):
+        """Initializes the bot
+            This is where we initialize a new user
+            If the user is not created, a new json is created
+            with json name as chatid.json"""
+        user_data = super().get_user(update,context)
+        if user_data is not None:
+            text = f'Welcome back, {update.message.from_user.first_name}! '
+        else:
+            chat_id = update.effective_chat.id
+            if chat_id>0:
+                user_data = {'chat_id': chat_id,
+                            'first_name': update.message.from_user.first_name,
+                            'last_name' : update.message.from_user.last_name,
+                            'username':   update.message.from_user.username,
+                            'credits': 0,
+                            }
+                super().update_user(user_data)
+            else:
+                context.bot.send_message(
+                    chat_id=chat_id,
+                    text=f'Hi @{update.message.from_user.username}, please start the bot privately, and not in groups!!'
+                )
+                return
+                
+            text = f'Hello, {update.message.from_user.first_name}! '
+        text+='This is your orc4bikes friendly neighbourhood bot :)'
+        text += "\nFor more info, send /help"
+        
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text)
+
+        if update.effective_chat.id > 0:
+            table_data = super().get_user_table()
+            table_data[update.message.from_user.username] = update.effective_chat.id
+            super().update_user_table(table_data)
+        
+    def info_command(self, update, context):
+        """This is for debugging purposes"""
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+        context.bot.send_message(
+            chat_id = update.effective_chat.id,
+            text=str(user_data)
+            )
+    
+    def help_command(self,update,context):
+        """Show a list of possible commands"""
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text = self.help_text,
+            parse_mode=ParseMode.MARKDOWN)
+    
+    def routes_command(self,update,context):
+        """Returns all routes from the list of routes"""
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text = "Here are some available routes for you!"
+            )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text='\n'.join(ROUTES_LIST)
+            )
+
     def payment_command(self,update,context):
         """Payment using Stripe API
            Currently not ready yet, will work on it soon"""
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text = "Payment methods will be available soon!"
@@ -210,25 +271,203 @@ class OrcaBot(TeleBot):
     def credits_command(self,update,context):
         """Show your current available credits"""
         user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
         credits =  user_data["credits"]
         text = f'Your remaining credits is: {credits}.'
         if credits < 10:
             text+=' Please top up soon!'
-
-
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text = text,
         )
 
+    def deduct_credits(self,update,context,time_diff):
+        user_data = super().get_user(update,context)
+        deduction = time_diff.seconds // self.deduct_rate + int(time_diff.seconds%self.deduct_rate > 0)
+        user_data['credits'] -= deduction
+        super().update_user(user_data)
+        return deduction
 
     def rent_command(self,update,context):
         """Start a rental service"""
-        pass    
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+        if len(context.args) < 1:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Please indicate which bike you would like to rent"
+            )
+            self.bikes_command(update,context)
+            return 
+        else: 
+            bike_name = context.args[0]
+        bikes_data = self.get_bikes()
+        if bikes_data.get(bike_name,None):
+            if bikes_data[bike_name]["status"] == 0:
+                user_data = super().get_user(update,context)
+                status = user_data.get('status',None)
+                if status is not None: #rental in progress
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text="You are already renting! Please return your current bike first"
+                    )
+                else: 
+                    curr_time = datetime.datetime.now().isoformat()
+                    user_data['status'] = curr_time
+                    user_data['bike_name'] = bike_name
+                    super().update_user(user_data)
+
+                    bikes_data[bike_name]['status'] = curr_time
+                    self.update_bikes(bikes_data)
+                        
+                    # Notify user
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id, 
+                        text=f"Rental started! Time of rental, {datetime.datetime.now()}")
+
+                    # Notify Admin group
+                    context.bot.send_message(
+                        chat_id=ADMIN_GROUP_ID,
+                        text=f'@{user_data["username"]} rented {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+                    )
+            else: #bike is not available
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f'Sorry, {bike_name} is not available. Please indicate which bike you would like to rent.')
+                self.bikes_command(update,context)
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'No such bike {bike_name} found. Please indicate which bike you would like to rent.')
+            self.bikes_command(update,context)
+            
+
+    def status_command(self,update,context):
+        """Check the user rental status"""
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+        try:
+            status = user_data.get('status',None)
+            if status is not None:
+                status = datetime.datetime.fromisoformat(status)
+                curr = datetime.datetime.now()
+                diff = curr - status
+                if diff.days:
+                    strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
+                else:
+                    strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
+                status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}.'
+            else: 
+                status_text = "You are not renting..."
+            context.bot.send_message(chat_id=update.effective_chat.id,
+                text=status_text)
+        except AssertionError as e:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Error, {e}'
+            )
+    
+    def return_command(self,update,context):
+        """Return the current bike"""
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+        status = user_data.get('status', None)
+        if status is not None: #rental in progress
+            diff = datetime.datetime.now() - datetime.datetime.fromisoformat(status)
+            if diff.days:
+                strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
+            else:
+                strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
+            d = {
+                'start': status,
+                'end': datetime.datetime.now().isoformat(),
+                'time': strdiff,
+            }
+            log = user_data.get('log',[])
+            log.append(d)
+            
+            #update bike first, because bike uses user_data.bike_name
+            bike_name = user_data['bike_name']  
+            bikes_data = self.get_bikes()
+            bikes_data[bike_name]['status'] = 0
+            self.update_bikes(bikes_data)
+
+            user_data["status"] = None
+            user_data["log"] = log
+            user_data['bike_name'] = ''
+            super().update_user(user_data)
+
+            deduction = self.deduct_credits(update,context,diff)
+
+            
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"Successfully returned! Your total rental time is {strdiff}."
+            )
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"{deduction} was deducted from your credits. Your remaining credit is {user_data['credits']-deduction}"
+            )
+            # Notify Admin group
+            context.bot.send_message(
+                chat_id=ADMIN_GROUP_ID,
+                text=f'@{user_data["username"]} returned {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+            )
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="You are not renting..."
+            )
+
+    def getpin_command(self,update,context):
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+        pass
+        
+    def bikes_command(self,update,context):
+        with open('bicycles.json', 'r') as f:
+            bikes_data = json.load(f)
+        avail, not_avail = list(), list()
+        for bike in bikes_data.values():
+            if bike.get('status') == 0:
+                avail.append(bike)
+            else:
+                not_avail.append(bike)
+
+        avail = "\n".join( b["name"] for b in avail )
+        not_avail = "\n".join(b["name"] for b in not_avail )
+        text = f'Currently available:\n{avail}\n\n'
+        text+= f'On loan:\n{not_avail}'
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text)  
+
+    def report_command(self,update,context):
+        pass
+
 
     def handle_admin(self, update, context, keywords):
-        """Handle the admin commands after /admin"""
-        
+        """Handle the admin commands after /admin"""  
         try:
             command = keywords.pop(0)
             username = keywords.pop(0)
@@ -286,7 +525,6 @@ class OrcaBot(TeleBot):
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'Could not find key {e} in dictionary! Please check database again')
-
         except Exception as e:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -295,7 +533,7 @@ class OrcaBot(TeleBot):
     def admin_failed(self, update, context):
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=f'Unrecognized command. Try again. For more info, enter /admin')
+            text='Unrecognized command. Try again. For more info, enter /admin')
     
     def admin_command(self,update,context):
         """Start a rental service
@@ -304,16 +542,23 @@ class OrcaBot(TeleBot):
         commands => ['addcredit','username','amount']"""
         commands = context.args
         if update.effective_chat.id in self.admin_list:
-            update.message.reply_text(str(commands))
+            # update.message.reply_text(str(commands))
             if commands:
                 self.handle_admin(update,context,commands)
             else:
-                update.message.reply_text(self.admin_text)
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=self.admin_text,
+                    parse_mode=ParseMode.MARKDOWN)
         else:
             update.message.reply_text('You are not authorized admin commands!')
 
+
     def echo_command(self,update,context):
         update.message.reply_text(update.message.text)
+
+    def dummy_command(self,update,context):
+        update.message.reply_text('This feature will be added soon! Where art thou, bikes...?')
 
     def initialize(self):
         """Initializes all commands that are required in the bot."""
@@ -326,7 +571,14 @@ class OrcaBot(TeleBot):
         self.addnew('neko', self.neko_command)
         self.addnew('payment', self.payment_command)
         self.addnew('credits', self.credits_command)
-        self.addnew('rent', self.rent_command)
+        self.addnew('rent', self.rent_command) #self.rent_command)
+        self.addnew('status', self.status_command) #self.status_command)
+        self.addnew('return', self.return_command) #self.return_command)
+        self.addnew('getpin', self.dummy_command) #self.getpin_command)
+        self.addnew('bikes', self.bikes_command) #self.bikes_command)
+        self.addnew('report', self.dummy_command) #self.report_command)
+
+        #admin handler
         self.addnew('admin', self.admin_command)
 
         # This part is a message command

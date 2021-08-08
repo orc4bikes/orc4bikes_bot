@@ -10,7 +10,7 @@ offhand, it shld be able to:
   
 
 Make user with ID
-credits: float
+credits: int
 status: time or bool
   if not time, say not renting
 
