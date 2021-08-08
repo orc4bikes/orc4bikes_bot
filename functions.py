@@ -26,7 +26,7 @@ HELP_TEXT = """List of commands:
 /routes - Get orc4bikes routes
 /doggo - Get a random dog!
 /neko - Get a random cat!
-/credits - See your current credits
+/credits - View your current credits
 """
 
 """
@@ -39,19 +39,24 @@ To be added:
 /routes - To add more new routes!
 """
 
+ADMIN_LIST = [
+    260281460, # yew chong
+    253089925, # jin ming
+]
+ADMIN_TEXT = """List of admin commands:
+Please do NOT add @ before a username. Usernames are case sensitive.
+"/admin viewcredit username" - View the user's credits
+"/admin setcredit username amount" - Set the user's credit to an integer amount.
+"/admin topup username amount" - Top up the user's credit by an integer amount.
+"/admin deduct username amount" - Deduct the user's credit by an integer amount.
+"""
+
 
 class TeleBot:
     def __init__(self,api_key):
         self.api_key = api_key
         self.updater = Updater(token=api_key, use_context=True)
         self.dispatcher = self.updater.dispatcher
-
-    def update_user(self, user_data):
-        chat_id = user_data.get('chat_id', None)
-        if not chat_id:
-            return None
-        with open(f'users/{chat_id}.json', 'w') as f:
-            json.dump(user_data, f)
 
     def get_user(self, update, context):
         chat_id = update.effective_chat.id
@@ -63,6 +68,13 @@ class TeleBot:
             user_data = None
             #print('no data found')
         return user_data
+
+    def update_user(self, user_data):
+        chat_id = user_data.get('chat_id', None)
+        if not chat_id:
+            return None
+        with open(f'users/{chat_id}.json', 'w') as f:
+            json.dump(user_data, f)
     
     def get_user_table(self):
         with open('users/table.json', 'r') as f:
@@ -87,9 +99,15 @@ class TeleBot:
         self.updater.idle()
 
 class OrcaBot(TeleBot):
-    def __init__(self,api_key):
+    def __init__(self,
+            api_key, 
+            help_text=HELP_TEXT, 
+            admin_list=ADMIN_LIST,
+            admin_text=ADMIN_TEXT):
         super().__init__(api_key)
-        self.help_text = HELP_TEXT
+        self.help_text = help_text
+        self.admin_list = admin_list
+        self.admin_text = admin_text
 
     def start_command(self,update,context):
         """Initializes the bot
@@ -179,6 +197,8 @@ class OrcaBot(TeleBot):
                 chat_id=update.effective_chat.id,
                 text="Sorry, all the cats are asleep... Please try again later!")
     
+
+
     def payment_command(self,update,context):
         """Payment using Stripe API
            Currently not ready yet, will work on it soon"""
@@ -205,21 +225,99 @@ class OrcaBot(TeleBot):
     def rent_command(self,update,context):
         """Start a rental service"""
         pass    
+
+    def handle_admin(self, update, context, keywords):
+        """Handle the admin commands after /admin"""
+        
+        try:
+            command = keywords.pop(0)
+            username = keywords.pop(0)
+            # handle usernames
+            all_users = self.get_user_table()
+            chat_id = all_users.get(username, None)
+            with open(f'users/{chat_id}.json', 'r') as f:
+                user_data = json.load(f)
+
+            if command == "topup":
+                amount = keywords.pop(0)
+                if chat_id is not None:
+                    user_data['credits'] += int(amount) #ValueError Here
+                    self.update_user(user_data)
+                else: 
+                    self.admin_failed(update,context)
+
+            elif command == "deduct":
+                amount = keywords.pop(0)
+                if chat_id is not None:
+                    user_data['credits'] -= int(amount) #ValueError Here
+                    self.update_user(user_data)
+                else: 
+                    self.admin_failed(update,context)
+
+            elif command == "setcredit":
+                amount = keywords.pop(0)
+                if chat_id is not None:
+                    user_data['credits'] = int(amount)
+                    self.update_user(user_data)
+                else: 
+                    self.admin_failed(update,context)
+
+            elif command == "viewcredit":
+                if chat_id is not None:
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f'User @{user_data["username"]} has : {user_data["credits"]} credits left.')
+                else: 
+                    self.admin_failed(update,context)
+            else:
+                self.admin_failed(update,context)
+
+        except IndexError as e: 
+            self.admin_failed(update,context)
+        except FileNotFoundError as e:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Specified user is not found! Please ask @{username} to create an account first.')
+        except ValueError as e:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Amount entered, {amount}, is not a valid amount!')
+        except KeyError as e:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Could not find key {e} in dictionary! Please check database again')
+
+        except Exception as e:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Failed, error is {e}')
+
+    def admin_failed(self, update, context):
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f'Unrecognized command. Try again. For more info, enter /admin')
     
     def admin_command(self,update,context):
         """Start a rental service
-        commands is a list of strings that the user sends
+        var commands is a list of strings that the user sends
         e.g. /admin addcredit username amount
         commands => ['addcredit','username','amount']"""
         commands = context.args
-        update.message.reply_text(str(commands))
-        
-        
-    
+        if update.effective_chat.id in self.admin_list:
+            update.message.reply_text(str(commands))
+            if commands:
+                self.handle_admin(update,context,commands)
+            else:
+                update.message.reply_text(self.admin_text)
+        else:
+            update.message.reply_text('You are not authorized admin commands!')
+
     def echo_command(self,update,context):
         update.message.reply_text(update.message.text)
 
-    def main(self):
+    def initialize(self):
+        """Initializes all commands that are required in the bot."""
+
         self.addnew('start',self.start_command)
         self.addnew('myinfo',self.info_command)
         self.addnew('help', self.help_command)
@@ -230,8 +328,13 @@ class OrcaBot(TeleBot):
         self.addnew('credits', self.credits_command)
         self.addnew('rent', self.rent_command)
         self.addnew('admin', self.admin_command)
-        self.addmessage(Filters.text & (~Filters.command), self.echo_command)
 
+        # This part is a message command
+        # self.addmessage(Filters.text & (~Filters.command), self.echo_command)
+
+    def main(self):
+        """Main bot function to run"""
+        self.initialize()
         super().main()
 
         
@@ -239,5 +342,12 @@ class OrcaBot(TeleBot):
 
 
 
-if __name__=="__main__":
-    print('Run the main python file!')
+if __name__=="__main__": 
+    # DEV part, do not run this
+    print('Running the development bot!')
+    API_KEY = '1722354435:AAHAFxP6_sIf_P4hdQJ7Y5EsH64PtyWwWo8' #this is old api for orcabikes_bot
+    # API_KEY = '1705378721:AAEbSmhxNhAY4s5eqWMSmxdCxkf44O7_nss' #new key for orc4bikes_bot
+    newbot = OrcaBot(API_KEY)
+    newbot.main()
+    
+

@@ -37,7 +37,7 @@ start the user timer
 
 
 /admin commands
-/admin addcredit username amount
+/admin topup username amount
 /admin deduct username amount 
 /admin setcredit username amount
 /admin viewcredit username
