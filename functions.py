@@ -125,6 +125,38 @@ class TeleBot:
         self.updater.idle()
 
 
+    #fun stuff
+    def doggo_command(self,update,context):
+        """Shows you a few cute dogs!"""
+        try:
+            url = requests.get('https://random.dog/woof.json').json()['url']
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                caption = random.choice(CHEER_LIST),
+                photo = url,
+                #reply_markup=InlineKeyboardMarkup(buttons)
+                )
+        except:
+            context.bot.send_message(
+                chat_id = update.effective_chat.id,
+                text="Sorry, all the dogs are out playing... Please try again later!")
+    
+    def neko_command(self,update,context):
+        """Shows you a few cute cats!"""
+        try:
+            url = requests.get('https://aws.random.cat/meow').json()['file']
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                caption = random.choice(CHEER_LIST),
+                photo = url,
+                #reply_markup=InlineKeyboardMarkup(buttons)
+                )
+        except:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, all the cats are asleep... Please try again later!")
+    
+
 
 class OrcaBot(TeleBot):
     def __init__(self,
@@ -203,41 +235,6 @@ class OrcaBot(TeleBot):
             text='\n'.join(ROUTES_LIST)
             )
 
-
-
-    #fun stuff
-    def doggo_command(self,update,context):
-        """Shows you a few cute dogs!"""
-        try:
-            url = requests.get('https://random.dog/woof.json').json()['url']
-            context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                caption = random.choice(CHEER_LIST),
-                photo = url,
-                #reply_markup=InlineKeyboardMarkup(buttons)
-                )
-        except:
-            context.bot.send_message(
-                chat_id = update.effective_chat.id,
-                text="Sorry, all the dogs are out playing... Please try again later!")
-    
-    def neko_command(self,update,context):
-        """Shows you a few cute cats!"""
-        try:
-            url = requests.get('https://aws.random.cat/meow').json()['file']
-            context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                caption = random.choice(CHEER_LIST),
-                photo = url,
-                #reply_markup=InlineKeyboardMarkup(buttons)
-                )
-        except:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Sorry, all the cats are asleep... Please try again later!")
-    
-
-
     def payment_command(self,update,context):
         """Payment using Stripe API
            Currently not ready yet, will work on it soon"""
@@ -258,22 +255,57 @@ class OrcaBot(TeleBot):
             text = text,
         )
 
+    def deduct_credits(self,update,context,time_diff):
+        user_data = super().get_user(update,context)
+        deduction = time_diff.seconds // 60 + int(time_diff.seconds%60 > 0)
+        user_data['credits'] -= deduction
+        super().update_user(user_data)
+        return deduction
 
     def rent_command(self,update,context):
         """Start a rental service"""
-        user_data = super().get_user(update,context)
-        status = user_data.get('status',None)
-        if status is not None: #rental in progress
+        if len(context.args) < 1:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="You are already renting! Please return your current bike first"
+                text="Please indicate which bike you would like to rent"
             )
+            self.bikes_command(update,context)
+            return 
         else: 
-            user_data['status'] = datetime.datetime.now().isoformat()
-            super().update_user(user_data)
+            bike_name = context.args[0]
+        bikes_data = self.get_bikes()
+        if bikes_data.get(bike_name,None):
+            if bikes_data[bike_name]["status"] == 0:
+                user_data = super().get_user(update,context)
+                status = user_data.get('status',None)
+                if status is not None: #rental in progress
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text="You are already renting! Please return your current bike first"
+                    )
+                else: 
+                    curr_time = datetime.datetime.now().isoformat()
+                    user_data['status'] = curr_time
+                    user_data['bike_name'] = bike_name
+                    super().update_user(user_data)
+
+                    bikes_data[bike_name]['status'] = curr_time
+                    self.update_bikes(bikes_data)
+                        
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id, 
+                        text=f"Rental started! Time of rental, {datetime.datetime.now()}")
+            else: #bike is not available
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f'Sorry, {bike_name} is not available. Please indicate which bike you would like to rent.')
+                self.bikes_command(update,context)
+        else:
             context.bot.send_message(
-                chat_id=update.effective_chat.id, 
-                text=f"Rental started! Time of rental, {datetime.datetime.now()}")
+                chat_id=update.effective_chat.id,
+                text=f'No such bike {bike_name} found. Please indicate which bike you would like to rent.')
+            self.bikes_command(update,context)
+            
 
     def status_command(self,update,context):
         """Check the user rental status"""
@@ -288,7 +320,7 @@ class OrcaBot(TeleBot):
                     strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
                 else:
                     strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
-                status_text = f'You have been renting for {strdiff}'
+                status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}.'
             else: 
                 status_text = "You are not renting..."
             context.bot.send_message(chat_id=update.effective_chat.id,
@@ -316,13 +348,27 @@ class OrcaBot(TeleBot):
             }
             log = user_data.get('log',[])
             log.append(d)
+            
+            #update bike first, because bike uses user_data.bike_name
+            bikes_data = self.get_bikes()
+            bikes_data[user_data['bike_name']]['status'] = 0
+            self.update_bikes(bikes_data)
+
             user_data["status"] = None
             user_data["log"] = log
+            user_data['bike_name'] = ''
             super().update_user(user_data)
+
+            deduction = self.deduct_credits(update,context,diff)
+
             
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=f"Successfully returned! Your total rental time is {strdiff}"
+                text=f"Successfully returned! Your total rental time is {strdiff}."
+            )
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"{deduction} was deducted from your credits. Your remaining credit is {user_data['credits']-deduction}"
             )
         else:
             context.bot.send_message(
@@ -330,13 +376,33 @@ class OrcaBot(TeleBot):
                 text="You are not renting..."
             )
 
+    def getpin_command(self,update,context):
+        pass
         
+    def bikes_command(self,update,context):
+        with open('bicycles.json', 'r') as f:
+            bikes_data = json.load(f)
+        avail, not_avail = list(), list()
+        for bike in bikes_data.values():
+            if bike.get('status') == 0:
+                avail.append(bike)
+            else:
+                not_avail.append(bike)
 
+        avail = "\n".join( b["name"] for b in avail )
+        not_avail = "\n".join(b["name"] for b in not_avail )
+        text = f'Currently available:\n{avail}\n\n'
+        text+= f'On loan:\n{not_avail}'
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text)  
+
+    def report_command(self,update,context):
+        pass
 
 
     def handle_admin(self, update, context, keywords):
-        """Handle the admin commands after /admin"""
-        
+        """Handle the admin commands after /admin"""  
         try:
             command = keywords.pop(0)
             username = keywords.pop(0)
@@ -394,7 +460,6 @@ class OrcaBot(TeleBot):
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'Could not find key {e} in dictionary! Please check database again')
-
         except Exception as e:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -412,7 +477,7 @@ class OrcaBot(TeleBot):
         commands => ['addcredit','username','amount']"""
         commands = context.args
         if update.effective_chat.id in self.admin_list:
-            update.message.reply_text(str(commands))
+            # update.message.reply_text(str(commands))
             if commands:
                 self.handle_admin(update,context,commands)
             else:
@@ -422,7 +487,6 @@ class OrcaBot(TeleBot):
                     parse_mode=ParseMode.MARKDOWN)
         else:
             update.message.reply_text('You are not authorized admin commands!')
-
 
 
     def echo_command(self,update,context):
@@ -442,14 +506,12 @@ class OrcaBot(TeleBot):
         self.addnew('neko', self.neko_command)
         self.addnew('payment', self.payment_command)
         self.addnew('credits', self.credits_command)
-        self.addnew('rent', self.dummy_command) #self.rent_command)
-        self.addnew('status', self.dummy_command) #self.status_command)
-        self.addnew('return', self.dummy_command) #self.return_command)
+        self.addnew('rent', self.rent_command) #self.rent_command)
+        self.addnew('status', self.status_command) #self.status_command)
+        self.addnew('return', self.return_command) #self.return_command)
         self.addnew('getpin', self.dummy_command) #self.getpin_command)
-        self.addnew('bikes', self.dummy_command) #self.bikes_command)
+        self.addnew('bikes', self.bikes_command) #self.bikes_command)
         self.addnew('report', self.dummy_command) #self.report_command)
-
-
 
         #admin handler
         self.addnew('admin', self.admin_command)
