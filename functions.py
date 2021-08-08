@@ -31,11 +31,12 @@ HELP_TEXT = """List of commands:
 /doggo - Get a random dog!
 /neko - Get a random cat!
 
-/rent - This features is still under development
-/getpin - This features is still under development
-/return - This features is still under development
-/availability - This features is still under development
-/report - This features is still under development
+/rent - This feature is still under development
+/getpin - This feature is still under development
+/status - This feature is still under development
+/return - This feature is still under development
+/bikes - This feature is still under development
+/report - This feature is still under development
 """
 
 """
@@ -43,7 +44,7 @@ To be added:
 /rent - Rent a bike
 /getpin - Get the pin for specific bikes
 /return - Return the current bicycle
-/availability - List of currently available bikes
+/bikes - List of currently available bikes
 /report - Report damages of our bikes
 /routes - To add more new routes!
 """
@@ -248,8 +249,6 @@ class OrcaBot(TeleBot):
         text = f'Your remaining credits is: {credits}.'
         if credits < 10:
             text+=' Please top up soon!'
-
-
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text = text,
@@ -425,6 +424,9 @@ class OrcaBot(TeleBot):
     def echo_command(self,update,context):
         update.message.reply_text(update.message.text)
 
+    def dummy_command(self,update,context):
+        update.message.reply_text('This feature will be added soon! Where art thou, bikes...?')
+
     def initialize(self):
         """Initializes all commands that are required in the bot."""
 
@@ -436,9 +438,12 @@ class OrcaBot(TeleBot):
         self.addnew('neko', self.neko_command)
         self.addnew('payment', self.payment_command)
         self.addnew('credits', self.credits_command)
-        self.addnew('rent', self.rent_command)
-        self.addnew('status', self.status_command)
-        self.addnew('return', self.return_command)
+        self.addnew('rent', self.dummy_command) #self.rent_command)
+        self.addnew('status', self.dummy_command) #self.status_command)
+        self.addnew('return', self.dummy_command) #self.return_command)
+        self.addnew('getpin', self.dummy_command) #self.getpin_command)
+        self.addnew('bikes', self.dummy_command) #self.bikes_command)
+        self.addnew('report', self.dummy_command) #self.report_command)
 
 
 
