@@ -58,12 +58,16 @@ ADMIN_LIST = [
     482226461, # bo yi
     451582425, # gordon
     292257566, # jolene
+    1018419264,# yuya
+    42444844,  # nic tan
+    197473636, # nic ang
     
     #old comm
     185995813, # fangxin
     50545125,  # kai en
     248853832, # brendan
     446305048, # jovi
+    
 ]
 ADMIN_TEXT = """List of admin commands:
 Please do NOT add @ before a username. Usernames are case sensitive.
@@ -139,7 +143,7 @@ class OrcaBot(TeleBot):
         return bikes_data
 
     def update_bikes(self, bikes_data):
-        with open(f'bicycles.json', 'w') as f:
+        with open('bicycles.json', 'w') as f:
             json.dump(bikes_data, f, sort_keys=True, indent=4)
 
     def start_command(self,update,context):
@@ -399,7 +403,7 @@ class OrcaBot(TeleBot):
     def admin_failed(self, update, context):
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=f'Unrecognized command. Try again. For more info, enter /admin')
+            text='Unrecognized command. Try again. For more info, enter /admin')
     
     def admin_command(self,update,context):
         """Start a rental service
