@@ -10,15 +10,14 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode, Repl
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 
-DEDUCT_RATE = 60 # deduct 1 credit every 60 seconds or part thereof
+DEDUCT_RATE = 20 # deduct 1 credit every 60 seconds or part thereof
 
 ADMIN_GROUP_ID = -580241456
 
-ROUTES_LIST = ["From RC4 B1 to Utown",
-               "From RC4 Level 1 to Utown",
-               "From RC4 to Clementi",
-               "From RC4 to Utown (Sheltered)",
-               "From RC4 to RC4",
+ROUTES_LIST = ["Orange: From RC4 Level 1 to Fine Foods",
+               "Pink: From Fine Foods to Octobox (SRC L1)",
+               "Green: From RC4 B1 to Fine Foods",
+               "Blue: From RC4 B1 to Fine Foods (Wet Weather route)",
                ]
 CHEER_LIST = ["","Cheer up!",
               "Ganbatte!",
@@ -374,10 +373,18 @@ class OrcaBot(TeleBot):
             chat_id=update.effective_chat.id,
             text = "Here are some available routes for you!"
             )
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text='\n'.join(ROUTES_LIST)
+        try:
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                photo="https://www.dropbox.com/s/5vmd1yhaslceii0/photo_2021-08-12_23-40-06.jpg",
+                text='\n'.join(ROUTES_LIST)
             )
+        except Exception as e:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"Server timed out with error {e}... Here are some routes for your consideration\n\
+                      " + '\n'.join(ROUTES_LIST)
+                )
 
     def payment_command(self,update,context):
         """Payment using Stripe API

@@ -1,11 +1,13 @@
 {
     "bike1": {
+        "colour": "red",
         "name": "bike1",
         "pin": "0000",
         "status": 0,
         "type": "mountain"
     },
     "bike2": {
+        "colour": "green",
         "name": "bike2",
         "pin": "1234",
         "status": 0,
