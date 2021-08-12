@@ -12,7 +12,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Conve
 
 DEDUCT_RATE = 20 # deduct 1 credit every 60 seconds or part thereof
 
-ADMIN_GROUP_ID = -580241456
+ADMIN_GROUP_ID = -580241456 #dev
+#ADMIN_GROUP_ID = -572304795 #actual
 
 ROUTES_LIST = ["Orange: From RC4 Level 1 to Fine Foods",
                "Pink: From Fine Foods to Octobox (SRC L1)",
@@ -86,6 +87,15 @@ Please do NOT add @ before a username. Usernames are case sensitive.
 """
 
 START_MESSAGE = "Please /start me privately to access this service!"
+
+
+EMOJI = {
+        "tick" : "✅",
+        "cross": "❌"
+        }
+
+
+
 
 
 class TeleBot:
@@ -293,12 +303,17 @@ class OrcaBot(TeleBot):
             api_key, 
             help_text=HELP_TEXT, 
             admin_list=ADMIN_LIST,
-            admin_text=ADMIN_TEXT):
+            admin_text=ADMIN_TEXT,
+            admin_group_id=ADMIN_GROUP_ID,
+            deduct_rate=DEDUCT_RATE
+            ):
         super().__init__(api_key)
         self.help_text = help_text
         self.admin_list = admin_list
         self.admin_text = admin_text
-        self.deduct_rate = DEDUCT_RATE
+        self.deduct_rate = deduct_rate
+        self.admin_group_id = admin_group_id
+        
 
     def get_bikes(self):
         with open('bicycles.json', 'r') as f:
@@ -350,6 +365,7 @@ class OrcaBot(TeleBot):
     def info_command(self, update, context):
         """This is for debugging purposes"""
         user_data = super().get_user(update,context)
+        update.message.reply_text(update.effective_chat.id)
         if user_data is None:
             return context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -473,10 +489,8 @@ class OrcaBot(TeleBot):
                         text=f"Rental started! Time of rental, {datetime.datetime.now()}")
 
                     # Notify Admin group
-                    context.bot.send_message(
-                        chat_id=ADMIN_GROUP_ID,
-                        text=f'@{user_data["username"]} rented {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
-                    )
+                    message=f'@{user_data["username"]} rented {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+                    self.admin_log(update,context,message)
                     return
             else: #bike is not available
                 context.bot.send_message(
@@ -510,16 +524,21 @@ class OrcaBot(TeleBot):
                     strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
                 else:
                     strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
-                status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}.'
+                status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}. '
+                deduction = diff.seconds // self.deduct_rate + int(diff.seconds%self.deduct_rate > 0)
+                status_text += f'\nCurrent credits: {user_data.get("credits")} \nThis trip: {deduction}\nCredits left: {user_data.get("credits") - deduction}'
             else: 
                 status_text = "You are not renting..."
-            context.bot.send_message(chat_id=update.effective_chat.id,
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
                 text=status_text)
         except AssertionError as e:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'Error, {e}'
             )
+        except Exception as e:
+            pass
     
     def return_command(self,update,context):
         """Return the current bike"""
@@ -567,10 +586,8 @@ class OrcaBot(TeleBot):
                 text=f"{deduction} was deducted from your credits. Your remaining credit is {user_data['credits']-deduction}"
             )
             # Notify Admin group
-            context.bot.send_message(
-                chat_id=ADMIN_GROUP_ID,
-                text=f'@{user_data["username"]} returned {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
-            )
+            message=f'@{user_data["username"]} returned {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+            self.admin_log(update,context,message)
         else:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -584,7 +601,22 @@ class OrcaBot(TeleBot):
                 chat_id=update.effective_chat.id,
                 text=START_MESSAGE
                 )
-        pass
+        bike_name = user_data.get('bike_name', None)
+        if not bike_name:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="You are not renting..."
+            )
+        else:
+            bike_data = self.get_bikes()
+            pin = bike_data[bike_name]['pin']
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Your bike pin is {pin}! Please do not share this pin...'
+            )
+            
+            
+
         
     def bikes_command(self,update,context):
         with open('bicycles.json', 'r') as f:
@@ -596,10 +628,10 @@ class OrcaBot(TeleBot):
             else:
                 not_avail.append(bike)
 
-        avail = "\n".join( b["name"] for b in avail )
-        not_avail = "\n".join(b["name"] for b in not_avail )
-        text = f'Currently available:\n{avail}\n\n'
-        text+= f'On loan:\n{not_avail}'
+        avail = "\n".join( b["name"]+EMOJI["tick"] for b in avail )
+        not_avail = "\n".join(b["name"]+EMOJI["cross"] for b in not_avail )
+        text = f'Bicycles:\n{avail}\n\n'
+        text+= f'{not_avail}'
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=text)  
@@ -616,10 +648,10 @@ class OrcaBot(TeleBot):
             # handle usernames
             all_users = self.get_user_table()
             chat_id = all_users.get(username, None)
-            with open(f'users/{chat_id}.json', 'r') as f:
-                user_data = json.load(f)
 
             if command == "topup":
+                with open(f'users/{chat_id}.json', 'r') as f:
+                    user_data = json.load(f)
                 amount = keywords.pop(0)
                 if chat_id is not None:
                     user_data['credits'] += int(amount) #ValueError Here
@@ -628,6 +660,8 @@ class OrcaBot(TeleBot):
                     self.admin_failed(update,context)
 
             elif command == "deduct":
+                with open(f'users/{chat_id}.json', 'r') as f:
+                    user_data = json.load(f)
                 amount = keywords.pop(0)
                 if chat_id is not None:
                     user_data['credits'] -= int(amount) #ValueError Here
@@ -636,6 +670,8 @@ class OrcaBot(TeleBot):
                     self.admin_failed(update,context)
 
             elif command == "setcredit":
+                with open(f'users/{chat_id}.json', 'r') as f:
+                    user_data = json.load(f)
                 amount = keywords.pop(0)
                 if chat_id is not None:
                     user_data['credits'] = int(amount)
@@ -644,12 +680,39 @@ class OrcaBot(TeleBot):
                     self.admin_failed(update,context)
 
             elif command == "viewcredit":
+                with open(f'users/{chat_id}.json', 'r') as f:
+                    user_data = json.load(f)
                 if chat_id is not None:
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         text=f'User @{user_data["username"]} has : {user_data["credits"]} credits left.')
                 else: 
                     self.admin_failed(update,context)
+            elif command =="setpin":
+                newpin = keywords.pop(0)
+                bikes_data = self.get_bikes()
+                bike_name  = username
+                bike = bikes_data.get(bike_name, None)
+                if bike is not None:
+                    if bike['pin']!=newpin:
+                        bikes_data[bike_name]['oldpin'] = bike['pin']
+                        bikes_data[bike_name]['pin'] = newpin
+                        self.update_bikes(bikes_data)
+                        context.bot.send_message(
+                            chat_id=update.effective_chat.id,
+                            text=f"Pin for {bike_name} updated to {newpin}!"
+                        )
+                    else:
+                        context.bot.send_message(
+                            chat_id=update.effective_chat.id,
+                            text=f'Old pin is the same as {newpin}!'
+                        )
+                else:
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f'No such bike, {bike}, exists. Please try again with current /bikes'
+                    )
+
             else:
                 self.admin_failed(update,context)
 
@@ -676,7 +739,13 @@ class OrcaBot(TeleBot):
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text='Unrecognized command. Try again. For more info, enter /admin')
-    
+
+    def admin_log(self, update, context, message):
+        context.bot.send_message(
+            chat_id=self.admin_group_id,
+            text=message
+        )
+
     def admin_command(self,update,context):
         """Start a rental service
         var commands is a list of strings that the user sends
@@ -697,7 +766,10 @@ class OrcaBot(TeleBot):
 
 
     def echo_command(self,update,context):
+        print(update.message.text)
         update.message.reply_text(update.message.text)
+        update.message.reply_text(tick)
+        update.message.reply_text(cross)
 
     def dummy_command(self,update,context):
         update.message.reply_text('This feature will be added soon! Where art thou, bikes...?')
@@ -716,14 +788,14 @@ class OrcaBot(TeleBot):
         self.addnew('shibe', self.shibe_command)
         self.addnew('foxy', self.foxy_command)  
         self.addnew('random', self.random_command)  
+        self.addnew('pika', self.pika_command) #pika sticker
         #self.addnew('quote', self.quote_command)   #doesnt work on web...
-        self.addnew('pika', self.pika_command)
         self.addnew('payment', self.payment_command)
         self.addnew('credits', self.credits_command)
-        self.addnew('rent', self.rent_command) #self.rent_command)
-        self.addnew('status', self.status_command) #self.status_command)
-        self.addnew('return', self.return_command) #self.return_command)
-        self.addnew('getpin', self.dummy_command) #self.getpin_command)
+        self.addnew('rent', self.rent_command)
+        self.addnew('status', self.status_command)
+        self.addnew('return', self.return_command)
+        self.addnew('getpin', self.getpin_command)
         self.addnew('bikes', self.bikes_command) #self.bikes_command)
         self.addnew('report', self.dummy_command) #self.report_command)
 
@@ -748,7 +820,9 @@ if __name__=="__main__":
     print('Running the development bot!')
     API_KEY = '1722354435:AAHAFxP6_sIf_P4hdQJ7Y5EsH64PtyWwWo8' #this is old api for orcabikes_bot
     # API_KEY = '1705378721:AAEbSmhxNhAY4s5eqWMSmxdCxkf44O7_nss' #new key for orc4bikes_bot
-    newbot = OrcaBot(API_KEY)
+    ADMIN_GROUP_ID = -580241456  # dev log group to be updated to new group
+    # ADMIN_GROUP_ID = -572304795 # Actual group id
+    newbot = OrcaBot(API_KEY, admin_group_id=ADMIN_GROUP_ID)
     newbot.main()
     
 

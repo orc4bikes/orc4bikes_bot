@@ -1,7 +1,7 @@
 {
     "bike_name": "",
     "chat_id": 260281460,
-    "credits": 9995,
+    "credits": 9982,
     "first_name": "yewchong",
     "last_name": null,
     "log": [
@@ -14,6 +14,31 @@
             "end": "2021-08-12T23:35:19.950852",
             "start": "2021-08-12T23:34:42.206716",
             "time": "0 hours, 0 minutes, and 37 seconds"
+        },
+        {
+            "end": "2021-08-13T00:23:19.513881",
+            "start": "2021-08-13T00:22:17.424776",
+            "time": "0 hours, 1 minutes, and 2 seconds"
+        },
+        {
+            "end": "2021-08-13T00:41:01.099675",
+            "start": "2021-08-13T00:40:36.406588",
+            "time": "0 hours, 0 minutes, and 24 seconds"
+        },
+        {
+            "end": "2021-08-13T00:45:31.473345",
+            "start": "2021-08-13T00:45:19.160454",
+            "time": "0 hours, 0 minutes, and 12 seconds"
+        },
+        {
+            "end": "2021-08-13T00:50:04.925206",
+            "start": "2021-08-13T00:49:38.301873",
+            "time": "0 hours, 0 minutes, and 26 seconds"
+        },
+        {
+            "end": "2021-08-13T01:08:45.710055",
+            "start": "2021-08-13T01:07:29.047783",
+            "time": "0 hours, 1 minutes, and 16 seconds"
         }
     ],
     "status": null,
