@@ -33,7 +33,12 @@ HELP_TEXT = """List of commands:
 /credits - View your current credits
 
 /doggo - Get a random dog!
+/shibe - Get a random shiba!
 /neko - Get a random cat!
+/kitty - Get a random kitten!
+/foxy - Get a random fox!
+/birb - Get a random bird!
+/pika - A wild pikachu appeared!
 
 /rent - This feature is still under development
 /getpin - This feature is still under development
@@ -158,10 +163,130 @@ class TeleBot:
                 #reply_markup=InlineKeyboardMarkup(buttons)
                 )
         except:
+            self.kitty_command(update,context)
+            return
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Sorry, all the cats are asleep... Please try again later!")
+        
+    def foxy_command(self,update,context):
+        """Shows you a few cute foxes!"""
+        try:
+            url = requests.get('https://randomfox.ca/floof/').json()['image']
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                caption = random.choice(CHEER_LIST),
+                photo = url,
+                #reply_markup=InlineKeyboardMarkup(buttons)
+                )
+        except:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, all the foxes are asleep... Please try again later!")
+
+    def shibe_command(self,update,context):
+        """Shows you a few cute shibe!"""
+        try:
+            url = requests.get('http://shibe.online/api/shibes').json()[0]
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                caption = random.choice(CHEER_LIST),
+                photo = url,
+                #reply_markup=InlineKeyboardMarkup(buttons)
+                )
+        except:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, all the shibe are asleep... Please try again later!")
     
+    def birb_command(self,update,context):
+        """Shows you a few cute shibe!"""
+        try:
+            url = requests.get('https://shibe.online/api/birds').json()[0]
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                caption = random.choice(CHEER_LIST),
+                photo = url,
+                #reply_markup=InlineKeyboardMarkup(buttons)
+                )
+        except:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, all the birbs are asleep... Please try again later!")
+    
+    def kitty_command(self,update,context):
+        """Shows you a few cute shibe!"""
+        try:
+            url = requests.get('https://shibe.online/api/cats').json()[0]
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                caption = random.choice(CHEER_LIST),
+                photo = url,
+                #reply_markup=InlineKeyboardMarkup(buttons)
+                )
+        except:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, all the cats are asleep... Please try again later!")
+
+    def random_command(self,update,context):
+        """Sends a random animal!"""
+        command_list = [
+                        self.doggo_command,
+                        self.neko_command,
+                        self.kitty_command,
+                        self.foxy_command,
+                        self.birb_command,
+                        self.shibe_command]
+        random.choice(command_list)(update,context)
+    
+    def quote_command(self,update,context):
+        """Sends an inspirational quote"""
+        try:
+            url = requests.get('https://type.fit/api/quotes').json()
+            print(url)
+            url = random.choice(url)
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'"{url["text"]}" - {url["author"]}'
+            )
+        except Exception as e:
+            print(e)
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=random.choice(CHEER_LIST)
+            )
+
+    def pika_command(self,update,context):
+        """Sends an inspirational quote"""
+        try:
+            pikas1 = context.bot.get_sticker_set('pikachu').stickers
+            pikas2 = context.bot.get_sticker_set('pikachu2').stickers
+            pikas3 = context.bot.get_sticker_set('PikachuDetective').stickers
+            pikas4 = context.bot.get_sticker_set('pikachu6').stickers
+            pikas5 = context.bot.get_sticker_set('pikach').stickers
+            pikas6 = context.bot.get_sticker_set('pikach_memes').stickers
+            pikas = pikas1+pikas2+pikas3+pikas4+pikas5+pikas6
+            pika = random.choice(pikas)
+            context.bot.send_sticker(
+                chat_id=update.effective_chat.id,
+                sticker=pika
+            )
+        except Exception as e:
+            print(e, 'error at', datetime.datetime.now())
+
+    def brawl_command(self,update,context):
+        """Sends an inspirational quote"""
+        try:
+            brawls = context.bot.get_sticker_set('BrawlStarsbyHerolias')
+            brawl = random.choice(brawls.stickers)
+            context.bot.send_sticker(
+                chat_id=update.effective_chat.id,
+                sticker=brawl
+            )
+        except Exception as e:
+            print(e, 'error at', datetime.datetime.now())
+
 
 
 class OrcaBot(TeleBot):
@@ -579,6 +704,13 @@ class OrcaBot(TeleBot):
         self.addnew('routes', self.routes_command)
         self.addnew('doggo', self.doggo_command)
         self.addnew('neko', self.neko_command)
+        self.addnew('kitty', self.kitty_command)
+        self.addnew('birb', self.birb_command)
+        self.addnew('shibe', self.shibe_command)
+        self.addnew('foxy', self.foxy_command)  
+        self.addnew('random', self.random_command)  
+        #self.addnew('quote', self.quote_command)   #doesnt work on web...
+        self.addnew('pika', self.pika_command)
         self.addnew('payment', self.payment_command)
         self.addnew('credits', self.credits_command)
         self.addnew('rent', self.rent_command) #self.rent_command)
