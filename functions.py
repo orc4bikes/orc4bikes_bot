@@ -112,8 +112,12 @@ class TeleBot:
             json.dump(user_data, f, sort_keys=True, indent=4)
     
     def get_user_table(self):
-        with open('users/table.json', 'r') as f:
-            table_data = json.load(f)
+        table_data = dict()
+        try:
+            with open('users/table.json', 'r') as f:
+                table_data = json.load(f)
+        except FileNotFoundError:
+            self.update_user_table({})
         return table_data
     
     def update_user_table(self, update_field):

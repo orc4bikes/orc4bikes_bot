@@ -1,4 +1,4 @@
 # ignore all users
 users/
-# ignore all admin info
+# ignore all admin info 
 admin.py
