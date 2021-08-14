@@ -502,7 +502,7 @@ class OrcaBot(TeleBot):
                         text=f"Rental started! Time of rental, {datetime.datetime.now()}")
 
                     # Notify Admin group
-                    message=f'@{user_data["username"]} rented {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+                    message=f'[RENTAL - RENT] \n@{user_data["username"]} rented {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
                     self.admin_log(update,context,message)
                     return
             else: #bike is not available
@@ -635,7 +635,7 @@ class OrcaBot(TeleBot):
                 text=f"{deduction} was deducted from your credits. Your remaining credit is {user_data['credits']-deduction}"
             )
             # Notify Admin group
-            admin_text=f'[RENTAL]\nUser @{update.message.from_user.username} RETURNED at following time:\n{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+            admin_text=f'[RENTAL - RETURN] \nUser @{update.message.from_user.username} returned {bike_name} at following time:\n{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
             self.admin_log(update,context, admin_text, context.user_data['photo'])
             context.user_data.clear()
             return -1   
@@ -761,7 +761,7 @@ class OrcaBot(TeleBot):
                 chat_id=update.effective_chat.id,
                 text="You have successfully sent a report! A comm member will respond in typically 3-5 working days..."
             )
-            admin_text=f'[REPORT]\nUser @{update.message.from_user.username} sent the following report:\n{context.user_data["desc"]}'
+            admin_text=f'[REPORT] \nUser @{update.message.from_user.username} sent the following report:\n{context.user_data["desc"]}'
             self.admin_log(update,context, admin_text, context.user_data['photo'])
             context.user_data.clear()
             return -1   
