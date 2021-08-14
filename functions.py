@@ -20,17 +20,27 @@ ROUTES_LIST = ["Orange: From RC4 Level 1 to Fine Foods",
                "Green: From RC4 B1 to Fine Foods",
                "Blue: From RC4 B1 to Fine Foods (Wet Weather route)",
                ]
-CHEER_LIST = ["","Cheer up!",
-              "Ganbatte!",
-              "Hwaiting!",
-              "Jiayou!",
-              "You got this!",
-              ]
+
+ROUTES_PICS = {
+    "orange": 'url',
+    "pink": 'url',
+    'blue': 'url',
+    'yellow': 'url'
+    }
+
+CHEER_LIST = ["",
+    "Cheer up!",
+    "Ganbatte!",
+    "Hwaiting!",
+    "Jiayou!",
+    "You got this!",
+    ]
+    
 HELP_TEXT = """List of commands:
 /start - Initializes the bot
 /help - Get all available commands
 /routes - Get orc4bikes routes
-/credits - View your current credits
+/status - View your current credits and rental status!
 
 /doggo - Get a random dog!
 /shibe - Get a random shiba!
@@ -42,7 +52,6 @@ HELP_TEXT = """List of commands:
 
 /rent - This feature is still under development
 /getpin - This feature is still under development
-/status - This feature is still under development
 /return - This feature is still under development
 /bikes - This feature is still under development
 /report - This feature is still under development
@@ -393,13 +402,13 @@ class OrcaBot(TeleBot):
             context.bot.send_photo(
                 chat_id=update.effective_chat.id,
                 photo="https://www.dropbox.com/s/5vmd1yhaslceii0/photo_2021-08-12_23-40-06.jpg",
-                text='\n'.join(ROUTES_LIST)
+                caption='\n'.join(ROUTES_LIST)
             )
         except Exception as e:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=f"Server timed out with error {e}... Here are some routes for your consideration\n\
-                      " + '\n'.join(ROUTES_LIST)
+                text=f"Server timed out with error {e}... Here are some routes for your consideration\n"
+                       + '\n'.join(ROUTES_LIST)
                 )
 
     def payment_command(self,update,context):
@@ -529,6 +538,7 @@ class OrcaBot(TeleBot):
                 status_text += f'\nCurrent credits: {user_data.get("credits")} \nThis trip: {deduction}\nCredits left: {user_data.get("credits") - deduction}'
             else: 
                 status_text = "You are not renting..."
+                self.credits_command(update,context)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=status_text)
@@ -768,8 +778,6 @@ class OrcaBot(TeleBot):
     def echo_command(self,update,context):
         print(update.message.text)
         update.message.reply_text(update.message.text)
-        update.message.reply_text(tick)
-        update.message.reply_text(cross)
 
     def dummy_command(self,update,context):
         update.message.reply_text('This feature will be added soon! Where art thou, bikes...?')
@@ -791,7 +799,7 @@ class OrcaBot(TeleBot):
         self.addnew('pika', self.pika_command) #pika sticker
         #self.addnew('quote', self.quote_command)   #doesnt work on web...
         self.addnew('payment', self.payment_command)
-        self.addnew('credits', self.credits_command)
+        # self.addnew('credits', self.credits_command) #deprecated, use /status to access credits   
         self.addnew('rent', self.rent_command)
         self.addnew('status', self.status_command)
         self.addnew('return', self.return_command)
