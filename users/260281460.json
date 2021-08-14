@@ -1,7 +1,7 @@
 {
     "bike_name": "",
     "chat_id": 260281460,
-    "credits": 9923,
+    "credits": 9907,
     "first_name": "yewchong",
     "last_name": null,
     "log": [
@@ -44,6 +44,11 @@
             "end": "2021-08-14T16:19:05.215906",
             "start": "2021-08-14T15:59:37.489557",
             "time": "0 hours, 19 minutes, and 27 seconds"
+        },
+        {
+            "end": "2021-08-15T00:53:27.838363",
+            "start": "2021-08-15T00:48:18.521315",
+            "time": "0 hours, 5 minutes, and 9 seconds"
         }
     ],
     "status": null,

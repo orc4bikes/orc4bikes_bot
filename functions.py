@@ -15,17 +15,18 @@ DEDUCT_RATE = 20 # deduct 1 credit every 60 seconds or part thereof
 ADMIN_GROUP_ID = -580241456 #dev
 #ADMIN_GROUP_ID = -572304795 #actual
 
-ROUTES_LIST = ["Orange: From RC4 Level 1 to Fine Foods",
-               "Pink: From Fine Foods to Octobox (SRC L1)",
-               "Green: From RC4 B1 to Fine Foods",
-               "Blue: From RC4 B1 to Fine Foods (Wet Weather route)",
-               ]
+ROUTES_LIST = {
+    "orange": "Orange: From RC4 Level 1 to Fine Foods",
+    "pink":   "Pink: From Fine Foods to Octobox (SRC L1)",
+    "blue":   "Blue: From RC4 B1 to Fine Foods (Wet Weather route)",
+    "green":  "Green: From RC4 B1 to Fine Foods",
+    }
 
 ROUTES_PICS = {
-    "orange": 'url',
-    "pink": 'url',
-    'blue': 'url',
-    'yellow': 'url'
+    "orange": 'https://www.dropbox.com/s/jsjfhld1ob6owrv/orange.jpg',
+    "pink":   'https://www.dropbox.com/s/fpulbka6kqovo3o/pink.jpg',
+    'blue':   'https://www.dropbox.com/s/m559ohyre39njok/blue.jpg',
+    'green': 'https://www.dropbox.com/s/ugbpo904vmzgtfa/green.jpg?dl=0'
     }
 
 CHEER_LIST = ["",
@@ -118,10 +119,9 @@ class TeleBot:
         try:
             with open(f'users/{chat_id}.json', 'r') as f:
                 user_data = json.load(f)
-            #print('user exists')
         except FileNotFoundError:
+            # User doesn't exist!
             user_data = None
-            #print('no data found')
         return user_data
 
     def update_user(self, user_data):
@@ -140,13 +140,16 @@ class TeleBot:
         with open('users/table.json', 'w') as f:
             json.dump(update_field, f, sort_keys=True, indent=4)
 
-    def addnew(self, command, methodname):
-        handler = CommandHandler(command,methodname)
+    def addnew(self,handler):
         self.dispatcher.add_handler(handler)
 
-    def addmessage(self, filters, methodname):
+    def addcmd(self, command, methodname):
+        handler = CommandHandler(command,methodname)
+        self.addnew(handler)
+
+    def addmsg(self, filters, methodname):
         handler = MessageHandler(filters, methodname)
-        self.dispatcher.add_handler(handler)
+        self.addnew(handler)
 
     def main(self):
         print('Initializing bot...')
@@ -262,7 +265,6 @@ class TeleBot:
         """Sends an inspirational quote"""
         try:
             url = requests.get('https://type.fit/api/quotes').json()
-            print(url)
             url = random.choice(url)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -396,19 +398,21 @@ class OrcaBot(TeleBot):
         """Returns all routes from the list of routes"""
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text = "Here are some available routes for you!"
+            text = "Here are some available routes for ya!"
             )
         try:
-            context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                photo="https://www.dropbox.com/s/5vmd1yhaslceii0/photo_2021-08-12_23-40-06.jpg",
-                caption='\n'.join(ROUTES_LIST)
-            )
+            for colour, url in ROUTES_PICS.items():
+                context.bot.send_photo(
+                    chat_id=update.effective_chat.id,
+                    photo=url,
+                    caption=ROUTES_LIST[colour],
+                )
         except Exception as e:
+            print('error with routes, error is:\n',e)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=f"Server timed out with error {e}... Here are some routes for your consideration\n"
-                       + '\n'.join(ROUTES_LIST)
+                text=f"Server timed out with error... Here are some routes for your consideration\n"
+                       + '\n'.join(ROUTES_LIST.values())
                 )
 
     def payment_command(self,update,context):
@@ -550,16 +554,28 @@ class OrcaBot(TeleBot):
         except Exception as e:
             pass
     
-    def return_command(self,update,context):
-        """Return the current bike"""
-        user_data = super().get_user(update,context)
-        if user_data is None:
-            return context.bot.send_message(
+    def return_pic(self,update, context):
+        """After photo is sent, save the photo and ask for others"""
+        if update.message.photo:
+            photo = update.message.photo[-1].file_id
+            context.user_data['photo'] = photo
+            text="^ This is your image. If you are unsatisfied with your image, please send another one. \nTo return the bike, send /done. To continue rental, send /cancel"
+            context.bot.send_photo(
                 chat_id=update.effective_chat.id,
-                text=START_MESSAGE
-                )
-        status = user_data.get('status', None)
-        if status is not None: #rental in progress
+                photo=context.user_data["photo"],
+                caption=text
+            )
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Please send a photo for proof of return! \nTo continue rental, send /cancel"
+            )
+        return 91
+        
+    def return_done(self,update,context):
+        user_data= super().get_user(update,context)
+        status= user_data.get('status',None)
+        if context.user_data.get('photo'):
             diff = datetime.datetime.now() - datetime.datetime.fromisoformat(status)
             if diff.days:
                 strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
@@ -596,13 +612,62 @@ class OrcaBot(TeleBot):
                 text=f"{deduction} was deducted from your credits. Your remaining credit is {user_data['credits']-deduction}"
             )
             # Notify Admin group
-            message=f'@{user_data["username"]} returned {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
-            self.admin_log(update,context,message)
+            admin_text=f'[RENTAL]\nUser @{update.message.from_user.username} RETURNED at following time:\n{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+            self.admin_log(update,context, admin_text, context.user_data['photo'])
+            context.user_data.clear()
+            return -1   
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, please send a photo."
+            )
+            return 91
+
+    def return_cancel(self,update,context):
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Return is cancelled. Enjoy your ride!"
+        )
+        context.user_data.clear()
+        return -1
+
+    def return_handler(self):
+        my_handler=ConversationHandler(
+            entry_points=[CommandHandler('return', self.return_command)],
+            states={
+                91:[
+                    MessageHandler(~Filters.command, callback=self.return_pic),
+                    MessageHandler(Filters.command, callback=self.unrecognized_command)],
+            },
+            fallbacks=[
+                CommandHandler('cancel',self.return_cancel),
+                CommandHandler('done', self.return_done),
+                ]
+        )
+        return my_handler
+        
+    def return_command(self,update,context):
+        """Return the current bike"""
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+            return -1
+        status = user_data.get('status', None)
+        if status is not None: #rental in progress
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Please send a photo for proof of return! \nTo continue rental, send /cancel" 
+            )
+            return 91
         else:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="You are not renting..."
             )
+            return -1
 
     def getpin_command(self,update,context):
         user_data = super().get_user(update,context)
@@ -647,6 +712,91 @@ class OrcaBot(TeleBot):
             text=text)  
 
     def report_command(self,update,context):
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Please send a short description of the report you would like to make! \nTo stop, send /cancel" 
+        )
+        return 11
+
+    def report_desc(self, update, context):
+        """After description is sent, save the description and ask for pics"""
+        desc = update.message.text
+        context.user_data['desc'] = desc
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Please send a picture of the report of the report you would like to make!  \nTo stop, send /cancel"
+        )
+        return 12
+
+    def report_pic(self,update, context):
+        """After photo is sent, save the photo and ask for others"""
+        photo = update.message.photo[-1].file_id
+        context.user_data['photo'] = photo
+        text=f'Your report is: {context.user_data["desc"]}!\n' 
+        text+="If you are unsatisfied with your image, please send another one. \nTo submit, send /done. To stop, send /cancel"
+        context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=context.user_data["photo"],
+            caption=text
+        )
+        return 13
+
+    def report_anything(self, update, context):
+        if update.message.text:
+            desc = update.message.text
+            context.user_data['desc'] = desc
+        elif update.message.photo:
+            photo = update.message.photo[-1].file_id
+            context.user_data['photo'] = photo
+
+        text=f'Your report is: {context.user_data["desc"]}!\n' 
+        text+="If you are unsatisfied with your image, please send another one. \nTo submit, send /done. To stop, send /cancel"
+        context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=context.user_data.get("photo"),
+            caption=text
+        )
+        return 13
+
+    def report_done(self,update,context):
+        if context.user_data.get('photo') and context.user_data.get('desc'):
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="You have successfully sent a report! A comm member will respond in typically 3-5 working days..."
+            )
+            admin_text=f'[REPORT]\nUser @{update.message.from_user.username} sent the following report:\n{context.user_data["desc"]}'
+            self.admin_log(update,context, admin_text, context.user_data['photo'])
+            context.user_data.clear()
+            return -1   
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, please send both a description and a photo."
+            )
+
+    def report_cancel(self,update,context):
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Report cancelled! Make sure to update us if you spot anything suspicious..."
+        )
+        context.user_data.clear()
+        return -1
+
+    def report_handler(self):
+        my_handler=ConversationHandler(
+            entry_points=[CommandHandler('report', self.report_command)],
+            states={
+                11:[MessageHandler(filters=Filters.text & ~Filters.command, callback=self.report_desc)],
+                12:[MessageHandler(filters=Filters.photo & ~Filters.command, callback=self.report_pic)],
+                13:[MessageHandler(filters=(Filters.text | Filters.photo) & ~Filters.command, callback=self.report_anything)],
+            },
+            fallbacks=[
+                CommandHandler('cancel',self.report_cancel),
+                CommandHandler('done', self.report_done),
+                ]
+        )
+        return my_handler
+
         pass
 
 
@@ -750,11 +900,18 @@ class OrcaBot(TeleBot):
             chat_id=update.effective_chat.id,
             text='Unrecognized command. Try again. For more info, enter /admin')
 
-    def admin_log(self, update, context, message):
-        context.bot.send_message(
-            chat_id=self.admin_group_id,
-            text=message
-        )
+    def admin_log(self, update, context, message, photo=None):
+        if photo:
+            context.bot.send_photo(
+                chat_id=self.admin_group_id,
+                photo=photo,
+                caption=message
+            )
+        else:
+            context.bot.send_message(
+                chat_id=self.admin_group_id,
+                text=message
+            )
 
     def admin_command(self,update,context):
         """Start a rental service
@@ -776,42 +933,55 @@ class OrcaBot(TeleBot):
 
 
     def echo_command(self,update,context):
-        print(update.message.text)
         update.message.reply_text(update.message.text)
 
     def dummy_command(self,update,context):
         update.message.reply_text('This feature will be added soon! Where art thou, bikes...?')
 
+    def unrecognized_command(self,update,context):
+        update.message.reply_text('Unrecognized command. Do you need /help...?')
+
     def initialize(self):
         """Initializes all commands that are required in the bot."""
 
-        self.addnew('start',self.start_command)
-        self.addnew('myinfo',self.info_command)
-        self.addnew('help', self.help_command)
-        self.addnew('routes', self.routes_command)
-        self.addnew('doggo', self.doggo_command)
-        self.addnew('neko', self.neko_command)
-        self.addnew('kitty', self.kitty_command)
-        self.addnew('birb', self.birb_command)
-        self.addnew('shibe', self.shibe_command)
-        self.addnew('foxy', self.foxy_command)  
-        self.addnew('random', self.random_command)  
-        self.addnew('pika', self.pika_command) #pika sticker
-        #self.addnew('quote', self.quote_command)   #doesnt work on web...
-        self.addnew('payment', self.payment_command)
-        # self.addnew('credits', self.credits_command) #deprecated, use /status to access credits   
-        self.addnew('rent', self.rent_command)
-        self.addnew('status', self.status_command)
-        self.addnew('return', self.return_command)
-        self.addnew('getpin', self.getpin_command)
-        self.addnew('bikes', self.bikes_command) #self.bikes_command)
-        self.addnew('report', self.dummy_command) #self.report_command)
+        self.addcmd('start',self.start_command)
+        self.addcmd('myinfo',self.info_command)
+        self.addcmd('help', self.help_command)
+        self.addcmd('routes', self.routes_command)
+        self.addcmd('doggo', self.doggo_command)
+        self.addcmd('neko', self.neko_command)
+        self.addcmd('kitty', self.kitty_command)
+        self.addcmd('birb', self.birb_command)
+        self.addcmd('shibe', self.shibe_command)
+        self.addcmd('foxy', self.foxy_command)  
+        self.addcmd('random', self.random_command)  
+        self.addcmd('pika', self.pika_command) #pika sticker
+        #self.addcmd('quote', self.quote_command)   #doesnt work on web...
+        self.addcmd('payment', self.payment_command)
+        # self.addcmd('credits', self.credits_command) #deprecated, use /status to access credits   
+        self.addcmd('rent', self.rent_command)
+        self.addcmd('status', self.status_command)
+        # self.addcmd('return', self.return_command) #deprecated, moved to return_handler
+        self.addcmd('getpin', self.getpin_command)
+        self.addcmd('bikes', self.bikes_command)
 
         #admin handler
-        self.addnew('admin', self.admin_command)
+        self.addcmd('admin', self.admin_command)
+
+
+        # This part is for convo commands
+        self.addnew(self.report_handler())
+        self.addnew(self.return_handler())
+
+        # This part for dummy commands, so that it recognizes commands
+        self.addcmd('report', lambda x,y:0) #dummy commmand
+        self.addcmd('return', lambda x,y:0) #dummy commmand
+        self.addcmd('done', lambda x,y:0) #dummy commmand
+        #self.addcmd('cancel', lambda x,y:0) #dummy commmand
 
         # This part is a message command
-        # self.addmessage(Filters.text & (~Filters.command), self.echo_command)
+        # Filters all unknown commands
+        self.addmsg(Filters.command, self.unrecognized_command)
 
     def main(self):
         """Main bot function to run"""
