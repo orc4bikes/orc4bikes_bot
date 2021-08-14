@@ -1,4 +1,4 @@
 # ignore all users
 users/
-*.json
+# ignore all admin info
 admin.py
