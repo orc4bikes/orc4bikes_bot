@@ -1,6 +1,5 @@
 import random
 import json
-import time
 import datetime
 
 import requests
@@ -460,7 +459,7 @@ class OrcaBot(TeleBot):
         if len(context.args) < 1:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Please indicate which bike you would like to rent"
+                text="Please indicate which bike you would like to rent\nE.g. /rent orc1bike"
             )
             self.bikes_command(update,context)
             return 
@@ -563,7 +562,7 @@ class OrcaBot(TeleBot):
         if status is not None: #rental in progress
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Please send a photo for proof of return! \nTo continue rental, send /cancel" 
+                text="Please send a photo for proof of return! \nPicture must be a photo, not a file... \nTo continue rental, send /cancel" 
             )
             return 91
         else:
@@ -717,7 +716,7 @@ class OrcaBot(TeleBot):
         context.user_data['desc'] = desc
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="Please send a picture of the report of the report you would like to make!  \nTo stop, send /cancel"
+            text="Please attach a picture as well! \nPicture must be a photo, not a file...  \nTo stop, send /cancel"
         )
         return 12
 
