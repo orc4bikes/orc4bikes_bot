@@ -1,7 +1,7 @@
 {
-    "bike_name": "orc1bike",
+    "bike_name": "",
     "chat_id": 260281460,
-    "credits": 9898,
+    "credits": 9859,
     "first_name": "yewchong",
     "last_name": null,
     "log": [
@@ -54,8 +54,18 @@
             "end": "2021-08-15T00:59:09.556143",
             "start": "2021-08-15T00:56:11.774333",
             "time": "0 hours, 2 minutes, and 57 seconds"
+        },
+        {
+            "end": "2021-08-15T01:21:30.968082",
+            "start": "2021-08-15T01:09:17.349551",
+            "time": "0 hours, 12 minutes, and 13 seconds"
+        },
+        {
+            "end": "2021-08-15T01:28:44.983453",
+            "start": "2021-08-15T01:28:14.662115",
+            "time": "0 hours, 0 minutes, and 30 seconds"
         }
     ],
-    "status": "2021-08-15T01:09:17.349551",
+    "status": null,
     "username": "fluffballz"
 }

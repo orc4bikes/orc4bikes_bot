@@ -4,7 +4,7 @@
         "name": "orc1bike",
         "oldpin": "0000",
         "pin": "12345",
-        "status": "2021-08-15T01:09:17.349551",
+        "status": 0,
         "type": "mountain"
     },
     "orc2bike": {
@@ -16,15 +16,15 @@
         "type": "mountain"
     },
     "orc3bike": {
-        "colour": "green",
-        "name": "orc5bike",
+        "colour": "blue",
+        "name": "orc3bike",
         "oldpin": "12345",
         "pin": "00000",
         "status": 0,
         "type": "mountain"
     },
     "orc5bike": {
-        "colour": "green",
+        "colour": "yellow",
         "name": "orc5bike",
         "oldpin": "12345",
         "pin": "00000",

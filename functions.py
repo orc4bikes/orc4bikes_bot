@@ -631,7 +631,7 @@ class OrcaBot(TeleBot):
                 text=f"{deduction} was deducted from your credits. Your remaining credit is {user_data['credits']-deduction}"
             )
             # Notify Admin group
-            admin_text=f'[RENTAL - RETURN] \nUser @{update.message.from_user.username} returned {bike_name} at following time:\n{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+            admin_text=f'[RENTAL - RETURN] \n@{update.message.from_user.username} returned {bike_name} at following time:\n{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
             self.admin_log(update,context, admin_text, context.user_data['photo'])
             context.user_data.clear()
             return -1   
@@ -757,7 +757,7 @@ class OrcaBot(TeleBot):
                 chat_id=update.effective_chat.id,
                 text="You have successfully sent a report! A comm member will respond in typically 3-5 working days..."
             )
-            admin_text=f'[REPORT] \nUser @{update.message.from_user.username} sent the following report:\n{context.user_data["desc"]}'
+            admin_text=f'[REPORT] \n@{update.message.from_user.username} sent the following report:\n{context.user_data["desc"]}'
             self.admin_log(update,context, admin_text, context.user_data['photo'])
             context.user_data.clear()
             return -1   
@@ -847,7 +847,7 @@ class OrcaBot(TeleBot):
                 if chat_id is not None:
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
-                        text=f'User @{user_data["username"]} has : {user_data["credits"]} credits left.')
+                        text=f'@{user_data["username"]} has : {user_data["credits"]} credits left.')
                 else: 
                     self.admin_failed(update,context)
             elif command =="setpin":
