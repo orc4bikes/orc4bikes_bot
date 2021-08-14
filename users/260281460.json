@@ -1,5 +1,5 @@
 {
-    "bike_name": "",
+    "bike_name": "orc1bike",
     "chat_id": 260281460,
     "credits": 9898,
     "first_name": "yewchong",
@@ -56,6 +56,6 @@
             "time": "0 hours, 2 minutes, and 57 seconds"
         }
     ],
-    "status": null,
+    "status": "2021-08-15T01:09:17.349551",
     "username": "fluffballz"
 }

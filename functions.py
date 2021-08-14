@@ -38,11 +38,23 @@ CHEER_LIST = ["",
     ]
     
 HELP_TEXT = """List of commands:
-/start - Initializes the bot
+Basic info:
+/start - Starts the bot
 /help - Get all available commands
 /routes - Get orc4bikes routes
+
+Your info:
 /status - View your current credits and rental status!
 
+Bike-related info:
+/bikes - Shows currently available bikes
+/rent - Rent a bike!
+/getpin - Get the pin for the bike you rented
+/return - Return the current bicycle
+/report - Report damages of our bikes, or anything sus...
+
+Fun stuff :D
+Feel free to click any of the below, or just send /random...
 /doggo - Get a random dog!
 /shibe - Get a random shiba!
 /neko - Get a random cat!
@@ -50,22 +62,6 @@ HELP_TEXT = """List of commands:
 /foxy - Get a random fox!
 /birb - Get a random bird!
 /pika - A wild pikachu appeared!
-
-/rent - This feature is still under development
-/getpin - This feature is still under development
-/return - This feature is still under development
-/bikes - This feature is still under development
-/report - This feature is still under development
-"""
-
-"""
-To be added:
-/rent - Rent a bike
-/getpin - Get the pin for specific bikes
-/return - Return the current bicycle
-/bikes - List of currently available bikes
-/report - Report damages of our bikes
-/routes - To add more new routes!
 """
 
 ADMIN_LIST = [
@@ -539,7 +535,7 @@ class OrcaBot(TeleBot):
                     strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
                 status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}. '
                 deduction = diff.seconds // self.deduct_rate + int(diff.seconds%self.deduct_rate > 0)
-                status_text += f'\nCurrent credits: {user_data.get("credits")} \nThis trip: {deduction}\nCredits left: {user_data.get("credits") - deduction}'
+                status_text += f'\nYour current credits:  {user_data.get("credits")} \nThis trip will cost:  {deduction}\nProjected credits after rental:  {user_data.get("credits") - deduction}'
             else: 
                 status_text = "You are not renting..."
                 self.credits_command(update,context)
@@ -700,8 +696,8 @@ class OrcaBot(TeleBot):
             else:
                 not_avail.append(bike)
 
-        avail = "\n".join( b["name"]+EMOJI["tick"] for b in avail )
-        not_avail = "\n".join(b["name"]+EMOJI["cross"] for b in not_avail )
+        avail = "\n".join( b["name"]+' '+EMOJI["tick"] for b in avail )
+        not_avail = "\n".join(b["name"]+' '+EMOJI["cross"] for b in not_avail )
         text = f'Bicycles:\n{avail}\n\n'
         text+= f'{not_avail}'
         context.bot.send_message(
@@ -783,9 +779,18 @@ class OrcaBot(TeleBot):
         my_handler=ConversationHandler(
             entry_points=[CommandHandler('report', self.report_command)],
             states={
-                11:[MessageHandler(filters=Filters.text & ~Filters.command, callback=self.report_desc)],
-                12:[MessageHandler(filters=Filters.photo & ~Filters.command, callback=self.report_pic)],
-                13:[MessageHandler(filters=(Filters.text | Filters.photo) & ~Filters.command, callback=self.report_anything)],
+                11:[
+                    MessageHandler(filters=Filters.text & ~Filters.command, callback=self.report_desc),
+                    MessageHandler(Filters.command, callback=self.unrecognized_command),
+                    ],
+                12:[
+                    MessageHandler(filters=Filters.photo & ~Filters.command, callback=self.report_pic),
+                    MessageHandler(Filters.command, callback=self.unrecognized_command),
+                    ],
+                13:[
+                    MessageHandler(filters=(Filters.text | Filters.photo) & ~Filters.command, callback=self.report_anything),
+                    MessageHandler(Filters.command, callback=self.unrecognized_command),
+                    ],
             },
             fallbacks=[
                 CommandHandler('cancel',self.report_cancel),

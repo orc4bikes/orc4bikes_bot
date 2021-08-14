@@ -1,15 +1,31 @@
 {
-    "bike1": {
+    "orc1bike": {
         "colour": "red",
-        "name": "bike1",
+        "name": "orc1bike",
         "oldpin": "0000",
         "pin": "12345",
+        "status": "2021-08-15T01:09:17.349551",
+        "type": "mountain"
+    },
+    "orc2bike": {
+        "colour": "green",
+        "name": "orc2bike",
+        "oldpin": "12345",
+        "pin": "00000",
         "status": 0,
         "type": "mountain"
     },
-    "bike2": {
+    "orc3bike": {
         "colour": "green",
-        "name": "bike2",
+        "name": "orc5bike",
+        "oldpin": "12345",
+        "pin": "00000",
+        "status": 0,
+        "type": "mountain"
+    },
+    "orc5bike": {
+        "colour": "green",
+        "name": "orc5bike",
         "oldpin": "12345",
         "pin": "00000",
         "status": 0,
