@@ -1,4 +1,8 @@
 # ignore all users
 users/
-# ignore all admin info 
+
+# ignore all admin and API token
 admin.py
+
+# old code prior to optimizing...
+old_code.py
