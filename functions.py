@@ -1,3 +1,9 @@
+from admin import (
+    DEV_ADMIN_GROUP_ID,
+    ADMIN_LIST, 
+    DEV_API_KEY,
+)
+
 import random
 import json
 import datetime
@@ -11,8 +17,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Conve
 
 DEDUCT_RATE = 20 # deduct 1 credit every 60 seconds or part thereof
 
-ADMIN_GROUP_ID = -580241456 #dev
-#ADMIN_GROUP_ID = -572304795 #actual
+
 
 ROUTES_LIST = {
     "orange": "Orange: From RC4 Level 1 to Fine Foods",
@@ -63,26 +68,6 @@ Feel free to click any of the below, or just send /random...
 /pika - A wild pikachu appeared!
 """
 
-ADMIN_LIST = [
-    #devs
-    260281460, # yew chong
-
-    #current comm
-    253089925, # jin ming
-    482226461, # bo yi
-    451582425, # gordon
-    292257566, # jolene
-    1018419264,# yuya
-    42444844,  # nic tan
-    197473636, # nic ang
-    
-    #old comm
-    185995813, # fangxin
-    50545125,  # kai en
-    248853832, # brendan
-    446305048, # jovi
-    
-]
 ADMIN_TEXT = """List of admin commands:
 Please do NOT add @ before a username. Usernames are case sensitive.
 /admin `viewcredit username` - View the user's credits
@@ -307,10 +292,10 @@ class TeleBot:
 class OrcaBot(TeleBot):
     def __init__(self,
             api_key, 
+            admin_group_id,
             help_text=HELP_TEXT, 
             admin_list=ADMIN_LIST,
             admin_text=ADMIN_TEXT,
-            admin_group_id=ADMIN_GROUP_ID,
             deduct_rate=DEDUCT_RATE
             ):
         super().__init__(api_key)
@@ -997,11 +982,7 @@ class OrcaBot(TeleBot):
 if __name__=="__main__": 
     # DEV part, do not run this
     print('Running the development bot!')
-    API_KEY = '1722354435:AAHAFxP6_sIf_P4hdQJ7Y5EsH64PtyWwWo8' #this is old api for orcabikes_bot
-    # API_KEY = '1705378721:AAEbSmhxNhAY4s5eqWMSmxdCxkf44O7_nss' #new key for orc4bikes_bot
-    ADMIN_GROUP_ID = -580241456  # dev log group to be updated to new group
-    # ADMIN_GROUP_ID = -572304795 # Actual group id
-    newbot = OrcaBot(API_KEY, admin_group_id=ADMIN_GROUP_ID)
+    newbot = OrcaBot(DEV_API_KEY, admin_group_id=DEV_ADMIN_GROUP_ID)
     newbot.main()
     
 
