@@ -656,7 +656,7 @@ class OrcaBot(TeleBot):
             states={
                 91:[
                     MessageHandler(~Filters.command, callback=self.return_pic),
-                    MessageHandler(Filters.command, callback=self.unrecognized_command)],
+                ]
             },
             fallbacks=[
                 CommandHandler('cancel',self.return_cancel),
@@ -781,15 +781,15 @@ class OrcaBot(TeleBot):
             states={
                 11:[
                     MessageHandler(filters=Filters.text & ~Filters.command, callback=self.report_desc),
-                    MessageHandler(Filters.command, callback=self.unrecognized_command),
+
                     ],
                 12:[
                     MessageHandler(filters=Filters.photo & ~Filters.command, callback=self.report_pic),
-                    MessageHandler(Filters.command, callback=self.unrecognized_command),
+                    
                     ],
                 13:[
                     MessageHandler(filters=(Filters.text | Filters.photo) & ~Filters.command, callback=self.report_anything),
-                    MessageHandler(Filters.command, callback=self.unrecognized_command),
+                    
                     ],
             },
             fallbacks=[
