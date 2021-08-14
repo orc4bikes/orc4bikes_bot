@@ -554,6 +554,29 @@ class OrcaBot(TeleBot):
         except Exception as e:
             pass
     
+    def return_command(self,update,context):
+        """Return the current bike"""
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+            return -1
+        status = user_data.get('status', None)
+        if status is not None: #rental in progress
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Please send a photo for proof of return! \nTo continue rental, send /cancel" 
+            )
+            return 91
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="You are not renting..."
+            )
+            return -1
+    
     def return_pic(self,update, context):
         """After photo is sent, save the photo and ask for others"""
         if update.message.photo:
@@ -645,29 +668,6 @@ class OrcaBot(TeleBot):
                 ]
         )
         return my_handler
-        
-    def return_command(self,update,context):
-        """Return the current bike"""
-        user_data = super().get_user(update,context)
-        if user_data is None:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=START_MESSAGE
-                )
-            return -1
-        status = user_data.get('status', None)
-        if status is not None: #rental in progress
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Please send a photo for proof of return! \nTo continue rental, send /cancel" 
-            )
-            return 91
-        else:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="You are not renting..."
-            )
-            return -1
 
     def getpin_command(self,update,context):
         user_data = super().get_user(update,context)
@@ -680,7 +680,7 @@ class OrcaBot(TeleBot):
         if not bike_name:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="You are not renting..."
+                text="You are not renting... Start a rental to get the pin for a bike!"
             )
         else:
             bike_data = self.get_bikes()
@@ -689,9 +689,6 @@ class OrcaBot(TeleBot):
                 chat_id=update.effective_chat.id,
                 text=f'Your bike pin is {pin}! Please do not share this pin...'
             )
-            
-            
-
         
     def bikes_command(self,update,context):
         with open('bicycles.json', 'r') as f:
