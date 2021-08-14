@@ -2,16 +2,13 @@ import random
 #import os
 import requests
 import re
-
+from admin import API_KEY
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode, ReplyKeyboardMarkup, KeyboardButton
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 
 #import logging
 
-
-API_KEY = '1722354435:AAHAFxP6_sIf_P4hdQJ7Y5EsH64PtyWwWo8' #this is old api for orcabikes_bot
-API_KEY = '1705378721:AAEbSmhxNhAY4s5eqWMSmxdCxkf44O7_nss' #new key for orc4bikes_bot
 
 routes_list = ["From RC4 B1 to Utown",
                "From RC4 Level 1 to Utown",
