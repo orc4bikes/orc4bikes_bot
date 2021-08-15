@@ -423,7 +423,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text = "Here are some available routes for ya!",
+            text = "Here are some available routes for ya!" + '\n'.join(ROUTES_LIST.values()),
             reply_markup=InlineKeyboardMarkup(keyboard)
             )
 
