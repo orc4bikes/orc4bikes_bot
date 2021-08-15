@@ -6,3 +6,6 @@ admin.py
 
 # old code prior to optimizing...
 old_code.py
+
+# rental and response logs
+logs/

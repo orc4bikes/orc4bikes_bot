@@ -4,89 +4,46 @@ from admin import (
     DEV_API_KEY,
 )
 
+from bot_text import (
+    ROUTES_LIST,
+    ROUTES_PICS,
+    CHEER_LIST,
+    HELP_TEXT,
+    ADMIN_TEXT,
+    START_MESSAGE,
+    EMOJI
+)
+
 import random
-import json
+import json # use json to store bicycles.json and user data
+import csv # use csv to store logs of rental
 import datetime
 
 import requests
 import re
 
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode, ReplyKeyboardMarkup, KeyboardButton, parsemode
+from telegram import (
+    InlineKeyboardMarkup, 
+    InlineKeyboardButton,
+    ParseMode, 
+    ReplyKeyboardMarkup, 
+    KeyboardButton
+)
 
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
+from telegram.ext import (
+    Updater,
+    CommandHandler,
+    MessageHandler,
+    Filters,
+    ConversationHandler,
+    PreCheckoutQueryHandler,
+    ShippingQueryHandler,
+    CallbackContext,
+    CallbackQueryHandler,
+    TypeHandler,
+)
 
 DEDUCT_RATE = 20 # deduct 1 credit every 60 seconds or part thereof
-
-
-
-ROUTES_LIST = {
-    "orange": "Orange: From RC4 Level 1 to Fine Foods",
-    "pink":   "Pink: From Fine Foods to Octobox (SRC L1)",
-    "blue":   "Blue: From RC4 B1 to Fine Foods (Wet Weather route)",
-    "green":  "Green: From RC4 B1 to Fine Foods",
-    }
-
-ROUTES_PICS = {
-    "orange": 'https://www.dropbox.com/s/jsjfhld1ob6owrv/orange.jpg',
-    "pink":   'https://www.dropbox.com/s/fpulbka6kqovo3o/pink.jpg',
-    'blue':   'https://www.dropbox.com/s/m559ohyre39njok/blue.jpg',
-    'green': 'https://www.dropbox.com/s/ugbpo904vmzgtfa/green.jpg?dl=0'
-    }
-
-CHEER_LIST = ["",
-    "Cheer up!",
-    "Ganbatte!",
-    "Hwaiting!",
-    "Jiayou!",
-    "You got this!",
-    ]
-    
-HELP_TEXT = """List of commands:
-Basic info:
-/start - Starts the bot
-/help - Get all available commands
-/routes - Get orc4bikes routes
-
-Your info:
-/status - View your current credits and rental status!
-
-Bike-related info:
-/bikes - Shows currently available bikes
-/rent - Rent a bike!
-/getpin - Get the pin for the bike you rented
-/return - Return the current bicycle
-/report - Report damages of our bikes, or anything sus...
-
-Fun stuff :D
-Feel free to click any of the below, or just send /random...
-/doggo - Get a random dog!
-/shibe - Get a random shiba!
-/neko - Get a random cat!
-/kitty - Get a random kitten!
-/foxy - Get a random fox!
-/birb - Get a random bird!
-/pika - A wild pikachu appeared!
-"""
-
-ADMIN_TEXT = """List of admin commands:
-Please do NOT add @ before a username. Usernames are case sensitive.
-/admin `viewcredit username` - View the user's credits
-/admin `setcredit username amount` - Set the user's credit to an integer amount.
-/admin `topup username amount` - Top up the user's credit by an integer amount.
-/admin `deduct username amount` - Deduct the user's credit by an integer amount.
-"""
-
-START_MESSAGE = "Please /start me privately to access this service!"
-
-
-EMOJI = {
-        "tick" : "✅",
-        "cross": "❌"
-        }
-
-
-
-
 
 class TeleBot:
     def __init__(self,api_key):
@@ -124,6 +81,16 @@ class TeleBot:
         with open('users/table.json', 'w') as f:
             json.dump(update_field, f, sort_keys=True, indent=4)
 
+    def update_rental_log(self, update_list):
+        with open('logs/rental.csv','a',newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(update_list)
+
+    def update_report_log(self, update_list):
+        with open('logs/report.csv','a',newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(update_list)
+
     def addnew(self,handler):
         self.dispatcher.add_handler(handler)
 
@@ -140,99 +107,131 @@ class TeleBot:
         self.updater.start_polling()
         self.updater.idle()
 
-
-    #fun stuff
-    def doggo_command(self,update,context):
-        """Shows you a few cute dogs!"""
+class FunBot(TeleBot):
+    def __init__(self,
+        api_key):
+        super().__init__(api_key)
+            #fun stuff
+    def animal_command(
+        self, update, context, 
+        pic_url='', key=0,
+        error_text=None,
+        secondary_url='',
+        secondary_key=''
+        ):
+        """Basic command for animals!"""
         try:
-            url = requests.get('https://random.dog/woof.json').json()['url']
+            assert(pic_url)
+            url = requests.get(pic_url).json()[key]
             context.bot.send_photo(
                 chat_id=update.effective_chat.id,
                 caption = random.choice(CHEER_LIST),
                 photo = url,
-                #reply_markup=InlineKeyboardMarkup(buttons)
                 )
-        except:
+            
+        except AssertionError:
+            # empty url given
+            animals = update.message.text.split(' ')[0][1:] + 's'
             context.bot.send_message(
-                chat_id = update.effective_chat.id,
-                text="Sorry, all the dogs are out playing... Please try again later!")
+                chat_id=update.effective_chat.id,
+                text=f"Hmm, I can't seem to find any {animals}... Maybe they're all asleep?"
+            )
+        except:
+            # first url does not work
+            try:
+                # try secondary url
+                assert(secondary_url)
+                url = requests.get(secondary_url).json()[secondary_key]
+                context.bot.send_photo(
+                    chat_id=update.effective_chat.id,
+                    caption = random.choice(CHEER_LIST),
+                    photo = url,
+                    )
+            except:
+                # both urls do not work
+                if error_text is None:
+                    animals = update.message.text.split(' ')[0][1:] + 's'
+                    error_text = f'Sorry, all the {animals} are out cycling! Please try again when they come home :)'
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=error_text
+                )
+
+    def doggo_command(self,update,context):
+        """Shows you a few cute dogs!"""
+        url = 'https://random.dog/woof.json'
+        key = 'url'
+        url2 = 'http://shibe.online/api/shibes'
+        key2 = 0
+        error_text='Sorry, all the dogs are out playing... Please try again later!'
+
+        self.animal_command(
+            update,context,
+            pic_url=url, key=key,
+            error_text=error_text,
+            secondary_url=url2, secondary_key=key2)
     
     def neko_command(self,update,context):
         """Shows you a few cute cats!"""
-        try:
-            url = requests.get('https://aws.random.cat/meow').json()['file']
-            context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                caption = random.choice(CHEER_LIST),
-                photo = url,
-                #reply_markup=InlineKeyboardMarkup(buttons)
-                )
-        except:
-            self.kitty_command(update,context)
-            return
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Sorry, all the cats are asleep... Please try again later!")
-        
+        url = 'https://aws.random.cat/meow'
+        key = 'file'
+        url2 = 'https://shibe.online/api/cats'
+        key2 = 0
+        error_text='Sorry, all the cats are asleep... Please try again later!'
+
+        self.animal_command(
+            update,context,
+            pic_url=url, key=key,
+            error_text=error_text,
+            secondary_url=url2, secondary_key=key2)
+       
     def foxy_command(self,update,context):
         """Shows you a few cute foxes!"""
-        try:
-            url = requests.get('https://randomfox.ca/floof/').json()['image']
-            context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                caption = random.choice(CHEER_LIST),
-                photo = url,
-                #reply_markup=InlineKeyboardMarkup(buttons)
-                )
-        except:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Sorry, all the foxes are asleep... Please try again later!")
+        url = 'https://randomfox.ca/floof/'
+        key = 'image'
+        error_text="Sorry, all the foxes are asleep... Please try again later!"
+
+        self.animal_command(
+            update,context,
+            pic_url=url, key=key,
+            error_text=error_text,
+            )
 
     def shibe_command(self,update,context):
         """Shows you a few cute shibe!"""
-        try:
-            url = requests.get('http://shibe.online/api/shibes').json()[0]
-            context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                caption = random.choice(CHEER_LIST),
-                photo = url,
-                #reply_markup=InlineKeyboardMarkup(buttons)
-                )
-        except:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Sorry, all the shibe are asleep... Please try again later!")
+        url = 'http://shibe.online/api/shibes'
+        key = 0
+        error_text="Sorry, doge is doge... Please try again later!"
+
+        self.animal_command(
+            update,context,
+            pic_url=url, key=key,
+            error_text=error_text,
+            )
     
     def birb_command(self,update,context):
-        """Shows you a few cute shibe!"""
-        try:
-            url = requests.get('https://shibe.online/api/birds').json()[0]
-            context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                caption = random.choice(CHEER_LIST),
-                photo = url,
-                #reply_markup=InlineKeyboardMarkup(buttons)
-                )
-        except:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Sorry, all the birbs are asleep... Please try again later!")
+        """Shows you a few cute birbs!"""
+        url = 'http://shibe.online/api/birds'
+        key = 0
+        error_text="Sorry, the birbs flew away... Please try again later!"
+
+        self.animal_command(
+            update,context,
+            pic_url=url, key=key,
+            error_text=error_text,
+            )
     
     def kitty_command(self,update,context):
-        """Shows you a few cute shibe!"""
-        try:
-            url = requests.get('https://shibe.online/api/cats').json()[0]
-            context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                caption = random.choice(CHEER_LIST),
-                photo = url,
-                #reply_markup=InlineKeyboardMarkup(buttons)
-                )
-        except:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Sorry, all the cats are asleep... Please try again later!")
+        """Shows you a few cute kittens!"""
+        url = 'http://shibe.online/api/cats'
+        key = 0
+        error_text="Sorry, all the cats are asleep... Please try again later!"
+
+        self.animal_command(
+            update,context,
+            pic_url=url, key=key,
+            error_text=error_text,
+            )
 
     def random_command(self,update,context):
         """Sends a random animal!"""
@@ -293,10 +292,24 @@ class TeleBot:
 
 
 
-class OrcaBot(TeleBot):
+class AdminBot(TeleBot):
+    def __init__(self,
+            api_key,
+            admin_group_id=DEV_ADMIN_GROUP_ID,
+            admin_list=ADMIN_LIST,
+            admin_text=ADMIN_TEXT,
+        ):
+        self.admin_group_id = admin_group_id
+        self.admin_list = admin_list
+        self.admin_text = admin_text
+        super().__init__(api_key)
+
+
+
+class OrcaBot(AdminBot, FunBot, TeleBot):
     def __init__(self,
             api_key, 
-            admin_group_id,
+            admin_group_id=DEV_ADMIN_GROUP_ID,
             help_text=HELP_TEXT, 
             admin_list=ADMIN_LIST,
             admin_text=ADMIN_TEXT,
@@ -304,10 +317,10 @@ class OrcaBot(TeleBot):
             ):
         super().__init__(api_key)
         self.help_text = help_text
+        self.admin_group_id = admin_group_id
         self.admin_list = admin_list
         self.admin_text = admin_text
         self.deduct_rate = deduct_rate
-        self.admin_group_id = admin_group_id
         
 
     def get_bikes(self):
@@ -357,19 +370,6 @@ class OrcaBot(TeleBot):
             table_data[update.message.from_user.username] = update.effective_chat.id
             super().update_user_table(table_data)
         
-    def info_command(self, update, context):
-        """This is for debugging purposes"""
-        user_data = super().get_user(update,context)
-        update.message.reply_text(update.effective_chat.id)
-        if user_data is None:
-            return context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=START_MESSAGE
-                )
-        context.bot.send_message(
-            chat_id = update.effective_chat.id,
-            text=str(user_data)
-            )
     
     def help_command(self,update,context):
         """Show a list of possible commands"""
@@ -378,17 +378,22 @@ class OrcaBot(TeleBot):
             text = self.help_text,
             parse_mode=ParseMode.MARKDOWN)
     
-    def routes_command(self,update,context):
-        """Returns all routes from the list of routes"""
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text = "Here are some available routes for ya!"
-            )
+    def routes_button(self,update,context):
+        query = update.callback_query
+        query.answer()
+        colour = query.data
         try:
-            for colour, url in ROUTES_PICS.items():
+            if colour=='all':
+                for colour, url in ROUTES_PICS.items():
+                    context.bot.send_photo(
+                        chat_id=update.effective_chat.id,
+                        photo=url,
+                        caption=ROUTES_LIST[colour],
+                    )
+            else:
                 context.bot.send_photo(
                     chat_id=update.effective_chat.id,
-                    photo=url,
+                    photo=ROUTES_PICS[colour],
                     caption=ROUTES_LIST[colour],
                 )
         except Exception as e:
@@ -398,6 +403,29 @@ class OrcaBot(TeleBot):
                 text=f"Server timed out with error... Here are some routes for your consideration\n"
                        + '\n'.join(ROUTES_LIST.values())
                 )
+        query.edit_message_text(text=f"Selected option: {query.data}")
+
+    def routes_command(self,update,context):
+        """Returns all routes from the list of routes"""
+        keyboard = [
+            [
+                InlineKeyboardButton("Blue", callback_data='blue'),
+                InlineKeyboardButton("Pink", callback_data='pink'),
+            ],
+            [
+                InlineKeyboardButton("Green", callback_data='green'),
+                InlineKeyboardButton("Orange", callback_data='orange'),
+            ],
+            [
+                InlineKeyboardButton("All", callback_data='all')
+            ]
+        ]
+
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text = "Here are some available routes for ya!",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+            )
 
     def payment_command(self,update,context):
         """Payment using Stripe API
@@ -437,7 +465,7 @@ class OrcaBot(TeleBot):
         super().update_user(user_data)
         return deduction
 
-    def rent_command(self,update,context):
+    def rent_command(self,update,context,bike_name=None):
         """Start a rental service"""
         user_data = super().get_user(update,context)
         if user_data is None:
@@ -445,14 +473,15 @@ class OrcaBot(TeleBot):
                 chat_id=update.effective_chat.id,
                 text=START_MESSAGE
                 )
-        if len(context.args) < 1:
+        if context.args is not None and len(context.args) < 1:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Please indicate which bike you would like to rent\nE.g. /rent orc1bike"
+                text="Please indicate which bike you would like to rent\nE.g. /rent orc1bike\
+                    \nAlternatively, you can click on any available bike below to start renting!"
             )
             self.bikes_command(update,context)
             return 
-        else: 
+        if context.args:
             bike_name = context.args[0]
         bikes_data = self.get_bikes()
         if bikes_data.get(bike_name,None):
@@ -477,6 +506,7 @@ class OrcaBot(TeleBot):
                     user_data['bike_name'] = bike_name
                     super().update_user(user_data)
 
+                    bikes_data[bike_name]['username'] = user_data.get('username')
                     bikes_data[bike_name]['status'] = curr_time
                     self.update_bikes(bikes_data)
                         
@@ -593,15 +623,23 @@ class OrcaBot(TeleBot):
                 'end': datetime.datetime.now().isoformat(),
                 'time': strdiff,
             }
-            log = user_data.get('log',[])
-            log.append(d)
             
-            #update bike first, because bike uses user_data.bike_name
-            bike_name = user_data['bike_name']  
+            #update return logs
+            username = user_data.get('username')
+            bike_name = user_data['bike_name'] 
             bikes_data = self.get_bikes()
+            start_time = bikes_data[bike_name]['status']
+            end_time = datetime.datetime.now().isoformat()
+            self.update_rental_log([bike_name,username,start_time,end_time,])
+
+            #update bike first, because bike uses user_data.bike_name 
             bikes_data[bike_name]['status'] = 0
+            bikes_data[bike_name]['username'] = ""
             self.update_bikes(bikes_data)
 
+            #update user data
+            log = user_data.get('log',[])
+            log.append(d)
             user_data["status"] = None
             user_data["log"] = log
             user_data['bike_name'] = ''
@@ -674,6 +712,23 @@ class OrcaBot(TeleBot):
                 text=f'Your bike pin is {pin}! Please do not share this pin...'
             )
         
+    def rent_button(self,update,context):
+        query = update.callback_query
+        query.answer()
+        bike_name = query.data
+        try:
+            if bike_name == 'stoprent':
+                query.edit_message_text(text=f"Send /bikes to refresh the available bikes!")
+                return
+            self.rent_command(update,context,bike_name=bike_name)
+            query.edit_message_text(text=f"Renting in progress...")
+        except Exception as e:
+            print('error with button renting, error is:\n',e)
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"Server timed out error..."
+                )
+
     def bikes_command(self,update,context):
         with open('bicycles.json', 'r') as f:
             bikes_data = json.load(f)
@@ -686,11 +741,18 @@ class OrcaBot(TeleBot):
 
         avail = "\n".join( b["name"]+' '+EMOJI["tick"] for b in avail )
         not_avail = "\n".join(b["name"]+' '+EMOJI["cross"] for b in not_avail )
-        text = f'Bicycles:\n{avail}\n\n'
+        text = f'Bicycles:\n{avail}'
+        text+= '\n\n' if avail else ''
         text+= f'{not_avail}'
+        text+='\n\nClick below to start renting now!' if avail else '\n\nSorry, all bikes are on rent...'
+        avail_bikes = [bike["name"] for bike in bikes_data.values() if bike.get('status') == 0]
+        keyboard = list([[InlineKeyboardButton('Rent ' + bike, callback_data=bike)] for bike in avail_bikes])
+        keyboard.append([InlineKeyboardButton('Cancel', callback_data='stoprent')])
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=text)  
+            text=text,
+            reply_markup=InlineKeyboardMarkup(keyboard)  
+        )
 
     def report_command(self,update,context):
         context.bot.send_message(
@@ -713,8 +775,8 @@ class OrcaBot(TeleBot):
         """After photo is sent, save the photo and ask for others"""
         photo = update.message.photo[-1].file_id
         context.user_data['photo'] = photo
-        text=f'Your report is: {context.user_data["desc"]}!\n' 
-        text+="If you are unsatisfied with your image, please send another one. \nTo submit, send /done. To stop, send /cancel"
+        text=f'Your report is: \n{context.user_data["desc"]}\n\n' 
+        text+="To update your report or image, feel free to send another one. \nTo submit, send /done. To stop, send /cancel"
         context.bot.send_photo(
             chat_id=update.effective_chat.id,
             photo=context.user_data["photo"],
@@ -730,8 +792,8 @@ class OrcaBot(TeleBot):
             photo = update.message.photo[-1].file_id
             context.user_data['photo'] = photo
 
-        text=f'Your report is: {context.user_data["desc"]}!\n' 
-        text+="If you are unsatisfied with your image, please send another one. \nTo submit, send /done. To stop, send /cancel"
+        text=f'Your report is: \n{context.user_data["desc"]}\n\n' 
+        text+="To update your report or image, feel free to send another one. \nTo submit, send /done. To stop, send /cancel"
         context.bot.send_photo(
             chat_id=update.effective_chat.id,
             photo=context.user_data.get("photo"),
@@ -745,8 +807,13 @@ class OrcaBot(TeleBot):
                 chat_id=update.effective_chat.id,
                 text="You have successfully sent a report! A comm member will respond in typically 3-5 working days..."
             )
+            #update admin group
             admin_text=f'[REPORT] \n@{update.message.from_user.username} sent the following report:\n{context.user_data["desc"]}'
             self.admin_log(update,context, admin_text, context.user_data['photo'])
+
+            #update report logs
+            curr_time = datetime.datetime.now().isoformat()
+            self.update_report_log([update.message.from_user.username, curr_time, context.user_data["desc"]])
             context.user_data.clear()
             return -1   
         else:
@@ -931,22 +998,26 @@ class OrcaBot(TeleBot):
     def unrecognized_command(self,update,context):
         update.message.reply_text('Unrecognized command. Do you need /help...?')
 
+    def all_buttons(self,update,context):
+        """Manages all inline query buttons, as there can only be one wrapper"""
+        data = update.callback_query.data
+        if data in self.get_bikes().keys() or data=='stoprent':
+            self.rent_button(update,context)
+        elif data in ROUTES_PICS.keys() or data=='all':
+            self.routes_button(update,context)
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="An unknown error occurred... What did you do?!"
+            )
+
     def initialize(self):
         """Initializes all commands that are required in the bot."""
 
         self.addcmd('start',self.start_command)
-        self.addcmd('myinfo',self.info_command)
         self.addcmd('help', self.help_command)
         self.addcmd('routes', self.routes_command)
-        self.addcmd('doggo', self.doggo_command)
-        self.addcmd('neko', self.neko_command)
-        self.addcmd('kitty', self.kitty_command)
-        self.addcmd('birb', self.birb_command)
-        self.addcmd('shibe', self.shibe_command)
-        self.addcmd('foxy', self.foxy_command)  
-        self.addcmd('random', self.random_command)  
-        self.addcmd('pika', self.pika_command) #pika sticker
-        #self.addcmd('quote', self.quote_command)   #doesnt work on web...
+        
         self.addcmd('payment', self.payment_command)
         # self.addcmd('credits', self.credits_command) #deprecated, use /status to access credits   
         self.addcmd('rent', self.rent_command)
@@ -959,6 +1030,8 @@ class OrcaBot(TeleBot):
         self.addcmd('admin', self.admin_command)
 
 
+        self.addnew(CallbackQueryHandler(self.all_buttons))
+
         # This part is for convo commands
         self.addnew(self.report_handler())
         self.addnew(self.return_handler())
@@ -969,9 +1042,28 @@ class OrcaBot(TeleBot):
         self.addcmd('done', lambda x,y:0) #dummy commmand
         #self.addcmd('cancel', lambda x,y:0) #dummy commmand
 
+
+        # Fun stuff 
+        #self.addcmd('quote', self.quote_command)   #doesnt work on web...
+        self.addcmd('doggo', self.doggo_command)
+        self.addcmd('neko', self.neko_command)
+        self.addcmd('kitty', self.kitty_command)
+        self.addcmd('birb', self.birb_command)
+        self.addcmd('shibe', self.shibe_command)
+        self.addcmd('foxy', self.foxy_command)  
+        self.addcmd('random', self.random_command) 
+
+        self.addcmd('animal',self.animal_command)
+
+        self.addcmd('pika', self.pika_command) #pika sticker
+
+        
+
         # This part is a message command
-        # Filters all unknown commands
+
+        # Filters all unknown commands, put this last!!
         self.addmsg(Filters.command, self.unrecognized_command)
+
 
     def main(self):
         """Main bot function to run"""
