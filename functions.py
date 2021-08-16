@@ -101,7 +101,9 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
         if update.effective_chat.id > 0:
             table_data = super().get_user_table()
-            table_data[update.message.from_user.username] = update.effective_chat.id
+            username=update.message.from_user.username
+            if username:
+                table_data[username] = update.effective_chat.id
             super().update_user_table(table_data)
         
 

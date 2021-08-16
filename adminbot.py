@@ -119,7 +119,7 @@ class AdminBot(TeleBot):
 
             elif command == "user":
                 text=f'@{user_data["username"]} has {user_data["credits"]} credits left.\n'
-                text+=f'User has been renting {user_data["bike_name"]} since {user_data["status"]}' if user_data["bike_name"] else "User is not renting currently."
+                text+=f'User has been renting {user_data["bike_name"]} since {user_data["status"]}' if user_data.get("bike_name") else "User is not renting currently."
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=text)
