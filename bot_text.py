@@ -47,23 +47,22 @@ Feel free to click any of the below, or just send /random...
 /pika - A wild pikachu appeared!
 """
 
-ADMIN_TEXT = """List of admin commands:
-Please do NOT add @ before a username. Usernames are case sensitive.
-User commands:
-/user `username` - View the user's current status
-/topup `username` AMOUNT - Top up the user's credit by an integer amount.
-/deduct `username` AMOUNT - Deduct the user's credit by an integer amount.
-/setcredit `username` AMOUNT - Set the user's credit to an integer amount.
+ADMIN_TEXT = """List of admin commands\:
+Please do NOT add @ before a username, usernames are case sensitive
+User commands\:
+/user `username` \- _View the user's current status_
+/topup `username AMOUNT` \- _Top up the user's credit by an integer amount_
+/deduct `username AMOUNT` \- _Deduct the user's credit by an integer amount_
+/setcredit `username AMOUNT` \- _Set the user's credit to an integer amount_
 
-Bikes commands:
-/admin bikes - Get all bikes and their current status
-/setpin `BIKE_NAME` NEW_PIN - Change the bike's pin in the server to a new pin
-/setstatus `BIKE_NAME` NEW_STATUS - Change the bike's status in the server to a new status
+Bikes commands\:
+/admin `bikes` \- _Get all bikes and their current status_
+/setpin `BIKENAME NEWPIN` \- _Change the bike's pin in the server to a new pin_
+/setstatus `BIKENAME NEWSTATUS` \- _Change the bike's status in the server to a new status_
 
-Other commands:
-/logs - Get rental and report logs as a csv file
-/admin COMMAND ACTION - deprecated (except bikes), commands can be accessed individually instead of calling /admin command.
-If you still want to use /admin COMMANDs, do it like this: eg "/admin user fluffballz" or "/admin logs"
+Other commands\:
+/logs \- _Get rental and report logs as a csv file_
+/admin `COMMAND ACTION` \- _deprecated except for bikes, commands can be accessed individually instead of calling /admin command_
 """
 
 START_MESSAGE = "Please /start me privately to access this service!"
