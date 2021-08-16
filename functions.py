@@ -51,7 +51,7 @@ class TeleBot:
         self.updater = Updater(token=api_key, use_context=True)
         self.dispatcher = self.updater.dispatcher
 
-    def get_user(self, update, context):
+    def get_user(self,update,context)  -> dict or None:
         chat_id = update.effective_chat.id
         try:
             with open(f'users/{chat_id}.json', 'r') as f:
@@ -68,7 +68,7 @@ class TeleBot:
         with open(f'users/{chat_id}.json', 'w') as f:
             json.dump(user_data, f, sort_keys=True, indent=4)
     
-    def get_user_table(self):
+    def get_user_table(self) -> dict:
         table_data = dict()
         try:
             with open('users/table.json', 'r') as f:
@@ -80,6 +80,15 @@ class TeleBot:
     def update_user_table(self, update_field):
         with open('users/table.json', 'w') as f:
             json.dump(update_field, f, sort_keys=True, indent=4)
+
+    def get_bikes(self) -> dict:
+        with open('bicycles.json', 'r') as f:
+            bikes_data = json.load(f)
+        return bikes_data
+
+    def update_bikes(self, bikes_data) -> None:
+        with open('bicycles.json', 'w') as f:
+            json.dump(bikes_data, f, sort_keys=True, indent=4)
 
     def update_rental_log(self, update_list):
         with open('logs/rental.csv','a',newline='') as f:
@@ -261,15 +270,19 @@ class FunBot(TeleBot):
             )
 
     def pika_command(self,update,context):
-        """Sends an inspirational quote"""
+        """Sends a pikachu sticker"""
         try:
-            pikas1 = context.bot.get_sticker_set('pikachu').stickers
-            pikas2 = context.bot.get_sticker_set('pikachu2').stickers
-            pikas3 = context.bot.get_sticker_set('PikachuDetective').stickers
-            pikas4 = context.bot.get_sticker_set('pikachu6').stickers
-            pikas5 = context.bot.get_sticker_set('pikach').stickers
-            pikas6 = context.bot.get_sticker_set('pikach_memes').stickers
-            pikas = pikas1+pikas2+pikas3+pikas4+pikas5+pikas6
+            pika_list = [
+                'pikachu',
+                'pikachu2',
+                'PikachuDetective',
+                'pikachu6',
+                'pikach',
+                'pikach_memes'
+                ]
+            pikas = []
+            for pika in pika_list:
+                pikas.extend(context.bot.get_sticker_set(pika).stickers)
             pika = random.choice(pikas)
             context.bot.send_sticker(
                 chat_id=update.effective_chat.id,
@@ -279,7 +292,7 @@ class FunBot(TeleBot):
             print(e, 'error at', datetime.datetime.now())
 
     def brawl_command(self,update,context):
-        """Sends an inspirational quote"""
+        """Sends a brawl stars sticker"""
         try:
             brawls = context.bot.get_sticker_set('BrawlStarsbyHerolias')
             brawl = random.choice(brawls.stickers)
@@ -303,7 +316,264 @@ class AdminBot(TeleBot):
         self.admin_list = admin_list
         self.admin_text = admin_text
         super().__init__(api_key)
+    
+    def handle_admin(self, update, context, keywords, command=''):
+        """Handle the admin commands after /admin"""  
+        try:
+            if not command:
+                command=keywords.pop(0)
 
+            if command in ['setpin','setstatus']: #bike commands
+                bike_name  = keywords.pop(0) # set the bike_name as name
+                bikes_data = self.get_bikes()
+                bike = bikes_data.get(bike_name, None)
+                if bike is None:
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f'No such bike, {bike}, exists. Please try again with current /bikes'
+                    )
+                    return
+
+            elif command in ['topup','deduct','setcredit','user']: # user commands
+                username = keywords.pop(0) #set the username as name
+                all_users = self.get_user_table()
+                chat_id = all_users.get(username, None)
+                if chat_id is not None:
+                    with open(f'users/{chat_id}.json', 'r') as f:
+                        user_data = json.load(f)
+                else:
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f'Specified user is not found! Please ask @{username} to create an account first.')
+                    return
+            else: # stats and logs commands
+                pass
+
+            if command == "topup":
+                number = keywords.pop(0)
+                user_data['credits'] += int(number) #ValueError Here
+                self.update_user(user_data)
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f'Top-up successful! @{username} now has {user_data["credits"]} credits.'
+                )
+
+            elif command == "deduct":
+                number = keywords.pop(0)
+                user_data['credits'] -= int(number) #ValueError Here
+                self.update_user(user_data)
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f'Deducted successfully! @{username} now has {user_data["credits"]} credits.'
+                )
+
+            elif command == "setcredit":
+                number = keywords.pop(0)
+                user_data['credits'] = int(number)
+                self.update_user(user_data)
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f'Setting was successful! @{username} now has {user_data["credits"]} credits.'
+                )
+
+            elif command == "user":
+                text=f'@{user_data["username"]} has {user_data["credits"]} credits left.\n'
+                text+=f'User has been renting {user_data["bike_name"]} since {user_data["status"]}' if user_data["bike_name"] else "User is not renting currently."
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=text)
+               
+            elif command == "setpin":
+                number = keywords.pop(0)
+                if bike['pin']!=number:
+                    bikes_data[bike_name]['oldpin'] = bike['pin']
+                    bikes_data[bike_name]['pin'] = number
+                    self.update_bikes(bikes_data)
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f"Pin for {bike_name} updated to {number}!"
+                    )
+                else:
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f'Old pin is the same as {number}!'
+                    )            
+            elif command == "setstatus":
+                if not keywords: 
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text="Please send a status update!"
+                    )
+                    return
+                status = ' '.join(keywords) 
+                rented = bike.get('username',"")
+                if rented == "":
+                    if status.isnumeric(): #to reset the status to 0
+                        status=int(status)
+                    bikes_data[bike_name]['status'] = status
+                    self.update_bikes(bikes_data)
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f"Status for {bike_name} updated to {status}!"
+                    )
+                else:
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f'Bike is rented by {rented}!'
+                    )
+            
+
+            elif "bike" in command:
+                bikes_data = self.get_bikes()
+                text= '\n'.join(f'Bike {bike["name"]}  --  {bike["username"] or bike["status"] or EMOJI["tick"]}' for bike in bikes_data.values())
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=text)
+            
+            elif command == "logs":
+                context.bot.send_document(
+                    chat_id=update.effective_chat.id,
+                    document=open('logs/rental.csv','rb'),
+                    filename="rental.csv",
+                    caption="Rental logs"
+                )
+                context.bot.send_document(
+                    chat_id=update.effective_chat.id,
+                    document=open('logs/report.csv','rb'),
+                    filename="report.csv",
+                    caption="Report logs"
+                )
+                
+
+            else: # unrecognized command...
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text='Unrecognized command. Try again. For more info, enter /admin')
+
+
+        except IndexError as e: 
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"Sorry, too little info provided.\nPlease send more info after /{command}"
+                )
+        except ValueError as e:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Number entered, {number}, is not valid!')
+        except KeyError as e:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Could not find key {e} in dictionary! Please check database again')
+        except FileNotFoundError:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text='Hmm, file not found... Please raise a ticket with @fluffballz, along with what you sent.')
+        except Exception as e:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Failed, error is {e}\nPlease raise a ticket with @fluffballz, along with what you sent')
+
+    def admin_log(self, update, context, message, photo=None):
+        if photo:
+            context.bot.send_photo(
+                chat_id=self.admin_group_id,
+                photo=photo,
+                caption=message
+            )
+        else:
+            context.bot.send_message(
+                chat_id=self.admin_group_id,
+                text=message
+            )
+
+    def admin_check(self,update,context):
+        """Checks whether the user is an admin"""
+        if update.effective_chat.id in self.admin_list:
+            return True
+        update.message.reply_text('You\'ve found... something unauthorized? Please contact a orc4bikes commmittee member or an admin for help!')
+        return False
+
+    def admin_command(self,update,context):
+        commands = context.args
+        if self.admin_check(update,context):
+            if commands:
+                self.handle_admin(update,context,commands)
+            else:
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=self.admin_text,
+                    parse_mode=ParseMode.MARKDOWN)
+
+    def topup_command(self,update,context):
+        try:
+            assert(self.admin_check(update,context))
+            keywords = context.args
+            self.handle_admin(update,context,keywords,'topup')
+        except AssertionError:
+            pass
+
+    def deduct_command(self,update,context):
+        try:
+            assert(self.admin_check(update,context))
+            keywords = context.args
+            self.handle_admin(update,context,keywords,'deduct')
+        except AssertionError:
+            pass
+
+    def setcredit_command(self,update,context):
+        try:
+            assert(self.admin_check(update,context))
+            keywords = context.args
+            self.handle_admin(update,context,keywords,'setcredit')
+        except AssertionError:
+            pass
+
+    def user_command(self,update,context):
+        try:
+            assert(self.admin_check(update,context))
+            keywords = context.args
+            self.handle_admin(update,context,keywords,'user')
+        except AssertionError:
+            pass
+
+    def setpin_command(self,update,context):
+        try:
+            assert(self.admin_check(update,context))
+            keywords = context.args
+            self.handle_admin(update,context,keywords,'setpin')
+        except AssertionError:
+            pass
+
+    def setstatus_command(self,update,context):
+        try:
+            assert(self.admin_check(update,context))
+            keywords = context.args
+            self.handle_admin(update,context,keywords,'setstatus')
+        except AssertionError:
+            pass
+        
+    def logs_command(self,update,context):
+        try:
+            assert(self.admin_check(update,context))
+            keywords = context.args
+            self.handle_admin(update,context,keywords,'logs')
+        except AssertionError:
+            pass
+        
+"""
+    def initialize(self):
+        self.addcmd('topup',self.topup_command)
+        self.addcmd('deduct',self.deduct_command)
+        self.addcmd('setcredit',self.setcredit_command)
+        self.addcmd('user',self.user_command)
+        self.addcmd('setpin',self.setpin_command)
+        self.addcmd('setstatus',self.setstatus_command)
+        self.addcmd('logs',self.logs_command)
+
+    def main(self):
+        self.initialize()
+        super().main()
+"""
 
 
 class OrcaBot(AdminBot, FunBot, TeleBot):
@@ -322,16 +592,6 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         self.admin_text = admin_text
         self.deduct_rate = deduct_rate
         
-
-    def get_bikes(self):
-        with open('bicycles.json', 'r') as f:
-            bikes_data = json.load(f)
-        return bikes_data
-
-    def update_bikes(self, bikes_data):
-        with open('bicycles.json', 'w') as f:
-            json.dump(bikes_data, f, sort_keys=True, indent=4)
-
     def start_command(self,update,context):
         """Initializes the bot
             This is where we initialize a new user
@@ -423,7 +683,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text = "Here are some available routes for ya!" + '\n'.join(ROUTES_LIST.values()),
+            text = "Here are some available routes for ya!\n\n" + '\n'.join(ROUTES_LIST.values()),
             reply_markup=InlineKeyboardMarkup(keyboard)
             )
 
@@ -591,7 +851,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             )
             return -1
     
-    def return_pic(self,update, context):
+    def return_pic(self,update,context):
         """After photo is sent, save the photo and ask for others"""
         if update.message.photo:
             photo = update.message.photo[-1].file_id
@@ -740,11 +1000,11 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 not_avail.append(bike)
 
         avail = "\n".join( b["name"]+' '+EMOJI["tick"] for b in avail )
-        not_avail = "\n".join(b["name"]+' '+EMOJI["cross"] for b in not_avail )
+        not_avail = "\n".join(f'{b["name"]} {EMOJI["cross"]} -- {"on rent" if b.get("username") else b["status"]}'  for b in not_avail )
         text = f'Bicycles:\n{avail}'
         text+= '\n\n' if avail else ''
         text+= f'{not_avail}'
-        text+='\n\nClick below to start renting now!' if avail else '\n\nSorry, all bikes are on rent...'
+        text+='\n\nClick below to start renting now!' if avail else '\n\nSorry, no bikes are not unavaialble...'
         avail_bikes = [bike["name"] for bike in bikes_data.values() if bike.get('status') == 0]
         keyboard = list([[InlineKeyboardButton('Rent ' + bike, callback_data=bike)] for bike in avail_bikes])
         keyboard.append([InlineKeyboardButton('Cancel', callback_data='stoprent')])
@@ -761,7 +1021,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         )
         return 11
 
-    def report_desc(self, update, context):
+    def report_desc(self, update,context):
         """After description is sent, save the description and ask for pics"""
         desc = update.message.text
         context.user_data['desc'] = desc
@@ -771,7 +1031,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         )
         return 12
 
-    def report_pic(self,update, context):
+    def report_pic(self,update,context):
         """After photo is sent, save the photo and ask for others"""
         photo = update.message.photo[-1].file_id
         context.user_data['photo'] = photo
@@ -784,7 +1044,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         )
         return 13
 
-    def report_anything(self, update, context):
+    def report_anything(self, update,context):
         if update.message.text:
             desc = update.message.text
             context.user_data['desc'] = desc
@@ -854,141 +1114,6 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         )
         return my_handler
 
-        pass
-
-
-    def handle_admin(self, update, context, keywords):
-        """Handle the admin commands after /admin"""  
-        try:
-            command = keywords.pop(0)
-            username = keywords.pop(0)
-            # handle usernames
-            all_users = self.get_user_table()
-            chat_id = all_users.get(username, None)
-
-            if command == "topup":
-                with open(f'users/{chat_id}.json', 'r') as f:
-                    user_data = json.load(f)
-                amount = keywords.pop(0)
-                if chat_id is not None:
-                    user_data['credits'] += int(amount) #ValueError Here
-                    self.update_user(user_data)
-                else: 
-                    self.admin_failed(update,context)
-
-            elif command == "deduct":
-                with open(f'users/{chat_id}.json', 'r') as f:
-                    user_data = json.load(f)
-                amount = keywords.pop(0)
-                if chat_id is not None:
-                    user_data['credits'] -= int(amount) #ValueError Here
-                    self.update_user(user_data)
-                else: 
-                    self.admin_failed(update,context)
-
-            elif command == "setcredit":
-                with open(f'users/{chat_id}.json', 'r') as f:
-                    user_data = json.load(f)
-                amount = keywords.pop(0)
-                if chat_id is not None:
-                    user_data['credits'] = int(amount)
-                    self.update_user(user_data)
-                else: 
-                    self.admin_failed(update,context)
-
-            elif command == "viewcredit":
-                with open(f'users/{chat_id}.json', 'r') as f:
-                    user_data = json.load(f)
-                if chat_id is not None:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f'@{user_data["username"]} has : {user_data["credits"]} credits left.')
-                else: 
-                    self.admin_failed(update,context)
-            elif command =="setpin":
-                newpin = keywords.pop(0)
-                bikes_data = self.get_bikes()
-                bike_name  = username
-                bike = bikes_data.get(bike_name, None)
-                if bike is not None:
-                    if bike['pin']!=newpin:
-                        bikes_data[bike_name]['oldpin'] = bike['pin']
-                        bikes_data[bike_name]['pin'] = newpin
-                        self.update_bikes(bikes_data)
-                        context.bot.send_message(
-                            chat_id=update.effective_chat.id,
-                            text=f"Pin for {bike_name} updated to {newpin}!"
-                        )
-                    else:
-                        context.bot.send_message(
-                            chat_id=update.effective_chat.id,
-                            text=f'Old pin is the same as {newpin}!'
-                        )
-                else:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f'No such bike, {bike}, exists. Please try again with current /bikes'
-                    )
-
-            else:
-                self.admin_failed(update,context)
-
-        except IndexError as e: 
-            self.admin_failed(update,context)
-        except FileNotFoundError as e:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f'Specified user is not found! Please ask @{username} to create an account first.')
-        except ValueError as e:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f'Amount entered, {amount}, is not a valid amount!')
-        except KeyError as e:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f'Could not find key {e} in dictionary! Please check database again')
-        except Exception as e:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f'Failed, error is {e}')
-
-    def admin_failed(self, update, context):
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text='Unrecognized command. Try again. For more info, enter /admin')
-
-    def admin_log(self, update, context, message, photo=None):
-        if photo:
-            context.bot.send_photo(
-                chat_id=self.admin_group_id,
-                photo=photo,
-                caption=message
-            )
-        else:
-            context.bot.send_message(
-                chat_id=self.admin_group_id,
-                text=message
-            )
-
-    def admin_command(self,update,context):
-        """Start a rental service
-        var commands is a list of strings that the user sends
-        e.g. /admin addcredit username amount
-        commands => ['addcredit','username','amount']"""
-        commands = context.args
-        if update.effective_chat.id in self.admin_list:
-            # update.message.reply_text(str(commands))
-            if commands:
-                self.handle_admin(update,context,commands)
-            else:
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=self.admin_text,
-                    parse_mode=ParseMode.MARKDOWN)
-        else:
-            update.message.reply_text('You are not authorized admin commands!')
-
-
     def echo_command(self,update,context):
         update.message.reply_text(update.message.text)
 
@@ -1027,12 +1152,19 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         self.addcmd('bikes', self.bikes_command)
 
         #admin handler
-        self.addcmd('admin', self.admin_command)
+        super().addcmd('admin', self.admin_command)
+        super().addcmd('topup',self.topup_command)
+        super().addcmd('deduct',self.deduct_command)
+        super().addcmd('setcredit',self.setcredit_command)
+        super().addcmd('user',self.user_command)
+        super().addcmd('setpin',self.setpin_command)
+        super().addcmd('setstatus',self.setstatus_command)
+        super().addcmd('logs',self.logs_command)
 
 
         self.addnew(CallbackQueryHandler(self.all_buttons))
 
-        # This part is for convo commands
+        # This part is for convo handlers
         self.addnew(self.report_handler())
         self.addnew(self.return_handler())
 
