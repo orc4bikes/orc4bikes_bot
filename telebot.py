@@ -27,6 +27,10 @@ from telegram.ext import (
     TypeHandler,
 )
 
+GMT = 0
+
+def now():
+    return datetime.datetime.now() + datetime.timedelta(hours=GMT)
 
 class TeleBot:
     def __init__(self,api_key):
@@ -74,12 +78,23 @@ class TeleBot:
             json.dump(bikes_data, f, sort_keys=True, indent=4)
 
     def update_rental_log(self, update_list):
+        """Updates rental logs with headers:
+           bike,username,start_time,end_time"""
         with open('logs/rental.csv','a',newline='') as f:
             writer = csv.writer(f)
             writer.writerow(update_list)
 
     def update_report_log(self, update_list):
+        """Updates report logs with headers:
+           username,time,report"""
         with open('logs/report.csv','a',newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(update_list)
+
+    def update_finance_log(self, update_list):
+        """Updates finance logs with headers:
+           username,time,initial_amt,change_amt,final_amt"""
+        with open('logs/finance.csv', 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(update_list)
 

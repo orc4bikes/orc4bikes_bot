@@ -9,7 +9,7 @@ from bot_text import (
     EMOJI
 )
 
-from telebot import TeleBot
+from telebot import TeleBot, now, GMT
 
 import random
 import json # use json to store bicycles.json and user data
@@ -214,7 +214,7 @@ class FunBot(TeleBot):
                 sticker=pika
             )
         except Exception as e:
-            print(e, 'error at', datetime.datetime.now())
+            print(e, 'error at', datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
 
     def brawl_command(self,update,context):
         """Sends a brawl stars sticker"""
@@ -226,7 +226,7 @@ class FunBot(TeleBot):
                 sticker=brawl
             )
         except Exception as e:
-            print(e, 'error at', datetime.datetime.now())
+            print(e, 'error at', datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
 
     def initialize(self):
         self.addcmd('doggo', self.doggo_command)

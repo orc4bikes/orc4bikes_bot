@@ -14,7 +14,7 @@ from bot_text import (
     EMOJI
 )
 
-from telebot import TeleBot
+from telebot import TeleBot, now, GMT
 
 import random
 import json # use json to store bicycles.json and user data
@@ -91,34 +91,100 @@ class AdminBot(TeleBot):
                 pass
 
             if command == "topup":
+                """Topup specific amount to user credits"""
                 number = keywords.pop(0)
-                user_data['credits'] += int(number) #ValueError Here
+                user_data['credits'] = user_data.get('credits', 0)
+                initial_amt = user_data.get('credits', 0)
+                user_data['credits'] += int(number)
+                final_amt = user_data.get('credits')
+
+                #update user data
+                user_data['finance'] = user_data.get('finance',[])
+                f_log = {
+                    'type':'admin',
+                    'time':datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    'initial':initial_amt,
+                    'change': int(number),
+                    'final': final_amt
+                }
+                user_data['finance'].append(f_log)
                 self.update_user(user_data)
+
+                finance_log=[
+                    username,
+                    datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    initial_amt, int(number), final_amt
+                ]
+                self.update_finance_log(finance_log)
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=f'Top-up successful! @{username} now has {user_data["credits"]} credits.'
                 )
 
             elif command == "deduct":
+                """Deduct specific amount from user credits"""
                 number = keywords.pop(0)
-                user_data['credits'] -= int(number) #ValueError Here
+                user_data['credits'] = user_data.get('credits', 0)
+                initial_amt = user_data.get('credits', 0)
+                user_data['credits'] -= int(number)
+                final_amt = user_data.get('credits')
+
+                #update user data
+                user_data['finance'] = user_data.get('finance',[])
+                f_log = {
+                    'type':'admin',
+                    'time':datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    'initial':initial_amt,
+                    'change': -int(number),
+                    'final': final_amt
+                }
+                user_data['finance'].append(f_log)
                 self.update_user(user_data)
+
+                finance_log=[
+                    username,
+                    datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    initial_amt, -int(number), final_amt
+                ]
+                self.update_finance_log(finance_log)
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=f'Deducted successfully! @{username} now has {user_data["credits"]} credits.'
                 )
 
             elif command == "setcredit":
+                """Set user credits to specified amount."""
                 number = keywords.pop(0)
+                user_data['credits'] = user_data.get('credits', 0)
+                initial_amt = user_data.get('credits', 0)
+                change_amt = int(number) - initial_amt
                 user_data['credits'] = int(number)
+
+                #update user data
+                user_data['finance'] = user_data.get('finance',[])
+                f_log = {
+                    'type':'admin',
+                    'time':datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    'initial':initial_amt,
+                    'change': change_amt,
+                    'final': int(number)
+                }
+                user_data['finance'].append(f_log)
                 self.update_user(user_data)
+
+                finance_log=[
+                    username,
+                    datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    initial_amt, change_amt, int(number)
+                ]
+                self.update_finance_log(finance_log)
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=f'Setting was successful! @{username} now has {user_data["credits"]} credits.'
                 )
 
             elif command == "user":
-                text=f'@{user_data["username"]} has {user_data["credits"]} credits left.\n'
+                text=f'@{user_data["username"]} has {user_data.get("credits",0)} credits left.\n'
                 text+=f'User has been renting {user_data["bike_name"]} since {user_data["status"]}' if user_data.get("bike_name") else "User is not renting currently."
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
@@ -184,6 +250,12 @@ class AdminBot(TeleBot):
                     filename="report.csv",
                     caption="Report logs"
                 )
+                context.bot.send_document(
+                    chat_id=update.effective_chat.id,
+                    document=open('logs/finance.csv','rb'),
+                    filename="finance.csv",
+                    caption="Finance logs"
+                )                
                 
 
             else: # unrecognized command...

@@ -28,6 +28,7 @@ Basic info:
 
 Your info:
 /status - View your current credits and rental status!
+/history - Show your past transaction history
 
 Bike-related info:
 /bikes - Shows currently available bikes

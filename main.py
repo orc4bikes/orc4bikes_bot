@@ -1,4 +1,4 @@
-from functions import TeleBot, OrcaBot
+from functions import OrcaBot
 from admin import (
     ADMIN_GROUP_ID, 
     API_KEY 

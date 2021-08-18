@@ -14,7 +14,7 @@ from bot_text import (
     EMOJI
 )
 
-from telebot import TeleBot
+from telebot import TeleBot, now, GMT
 from funbot import FunBot
 from adminbot import AdminBot
 
@@ -82,6 +82,10 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                             'last_name' : update.message.from_user.last_name,
                             'username':   update.message.from_user.username,
                             'credits': 0,
+                            'finance':[],
+                            'log':[],
+                            'bike_name':'', 
+                            'status':None, 
                             }
                 super().update_user(user_data)
             else:
@@ -177,6 +181,32 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             text = "Payment methods will be available soon!"
             )
 
+    def history_command(self,update,context):
+        """Shows past 10 transaction history"""
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+        data = user_data.get('finance',[])[-10:] # get the last 10 transactions
+        if data:
+            text=f"Your past {len(data)} transaction history are as follows:\n\n"
+            for i,line in enumerate(data,1):
+                if line['type']=='admin':
+                    text+=f'{i}: An admin {"added" if line["change"]>=0 else "deducted"} {line["change"]} credits on {line["time"]}. You now have {line["final"]} credits.\n'
+                elif line['type']=='rental':
+                    text+=f'{i}: You rented a bike on {line["time"]}, and spent {line["spent"]} credits.\n'
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=text
+            )
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="You haven't cycled with us before :( Send /bikes to start renting now!"
+            )
+
     def credits_command(self,update,context):
         """Show your current available credits"""
         user_data = super().get_user(update,context)
@@ -185,7 +215,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 chat_id=update.effective_chat.id,
                 text=START_MESSAGE
                 )
-        credits =  user_data["credits"]
+        credits = user_data.get("credits",0)
         text = f'Your remaining credits is: {credits}.'
         if credits < 10:
             text+=' Please top up soon!'
@@ -194,11 +224,8 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             text = text,
         )
 
-    def deduct_credits(self,update,context,time_diff):
-        user_data = super().get_user(update,context)
+    def calc_deduct(self,time_diff):
         deduction = time_diff.seconds // self.deduct_rate + int(time_diff.seconds%self.deduct_rate > 0)
-        user_data['credits'] -= deduction
-        super().update_user(user_data)
         return deduction
 
     def rent_command(self,update,context,bike_name=None):
@@ -230,7 +257,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                         text="You are already renting! Please return your current bike first"
                     )
                     return
-                elif user_data.get('credits') < 1: #not enough credits
+                elif user_data.get('credits', 0) < 1: #not enough credits
                     context.bot.send_message(
                         chat_id=update.effective_chat.id, 
                         text=f"You cannot rent, as you do not have enough credits! Current credits: {user_data.get('credits')}"
@@ -249,7 +276,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                     # Notify user
                     context.bot.send_message(
                         chat_id=update.effective_chat.id, 
-                        text=f"Rental started! Time of rental, {datetime.datetime.now()}")
+                        text=f"Rental started! Time of rental, {datetime.datetime.now().strftime('%m/%d/%Y, %H:%M:%S')}")
 
                     # Notify Admin group
                     message=f'[RENTAL - RENT] \n@{user_data["username"]} rented {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
@@ -344,7 +371,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 text="Please send a photo for proof of return! \nTo continue rental, send /cancel"
             )
         return 91
-        
+    
     def return_done(self,update,context):
         user_data= super().get_user(update,context)
         status= user_data.get('status',None)
@@ -359,16 +386,18 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 'end': datetime.datetime.now().isoformat(),
                 'time': strdiff,
             }
-            
+
+            deduction = self.calc_deduct(diff)
+
             #update return logs
             username = user_data.get('username')
-            bike_name = user_data['bike_name'] 
+            bike_name = user_data['bike_name']
             bikes_data = self.get_bikes()
             start_time = bikes_data[bike_name]['status']
             end_time = datetime.datetime.now().isoformat()
             self.update_rental_log([bike_name,username,start_time,end_time,])
 
-            #update bike first, because bike uses user_data.bike_name 
+            #update bike first, because bike uses user_data.bike_name
             bikes_data[bike_name]['status'] = 0
             bikes_data[bike_name]['username'] = ""
             self.update_bikes(bikes_data)
@@ -379,24 +408,33 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             user_data["status"] = None
             user_data["log"] = log
             user_data['bike_name'] = ''
+            user_data['credits'] -= deduction
+            user_data['finance'] = user_data.get('finance',[])
+            f_log = {
+                'type':'rental',
+                'time':datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                'credits':user_data.get('credits'),
+                'spent': deduction,
+                'remaining': user_data.get('credits') - deduction
+            }
+            user_data['finance'].append(f_log)
             super().update_user(user_data)
 
-            deduction = self.deduct_credits(update,context,diff)
 
-            
+
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f"Successfully returned! Your total rental time is {strdiff}."
             )
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=f"{deduction} was deducted from your credits. Your remaining credit is {user_data['credits']-deduction}"
+                text=f"{deduction} was deducted from your credits. Your remaining credit is {user_data['credits']}"
             )
             # Notify Admin group
             admin_text=f'[RENTAL - RETURN] \n@{update.message.from_user.username} returned {bike_name} at following time:\n{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
             self.admin_log(update,context, admin_text, context.user_data['photo'])
             context.user_data.clear()
-            return -1   
+            return -1
         else:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -620,6 +658,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         self.addcmd('routes', self.routes_command)
         
         self.addcmd('payment', self.payment_command)
+        self.addcmd('history', self.history_command)
         # self.addcmd('credits', self.credits_command) #deprecated, use /status to access credits   
         self.addcmd('rent', self.rent_command)
         self.addcmd('status', self.status_command)
