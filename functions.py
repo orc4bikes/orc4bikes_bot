@@ -720,9 +720,30 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         # Lastly, Filters all unknown commands, put this last!!
         self.addmsg(Filters.command, self.unrecognized_command)
 
+    def reminder(self,context):
+        """Reminder for return, every hour"""
+        bikes_data = self.get_bikes()
+        for bike_name, bike_data in bikes_data.items():
+            username = bike_data.get('username')
+            if username:
+                chat_id = self.get_user_table().get(username)
+                context.bot.send_message(
+                    chat_id=chat_id,
+                    text="Please remember to /return your bike! Check your bike status with /status"
+                )
+
+    def scheduler(self):
+        j = self.updater.job_queue
+        print('getting daily queue')
+        for hour in range(24):
+            job_daily = j.run_daily(
+                self.reminder, 
+                days=(0, 1, 2, 3, 4, 5, 6), 
+                time=datetime.time(hour=hour, minute=0, second=0))
 
     def main(self):
         """Main bot function to run"""
+        self.scheduler()
         self.initialize()
         super().main()
 
