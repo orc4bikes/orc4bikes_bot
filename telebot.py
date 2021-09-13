@@ -31,7 +31,6 @@ from telegram.ext import (
 
 GMT = 0
 
-
 class TeleBot:
     def __init__(self,api_key):
         self.api_key = api_key
@@ -148,6 +147,7 @@ class TeleBot:
                 text="Sorry, this command is not valid."
             )
             print(e)
+            
     def initialize(self):
         self.addcmd('py',self.py_command)
 

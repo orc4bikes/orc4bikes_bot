@@ -57,9 +57,9 @@ class AdminBot(TeleBot):
         self.admin_list = admin_list
         self.admin_text = admin_text
         super().__init__(api_key)
-    
+
     def handle_admin(self, update, context, keywords, command=''):
-        """Handle the admin commands after /admin"""  
+        """Handle the admin commands after /admin"""
         try:
             if not command:
                 command=keywords.pop(0)
@@ -77,8 +77,12 @@ class AdminBot(TeleBot):
 
             elif command in ['topup','deduct','setcredit','user']: # user commands
                 username = keywords.pop(0) #set the username as name
-                user_data = super().get_user(username=username)
-                if user_data is None:
+                all_users = self.get_user_table()
+                chat_id = all_users.get(username, None)
+                if chat_id is not None:
+                    with open(f'users/{chat_id}.json', 'r') as f:
+                        user_data = json.load(f)
+                else:
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         text=f'Specified user is not found! Please ask @{username} to create an account first.')
@@ -185,7 +189,7 @@ class AdminBot(TeleBot):
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=text)
-               
+
             elif command == "setpin":
                 number = keywords.pop(0)
                 if bike['pin']!=number:
@@ -200,15 +204,15 @@ class AdminBot(TeleBot):
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         text=f'Old pin is the same as {number}!'
-                    )            
+                    )
             elif command == "setstatus":
-                if not keywords: 
+                if not keywords:
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         text="Please send a status update!"
                     )
                     return
-                status = ' '.join(keywords) 
+                status = ' '.join(keywords)
                 rented = bike.get('username',"")
                 if rented == "":
                     if status.isnumeric(): #to reset the status to 0
@@ -224,7 +228,7 @@ class AdminBot(TeleBot):
                         chat_id=update.effective_chat.id,
                         text=f'Bike is rented by {rented}!'
                     )
-            
+
 
             elif "bike" in command:
                 bikes_data = self.get_bikes()
@@ -232,7 +236,7 @@ class AdminBot(TeleBot):
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=text)
-            
+
             elif command == "logs":
                 context.bot.send_document(
                     chat_id=update.effective_chat.id,
@@ -251,8 +255,8 @@ class AdminBot(TeleBot):
                     document=open('logs/finance.csv','rb'),
                     filename="finance.csv",
                     caption="Finance logs"
-                )                
-                
+                )
+
 
             else: # unrecognized command...
                 context.bot.send_message(
@@ -260,7 +264,7 @@ class AdminBot(TeleBot):
                     text='Unrecognized command. Try again. For more info, enter /admin')
 
 
-        except IndexError as e: 
+        except IndexError as e:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f"Sorry, too little info provided.\nPlease send more info after /{command}"
@@ -303,15 +307,18 @@ class AdminBot(TeleBot):
         return False
 
     def admin_command(self,update,context):
-        commands = context.args
-        if self.admin_check(update,context):
-            if commands:
-                self.handle_admin(  update,context,commands)
-            else:
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=self.admin_text,
-                    parse_mode="MarkdownV2")
+        try:
+            commands = context.args
+            if self.admin_check(update,context):
+                if commands:
+                    self.handle_admin(update,context,commands)
+                else:
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=self.admin_text,
+                        parse_mode="MarkdownV2")
+        except Exception as e:
+            print(e)
 
     def topup_command(self,update,context):
         try:
@@ -360,7 +367,7 @@ class AdminBot(TeleBot):
             self.handle_admin(update,context,keywords,'setstatus')
         except AssertionError:
             pass
-        
+
     def logs_command(self,update,context):
         try:
             assert(self.admin_check(update,context))
@@ -368,7 +375,7 @@ class AdminBot(TeleBot):
             self.handle_admin(update,context,keywords,'logs')
         except AssertionError:
             pass
-        
+
     def initialize(self):
         self.addcmd('admin',self.admin_command)
         self.addcmd('topup',self.topup_command)
@@ -378,3 +385,7 @@ class AdminBot(TeleBot):
         self.addcmd('setpin',self.setpin_command)
         self.addcmd('setstatus',self.setstatus_command)
         self.addcmd('logs',self.logs_command)
+
+    def main(self):
+        self.initialize()
+        super().main()

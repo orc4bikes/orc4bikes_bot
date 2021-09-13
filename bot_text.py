@@ -19,25 +19,20 @@ CHEER_LIST = ["",
     "Jiayou!",
     "You got this!",
     ]
-    
-HELP_TEXT = """List of commands:
-Basic info:
-/start - Starts the bot
-/help - Get all available commands
-/routes - Get orc4bikes routes
 
-Your info:
-/status - View your current credits and rental status!
-/history - Show your past transaction history
+HELP_TEXT = """
+🗾 /routes - orc4bikes-curated routes
+ℹ️ /status - Credits and rental status
+📜 /history - Recent 10 transactions
+✨/ fun - Interesting..
 
-Bike-related info:
-/bikes - Shows currently available bikes
-/rent - Rent a bike!
-/getpin - Get the pin for the bike you rented
-/return - Return the current bicycle
-/report - Report damages of our bikes, or anything sus...
+🚴 ️/rent - Start your rental trip here!
+🔓 /getpin - Get the PIN for the bike you rented
+↩️ /return - End your rental trip here!
+📢 /report - Report damages or anything sus
+"""
 
-Fun stuff :D
+FUN_TEXT = """
 Feel free to click any of the below, or just send /random...
 /doggo - Get a random dog!
 /shibe - Get a random shiba!
@@ -46,24 +41,26 @@ Feel free to click any of the below, or just send /random...
 /foxy - Get a random fox!
 /birb - Get a random bird!
 /pika - A wild pikachu appeared!
+
+Try other commands for easter eggs... :)
 """
 
-ADMIN_TEXT = """List of admin commands\:
-Please do NOT add @ before a username, usernames are case sensitive
-User commands\:
-/user `username` \- _View the user's current status_
-/topup `username AMOUNT` \- _Top up the user's credit by an integer amount_
-/deduct `username AMOUNT` \- _Deduct the user's credit by an integer amount_
-/setcredit `username AMOUNT` \- _Set the user's credit to an integer amount_
+ADMIN_TEXT = """List of admin commands:
+Please do NOT add @ before a username
+Usernames are case sensitive
+User commands:
+/user `username` \\- View the user's current status
+/topup `username` AMOUNT \\- Top up the user's credit by an integer amount
+/deduct `username` AMOUNT \\- Deduct the user's credit by an integer amount
+/setcredit `username` AMOUNT \\- Set the user's credit to an integer amount
 
-Bikes commands\:
-/admin `bikes` \- _Get all bikes and their current status_
-/setpin `BIKENAME NEWPIN` \- _Change the bike's pin in the server to a new pin_
-/setstatus `BIKENAME NEWSTATUS` \- _Change the bike's status in the server to a new status_
+Bikes commands:
+/admin `bikes` \\- Get all bikes and their current status
+/setpin `BIKE_NAME` NEW_PIN \\- Change the bike's pin in the server to a new pin
+/setstatus `BIKE_NAME` NEW_STATUS \\- Change the bike's status in the server to a new status
 
-Other commands\:
-/logs \- _Get rental and report logs as a csv file_
-/admin `COMMAND ACTION` \- _deprecated except for bikes, commands can be accessed individually instead of calling /admin command_
+Other commands:
+/logs \\- Get rental and report logs as a csv file
 """
 
 START_MESSAGE = "Please /start me privately to access this service!"

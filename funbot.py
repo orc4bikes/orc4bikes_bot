@@ -1,12 +1,12 @@
-
 from bot_text import (
     ROUTES_LIST,
     ROUTES_PICS,
     CHEER_LIST,
     HELP_TEXT,
+    FUN_TEXT,
     ADMIN_TEXT,
     START_MESSAGE,
-    EMOJI
+    EMOJI,
 )
 
 from telebot import TeleBot
@@ -46,8 +46,16 @@ class FunBot(TeleBot):
         api_key):
         super().__init__(api_key)
             #fun stuff
+
+    def fun_command(self,update,context):
+        """Shows you guide to renting bike"""
+        context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            text = FUN_TEXT,
+            )
+
     def animal_command(
-        self, update, context, 
+        self, update, context,
         pic_url='', key=0,
         error_text=None,
         secondary_url='',
@@ -62,7 +70,7 @@ class FunBot(TeleBot):
                 caption = random.choice(CHEER_LIST),
                 photo = url,
                 )
-            
+
         except AssertionError:
             # empty url given
             animals = update.message.text.split(' ')[0][1:] + 's'
@@ -104,7 +112,7 @@ class FunBot(TeleBot):
             pic_url=url, key=key,
             error_text=error_text,
             secondary_url=url2, secondary_key=key2)
-    
+
     def neko_command(self,update,context):
         """Shows you a few cute cats!"""
         url = 'https://aws.random.cat/meow'
@@ -118,7 +126,7 @@ class FunBot(TeleBot):
             pic_url=url, key=key,
             error_text=error_text,
             secondary_url=url2, secondary_key=key2)
-       
+
     def foxy_command(self,update,context):
         """Shows you a few cute foxes!"""
         url = 'https://randomfox.ca/floof/'
@@ -142,7 +150,7 @@ class FunBot(TeleBot):
             pic_url=url, key=key,
             error_text=error_text,
             )
-    
+
     def birb_command(self,update,context):
         """Shows you a few cute birbs!"""
         url = 'http://shibe.online/api/birds'
@@ -154,7 +162,7 @@ class FunBot(TeleBot):
             pic_url=url, key=key,
             error_text=error_text,
             )
-    
+
     def kitty_command(self,update,context):
         """Shows you a few cute kittens!"""
         url = 'http://shibe.online/api/cats'
@@ -177,7 +185,7 @@ class FunBot(TeleBot):
                         self.birb_command,
                         self.shibe_command]
         random.choice(command_list)(update,context)
-    
+
     def quote_command(self,update,context):
         """Sends an inspirational quote"""
         try:
@@ -214,7 +222,7 @@ class FunBot(TeleBot):
                 sticker=pika
             )
         except Exception as e:
-            print('pika error\n',e)
+            print(e, 'error at', datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
 
     def brawl_command(self,update,context):
         """Sends a brawl stars sticker"""
@@ -226,10 +234,22 @@ class FunBot(TeleBot):
                 sticker=brawl
             )
         except Exception as e:
-            print('brawl error\n',e)
+            print(e, 'error at', datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
 
+    def bangday_command(self,update,context):
+        """Sends a bang don sticker"""
+        try:
+            bangdongs = context.bot.get_sticker_set('happybangday')
+            bangdong = random.choice(bangdongs.stickers)
+            context.bot.send_sticker(
+                chat_id=update.effective_chat.id,
+                sticker=bangdong
+            )
+        except Exception as e:
+            print(e, 'error at', datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
 
     def initialize(self):
+        self.addcmd('fun', self.fun_command)
         self.addcmd('doggo', self.doggo_command)
         self.addcmd('neko', self.neko_command)
         self.addcmd('kitty', self.kitty_command)
@@ -241,6 +261,8 @@ class FunBot(TeleBot):
         self.addcmd('animal',self.animal_command)
 
         self.addcmd('pika', self.pika_command) #pika sticker
+        self.addcmd('brawl', self.brawl_command) #pika sticker
+        self.addcmd('happybangday', self.bangday_command)
 
         #self.addcmd('quote', self.quote_command)   #doesnt work on web...
 

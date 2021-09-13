@@ -118,6 +118,17 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             text = self.help_text,
             parse_mode=ParseMode.MARKDOWN)
     
+    def guide_command(self,update,context):
+        """Shows you guide to renting bike"""
+        self.random_command(update,context) #random for placeholder
+        """
+        context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            caption = "instructions here",
+            photo = "url to photo here"
+            )
+        """        
+
     def routes_button(self,update,context):
         query = update.callback_query
         query.answer()
@@ -655,6 +666,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
         self.addcmd('start',self.start_command)
         self.addcmd('help', self.help_command)
+        self.addcmd('guide', self.guide_command)
         self.addcmd('routes', self.routes_command)
         
         self.addcmd('payment', self.payment_command)
