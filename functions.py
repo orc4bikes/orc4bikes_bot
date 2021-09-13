@@ -14,7 +14,7 @@ from bot_text import (
     EMOJI
 )
 
-from telebot import TeleBot, now, GMT
+from telebot import TeleBot
 from funbot import FunBot
 from adminbot import AdminBot
 
@@ -264,7 +264,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                     )
                     return
                 else: 
-                    curr_time = datetime.datetime.now().isoformat()
+                    curr_time = self.now().isoformat()
                     user_data['status'] = curr_time
                     user_data['bike_name'] = bike_name
                     super().update_user(user_data)
@@ -276,10 +276,10 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                     # Notify user
                     context.bot.send_message(
                         chat_id=update.effective_chat.id, 
-                        text=f"Rental started! Time of rental, {datetime.datetime.now().strftime('%m/%d/%Y, %H:%M:%S')}")
+                        text=f"Rental started! Time of rental, {self.now().strftime('%m/%d/%Y, %H:%M:%S')}")
 
                     # Notify Admin group
-                    message=f'[RENTAL - RENT] \n@{user_data["username"]} rented {bike_name} at {datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+                    message=f'[RENTAL - RENT] \n@{user_data["username"]} rented {bike_name} at {self.now().strftime("%m/%d/%Y, %H:%M:%S")}'
                     self.admin_log(update,context,message)
                     return
             else: #bike is not available
@@ -308,7 +308,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             status = user_data.get('status',None)
             if status is not None:
                 status = datetime.datetime.fromisoformat(status)
-                curr = datetime.datetime.now()
+                curr = self.now()
                 diff = curr - status
                 if diff.days:
                     strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
@@ -376,14 +376,14 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         user_data= super().get_user(update,context)
         status= user_data.get('status',None)
         if context.user_data.get('photo'):
-            diff = datetime.datetime.now() - datetime.datetime.fromisoformat(status)
+            diff = self.now() - datetime.datetime.fromisoformat(status)
             if diff.days:
                 strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
             else:
                 strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
             d = {
                 'start': status,
-                'end': datetime.datetime.now().isoformat(),
+                'end': self.now().isoformat(),
                 'time': strdiff,
             }
 
@@ -394,8 +394,8 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             bike_name = user_data['bike_name']
             bikes_data = self.get_bikes()
             start_time = bikes_data[bike_name]['status']
-            end_time = datetime.datetime.now().isoformat()
-            self.update_rental_log([bike_name,username,start_time,end_time,])
+            end_time = self.now().isoformat()
+            self.update_rental_log([bike_name,username,start_time,end_time])
 
             #update bike first, because bike uses user_data.bike_name
             bikes_data[bike_name]['status'] = 0
@@ -412,7 +412,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             user_data['finance'] = user_data.get('finance',[])
             f_log = {
                 'type':'rental',
-                'time':datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                'time':self.now().strftime("%m/%d/%Y, %H:%M:%S"),
                 'credits':user_data.get('credits'),
                 'spent': deduction,
                 'remaining': user_data.get('credits') - deduction
@@ -431,7 +431,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 text=f"{deduction} was deducted from your credits. Your remaining credit is {user_data['credits']}"
             )
             # Notify Admin group
-            admin_text=f'[RENTAL - RETURN] \n@{update.message.from_user.username} returned {bike_name} at following time:\n{datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+            admin_text=f'[RENTAL - RETURN] \n@{update.message.from_user.username} returned {bike_name} at following time:\n{self.now().strftime("%m/%d/%Y, %H:%M:%S")}'
             self.admin_log(update,context, admin_text, context.user_data['photo'])
             context.user_data.clear()
             return -1
@@ -586,7 +586,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             self.admin_log(update,context, admin_text, context.user_data['photo'])
 
             #update report logs
-            curr_time = datetime.datetime.now().isoformat()
+            curr_time = self.now().isoformat()
             self.update_report_log([update.message.from_user.username, curr_time, context.user_data["desc"]])
             context.user_data.clear()
             return -1   
@@ -676,6 +676,9 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         self.addcmd('return', lambda x,y:0) #dummy commmand
         self.addcmd('done', lambda x,y:0) #dummy commmand
         #self.addcmd('cancel', lambda x,y:0) #dummy commmand
+
+        #running python script in bot
+        TeleBot.initialize(self)
 
         #admin handler
         AdminBot.initialize(self)

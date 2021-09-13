@@ -6,6 +6,8 @@ import datetime
 import requests
 import re
 
+from admin import DEV_API_KEY
+
 from telegram import (
     InlineKeyboardMarkup, 
     InlineKeyboardButton,
@@ -29,8 +31,6 @@ from telegram.ext import (
 
 GMT = 0
 
-def now():
-    return datetime.datetime.now() + datetime.timedelta(hours=GMT)
 
 class TeleBot:
     def __init__(self,api_key):
@@ -38,8 +38,16 @@ class TeleBot:
         self.updater = Updater(token=api_key, use_context=True)
         self.dispatcher = self.updater.dispatcher
 
-    def get_user(self,update,context)  -> dict or None:
-        chat_id = update.effective_chat.id
+    def now(self,gmt=GMT):
+        return datetime.datetime.now() + datetime.timedelta(hours=gmt)
+
+    def get_user(self,update=None,context=None,username=None)  -> dict or None:
+        if username is not None:
+            chat_id = self.get_user_table().get(username)
+            if chat_id is None:
+                return None
+        else:
+            chat_id = update.effective_chat.id
         try:
             with open(f'users/{chat_id}.json', 'r') as f:
                 user_data = json.load(f)
@@ -109,7 +117,50 @@ class TeleBot:
         handler = MessageHandler(filters, methodname)
         self.addnew(handler)
 
+    def py_command(self,update,context):
+        def reply(item):
+            item=str(item)
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=item
+        )
+        def accounts():
+            from os import listdir
+            from os.path import isfile, join
+            files = [f for f in listdir('users/') if isfile(join('users/', f))]
+            files = [json.load(open(f'users/{file}')) for file in files]
+            return files
+        
+        code = update.message.text[4:].strip()
+        try:
+            if code == '':
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text='You can run python with this command.\
+                        \nUse reply(item) to ask bot to send a message with reply as "item".\
+                        \nUse accounts() to access all accounts as a list.'
+                )
+            else:
+                exec(code)
+        except Exception as e:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, this command is not valid."
+            )
+            print(e)
+    def initialize(self):
+        self.addcmd('py',self.py_command)
+
     def main(self):
         print('Initializing bot...')
+        self.initialize()
         self.updater.start_polling()
         self.updater.idle()
+
+
+
+if __name__=="__main__":
+    print('Running the TeleBot!')
+    newbot = TeleBot(DEV_API_KEY)
+    newbot.main()
+    

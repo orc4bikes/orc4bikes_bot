@@ -14,7 +14,7 @@ from bot_text import (
     EMOJI
 )
 
-from telebot import TeleBot, now, GMT
+from telebot import TeleBot
 
 import random
 import json # use json to store bicycles.json and user data
@@ -77,12 +77,8 @@ class AdminBot(TeleBot):
 
             elif command in ['topup','deduct','setcredit','user']: # user commands
                 username = keywords.pop(0) #set the username as name
-                all_users = self.get_user_table()
-                chat_id = all_users.get(username, None)
-                if chat_id is not None:
-                    with open(f'users/{chat_id}.json', 'r') as f:
-                        user_data = json.load(f)
-                else:
+                user_data = super().get_user(username=username)
+                if user_data is None:
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         text=f'Specified user is not found! Please ask @{username} to create an account first.')
@@ -102,7 +98,7 @@ class AdminBot(TeleBot):
                 user_data['finance'] = user_data.get('finance',[])
                 f_log = {
                     'type':'admin',
-                    'time':datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    'time':self.now().strftime("%m/%d/%Y, %H:%M:%S"),
                     'initial':initial_amt,
                     'change': int(number),
                     'final': final_amt
@@ -112,7 +108,7 @@ class AdminBot(TeleBot):
 
                 finance_log=[
                     username,
-                    datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    self.now().strftime("%m/%d/%Y, %H:%M:%S"),
                     initial_amt, int(number), final_amt
                 ]
                 self.update_finance_log(finance_log)
@@ -133,7 +129,7 @@ class AdminBot(TeleBot):
                 user_data['finance'] = user_data.get('finance',[])
                 f_log = {
                     'type':'admin',
-                    'time':datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    'time':self.now().strftime("%m/%d/%Y, %H:%M:%S"),
                     'initial':initial_amt,
                     'change': -int(number),
                     'final': final_amt
@@ -143,7 +139,7 @@ class AdminBot(TeleBot):
 
                 finance_log=[
                     username,
-                    datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    self.now().strftime("%m/%d/%Y, %H:%M:%S"),
                     initial_amt, -int(number), final_amt
                 ]
                 self.update_finance_log(finance_log)
@@ -164,7 +160,7 @@ class AdminBot(TeleBot):
                 user_data['finance'] = user_data.get('finance',[])
                 f_log = {
                     'type':'admin',
-                    'time':datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    'time':self.now().strftime("%m/%d/%Y, %H:%M:%S"),
                     'initial':initial_amt,
                     'change': change_amt,
                     'final': int(number)
@@ -174,7 +170,7 @@ class AdminBot(TeleBot):
 
                 finance_log=[
                     username,
-                    datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    self.now().strftime("%m/%d/%Y, %H:%M:%S"),
                     initial_amt, change_amt, int(number)
                 ]
                 self.update_finance_log(finance_log)
