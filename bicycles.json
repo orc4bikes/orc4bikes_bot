@@ -3,8 +3,8 @@
         "colour": "red",
         "name": "orc1bike",
         "oldpin": "0000",
-        "pin": "12345",
-        "status": 10,
+        "pin": "00000",
+        "status": 0,
         "type": "mountain",
         "username": ""
     },
@@ -22,7 +22,7 @@
         "name": "orc3bike",
         "oldpin": "12345",
         "pin": "00000",
-        "status": 1,
+        "status": "Maintenance",
         "type": "mountain",
         "username": ""
     },
