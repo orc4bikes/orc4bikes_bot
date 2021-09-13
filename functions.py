@@ -667,7 +667,15 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         text = random.choice([
             "OH NO!",
             "Oh no indeed...",
-            "Oh no"])
+            "Oh no",
+            "Ah, that is not ideal",
+            "This is a pleasant surprise withouth the pleasant",
+            "Goodness gracious me!",
+            "Oh noes",
+            "Das not good",
+            "Aaaaaaaaaaaaaaaaaaaaaaaaaaaaah",
+            "How could this happen?!",
+            ])
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=text)
