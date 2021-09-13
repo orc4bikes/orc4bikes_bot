@@ -24,7 +24,7 @@ HELP_TEXT = """
 🗾 /routes - orc4bikes-curated routes
 ℹ️ /status - Credits and rental status
 📜 /history - Recent 10 transactions
-✨/ fun - Interesting..
+✨ /fun - Interesting..
 
 🚴 ️/rent - Start your rental trip here!
 🔓 /getpin - Get the PIN for the bike you rented
@@ -56,8 +56,8 @@ User commands:
 
 Bikes commands:
 /admin `bikes` \\- Get all bikes and their current status
-/setpin `BIKE_NAME` NEW_PIN \\- Change the bike's pin in the server to a new pin
-/setstatus `BIKE_NAME` NEW_STATUS \\- Change the bike's status in the server to a new status
+/setpin `BIKENAME` NEW_PIN \\- Change the bike's pin in the server to a new pin
+/setstatus `BIKENAME` NEW_STATUS \\- Change the bike's status in the server to a new status
 
 Other commands:
 /logs \\- Get rental and report logs as a csv file
