@@ -102,7 +102,7 @@ class AdminBot(TeleBot):
                 user_data['finance'] = user_data.get('finance',[])
                 f_log = {
                     'type':'admin',
-                    'time':self.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    'time':self.now().strftime("%Y/%m/%d, %H:%M:%S"),
                     'initial':initial_amt,
                     'change': int(number),
                     'final': final_amt
@@ -112,7 +112,7 @@ class AdminBot(TeleBot):
 
                 finance_log=[
                     username,
-                    self.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    self.now().strftime("%Y/%m/%d, %H:%M:%S"),
                     initial_amt, int(number), final_amt
                 ]
                 self.update_finance_log(finance_log)
@@ -133,7 +133,7 @@ class AdminBot(TeleBot):
                 user_data['finance'] = user_data.get('finance',[])
                 f_log = {
                     'type':'admin',
-                    'time':self.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    'time':self.now().strftime("%Y/%m/%d, %H:%M:%S"),
                     'initial':initial_amt,
                     'change': -int(number),
                     'final': final_amt
@@ -143,7 +143,7 @@ class AdminBot(TeleBot):
 
                 finance_log=[
                     username,
-                    self.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    self.now().strftime("%Y/%m/%d, %H:%M:%S"),
                     initial_amt, -int(number), final_amt
                 ]
                 self.update_finance_log(finance_log)
@@ -164,7 +164,7 @@ class AdminBot(TeleBot):
                 user_data['finance'] = user_data.get('finance',[])
                 f_log = {
                     'type':'admin',
-                    'time':self.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    'time':self.now().strftime("%Y/%m/%d, %H:%M:%S"),
                     'initial':initial_amt,
                     'change': change_amt,
                     'final': int(number)
@@ -174,7 +174,7 @@ class AdminBot(TeleBot):
 
                 finance_log=[
                     username,
-                    self.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                    self.now().strftime("%Y/%m/%d, %H:%M:%S"),
                     initial_amt, change_amt, int(number)
                 ]
                 self.update_finance_log(finance_log)

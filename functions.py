@@ -59,7 +59,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             admin_text=ADMIN_TEXT,
             deduct_rate=DEDUCT_RATE
             ):
-        print('running OrcaBot')
+        print('running OrcaBot', super().now())
         super().__init__(api_key)
         self.help_text = help_text
         self.admin_group_id = admin_group_id
@@ -289,10 +289,10 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                     # Notify user
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
-                        text=f"Rental started! Time of rental, {self.now().strftime('%m/%d/%Y, %H:%M:%S')}")
+                        text=f"Rental started! Time of rental, {self.now().strftime('%Y/%m/%d, %H:%M:%S')}")
 
                     # Notify Admin group
-                    message=f'[RENTAL - RENT] \n@{user_data["username"]} rented {bike_name} at {self.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+                    message=f'[RENTAL - RENT] \n@{user_data["username"]} rented {bike_name} at {self.now().strftime("%Y/%m/%d, %H:%M:%S")}'
                     self.admin_log(update,context,message)
                     return
             else: #bike is not available
@@ -406,9 +406,9 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             username = user_data.get('username')
             bike_name = user_data['bike_name']
             bikes_data = self.get_bikes()
-            start_time = bikes_data[bike_name]['status']
-            end_time = self.now().isoformat()
-            self.update_rental_log([bike_name,username,start_time,end_time,])
+            start_time = datetime.datetime.fromisoformat(bikes_data[bike_name]['status']).strftime('%Y/%m/%d, %H:%M:%S')
+            end_time = self.now().strftime('%Y/%m/%d, %H:%M:%S')
+            self.update_rental_log([bike_name,username,start_time,end_time,deduction])
 
             #update bike first, because bike uses user_data.bike_name
             bikes_data[bike_name]['status'] = 0
@@ -425,7 +425,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             user_data['finance'] = user_data.get('finance',[])
             f_log = {
                 'type':'rental',
-                'time':self.now().strftime("%m/%d/%Y, %H:%M:%S"),
+                'time':self.now().strftime("%Y/%m/%d, %H:%M:%S"),
                 'credits':user_data.get('credits'),
                 'spent': deduction,
                 'remaining': user_data.get('credits') - deduction
@@ -439,12 +439,15 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 chat_id=update.effective_chat.id,
                 text=f"Successfully returned! Your total rental time is {strdiff}."
             )
+            
+            deduction_text = f"{deduction} credits was deducted. Remaining credits: {user_data['credits']}"
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=f"{deduction} was deducted from your credits. Your remaining credit is {user_data['credits']}"
+                text=deduction_text
             )
             # Notify Admin group
-            admin_text=f'[RENTAL - RETURN] \n@{update.message.from_user.username} returned {bike_name} at following time:\n{self.now().strftime("%m/%d/%Y, %H:%M:%S")}'
+            admin_text=f'[RENTAL - RETURN] \n@{update.message.from_user.username} returned {bike_name} at following time:\n{self.now().strftime("%Y/%m/%d, %H:%M:%S")}'
+            admin_text+='\n'+deduction_text
             self.admin_log(update,context, admin_text, context.user_data['photo'])
             context.user_data.clear()
             return -1
@@ -599,7 +602,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             self.admin_log(update,context, admin_text, context.user_data['photo'])
 
             #update report logs
-            curr_time = self.now().isoformat()
+            curr_time = self.now().strftime('%Y/%m/%d, %H:%M:%S')
             self.update_report_log([update.message.from_user.username or update.message.from_user.first_name, curr_time, context.user_data["desc"]])
             context.user_data.clear()
             return -1
@@ -736,7 +739,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         j = self.updater.job_queue
         print('getting daily queue')
         for hour in range(24):
-            job_daily = j.run_daily(
+            j.run_daily(
                 self.reminder, 
                 days=(0, 1, 2, 3, 4, 5, 6), 
                 time=datetime.time(hour=hour, minute=0, second=0))

@@ -222,7 +222,7 @@ class FunBot(TeleBot):
                 sticker=pika
             )
         except Exception as e:
-            print(e, 'error at', datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
+            print(e, 'error at', self.now().strftime("%Y/%m/%d, %H:%M:%S"))
 
     def brawl_command(self,update,context):
         """Sends a brawl stars sticker"""
@@ -234,7 +234,7 @@ class FunBot(TeleBot):
                 sticker=brawl
             )
         except Exception as e:
-            print(e, 'error at', datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
+            print(e, 'error at', self.now().strftime("%Y/%m/%d, %H:%M:%S"))
 
     def bangday_command(self,update,context):
         """Sends a bang don sticker"""
@@ -246,7 +246,7 @@ class FunBot(TeleBot):
                 sticker=bangdong
             )
         except Exception as e:
-            print(e, 'error at', datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
+            print(e, 'error at', self.now().strftime("%Y/%m/%d, %H:%M:%S"))
 
     def initialize(self):
         self.addcmd('fun', self.fun_command)

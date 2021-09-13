@@ -29,7 +29,7 @@ from telegram.ext import (
     TypeHandler,
 )
 
-GMT = 0
+GMT = 8
 
 class TeleBot:
     def __init__(self,api_key):
@@ -38,7 +38,7 @@ class TeleBot:
         self.dispatcher = self.updater.dispatcher
 
     def now(self,gmt=GMT):
-        return datetime.datetime.now() + datetime.timedelta(hours=gmt)
+        return datetime.datetime.utcnow() + datetime.timedelta(hours=gmt)
 
     def get_user(self,update=None,context=None,username=None)  -> dict or None:
         if username is not None:
