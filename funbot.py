@@ -49,7 +49,7 @@ class FunBot(TeleBot):
 
     def fun_command(self,update,context):
         """Shows you guide to renting bike"""
-        context.bot.send_photo(
+        context.bot.send_message(
             chat_id=update.effective_chat.id,
             text = FUN_TEXT,
             )
