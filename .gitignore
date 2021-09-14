@@ -1,5 +1,7 @@
 # ignore all users
 users/
+
+#ignore all pycache
 __pycache__/
 
 # ignore all admin and API token

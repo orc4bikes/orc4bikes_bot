@@ -205,6 +205,11 @@ class FunBot(TeleBot):
     def pika_command(self,update,context):
         """Sends a pikachu sticker"""
         try:
+            if random.random() < 0.01:
+                return context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text="Pika... boo? 🙂"
+                )
             pika_list = [
                 'pikachu',
                 'pikachu2',
@@ -216,6 +221,7 @@ class FunBot(TeleBot):
             pikas = []
             for pika in pika_list:
                 pikas.extend(context.bot.get_sticker_set(pika).stickers)
+            pikas.extend(context.bot.get_sticker_set('uwumon').stickers[:20])
             pika = random.choice(pikas)
             context.bot.send_sticker(
                 chat_id=update.effective_chat.id,
@@ -223,6 +229,10 @@ class FunBot(TeleBot):
             )
         except Exception as e:
             print(e, 'error at', self.now().strftime("%Y/%m/%d, %H:%M:%S"))
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Pika... boo? 🙂"
+            )
 
     def brawl_command(self,update,context):
         """Sends a brawl stars sticker"""
