@@ -1,8 +1,10 @@
 # ignore all users
 users/
+__pycache__/
 
 # ignore all admin and API token
 admin.py
+test.py
 
 # old code prior to optimizing...
 old_code.py

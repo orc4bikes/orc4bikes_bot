@@ -56,8 +56,8 @@ User commands:
 
 Bikes commands:
 /admin `bikes` \\- Get all bikes and their current status
-/setpin `BIKENAME` NEW_PIN \\- Change the bike's pin in the server to a new pin
-/setstatus `BIKENAME` NEW_STATUS \\- Change the bike's status in the server to a new status
+/setpin `BIKENAME` NEWPIN \\- Change the bike's pin in the server to a new pin
+/setstatus `BIKENAME` NEWSTATUS \\- Change the bike's status in the server to a new status
 
 Other commands:
 /logs \\- Get rental and report logs as a csv file
