@@ -328,7 +328,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 else:
                     strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
                 status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}. '
-                deduction = diff.seconds // self.deduct_rate + int(diff.seconds%self.deduct_rate > 0)
+                deduction = self.calc_deduct(diff)
                 status_text += f'\nYour current credits:  {user_data.get("credits")} \nThis trip will cost:  {deduction}\nProjected credits after rental:  {user_data.get("credits") - deduction}'
             else:
                 status_text = "You are not renting..."
@@ -730,6 +730,21 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             username = bike_data.get('username')
             if username:
                 chat_id = self.get_user_table().get(username)
+                user_data = self.get_user(username=username)
+                status = user_data.get('status')
+                start = datetime.datetime.fromisoformat(status)
+                curr = self.now()
+                diff = curr - start
+                if diff.days:
+                    strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
+                else:
+                    strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
+                status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}. '
+                deduction = self.calc_deduct(diff)
+                status_text += f'\nYour current credits:  {user_data.get("credits")} \nThis trip will cost:  {deduction}\nProjected credits after rental:  {user_data.get("credits") - deduction}'
+                context.bot.send_message(
+                    chat_id=chat_id,
+                    text=status_text)
                 context.bot.send_message(
                     chat_id=chat_id,
                     text="Please remember to /return your bike! Check your bike status with /status"
@@ -806,7 +821,8 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 finance_log=[
                     username,
                     self.now().strftime("%Y/%m/%d, %H:%M:%S"),
-                    initial_amt, int(number), final_amt
+                    initial_amt, int(number), final_amt,
+                    update.message.from_user.username
                 ]
                 self.update_finance_log(finance_log)
                 context.bot.send_message(
@@ -837,7 +853,8 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 finance_log=[
                     username,
                     self.now().strftime("%Y/%m/%d, %H:%M:%S"),
-                    initial_amt, -int(number), final_amt
+                    initial_amt, -int(number), final_amt,
+                    update.message.from_user.username
                 ]
                 self.update_finance_log(finance_log)
                 context.bot.send_message(
@@ -868,7 +885,8 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 finance_log=[
                     username,
                     self.now().strftime("%Y/%m/%d, %H:%M:%S"),
-                    initial_amt, change_amt, int(number)
+                    initial_amt, change_amt, int(number),
+                    update.message.from_user.username
                 ]
                 self.update_finance_log(finance_log)
                 context.bot.send_message(
@@ -998,7 +1016,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
             elif "bike" in command:
                 bikes_data = self.get_bikes()
-                text= '\n'.join(f'Bike {bike["name"]}  --  {bike["username"] or bike["status"] or EMOJI["tick"]}' for bike in bikes_data.values())
+                text= '\n'.join(f'{bike["name"]}  --  {bike["username"] or bike["status"] or EMOJI["tick"]} (Pin: {bike["pin"]})' for bike in bikes_data.values())
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=text)
