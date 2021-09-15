@@ -258,6 +258,24 @@ class FunBot(TeleBot):
         except Exception as e:
             print(e, 'error at', self.now().strftime("%Y/%m/%d, %H:%M:%S"))
 
+    def ohno_command(self,update,context):
+        """Sends a version of "Oh no"..."""
+        text = random.choice([
+            "OH NO!",
+            "Oh no indeed...",
+            "Oh no",
+            "Ah, that is not ideal",
+            "This is a pleasant surprise withouth the pleasant",
+            "Goodness gracious me!",
+            "Oh noes",
+            "Das not good",
+            "Aaaaaaaaaaaaaaaaaaaaaaaaaaaaah",
+            "How could this happen?!",
+            ])
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text)
+
     def initialize(self):
         self.addcmd('fun', self.fun_command)
         self.addcmd('doggo', self.doggo_command)
@@ -271,8 +289,10 @@ class FunBot(TeleBot):
         self.addcmd('animal',self.animal_command)
 
         self.addcmd('pika', self.pika_command) #pika sticker
-        self.addcmd('brawl', self.brawl_command) #pika sticker
-        self.addcmd('happybangday', self.bangday_command)
+        self.addcmd('brawl', self.brawl_command) #brawl sticker
+        self.addcmd('happybangday', self.bangday_command) #bangday sticker
+
+        self.addcmd('ohno',self.ohno_command)
 
         #self.addcmd('quote', self.quote_command)   #doesnt work on web...
 

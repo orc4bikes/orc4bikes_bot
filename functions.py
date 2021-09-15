@@ -67,6 +67,12 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         self.admin_text = admin_text
         self.deduct_rate = deduct_rate
 
+    def calc_deduct(self,time_diff):
+        """Calculate credits deductable given a time period"""
+        deduction = time_diff.seconds // self.deduct_rate + int(time_diff.seconds%self.deduct_rate > 0)
+        deduction += time_diff.days * 86400 / self.deduct_rate
+        return deduction
+
     def start_command(self,update,context):
         """Initializes the bot
             This is where we initialize a new user
@@ -111,7 +117,6 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 table_data[username] = update.effective_chat.id
             super().update_user_table(table_data)
 
-
     def help_command(self,update,context):
         """Show a list of possible commands"""
         context.bot.send_message(
@@ -131,6 +136,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         """        
 
     def routes_button(self,update,context):
+        """Manage buttons pressed with /routes command"""
         query = update.callback_query
         query.answer()
         colour = query.data
@@ -193,6 +199,55 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             text = "Payment methods will be available soon!"
             )
 
+    def getpin_command(self,update,context):
+        """Gets pin of current renting bike.
+        Not available if not renting"""
+        user_data = super().get_user(update,context)
+        if user_data is None:
+            return context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+        bike_name = user_data.get('bike_name', None)
+        if not bike_name:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="You are not renting... Start a rental to get the pin for a bike!"
+            )
+        else:
+            bike_data = self.get_bikes()
+            pin = bike_data[bike_name]['pin']
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Your bike pin is {pin}! Please do not share this pin...'
+            )
+
+    def bikes_command(self,update,context):
+        """Show all available bikes. Used in /rent"""
+        with open('bicycles.json', 'r') as f:
+            bikes_data = json.load(f)
+        avail, not_avail = list(), list()
+        for bike in bikes_data.values():
+            if bike.get('status') == 0:
+                avail.append(bike)
+            else:
+                not_avail.append(bike)
+
+        avail = "\n".join( b["name"]+' '+EMOJI["tick"] for b in avail )
+        not_avail = "\n".join(f'{b["name"]} {EMOJI["cross"]} -- {"on rent" if b.get("username") else b["status"]}'  for b in not_avail )
+        text = f'Bicycles:\n{avail}'
+        text+= '\n\n' if avail else ''
+        text+= f'{not_avail}'
+        text+='\n\nClick below to start renting now!' if avail else '\n\nSorry, no bikes are not unavaialble...'
+        avail_bikes = [bike["name"] for bike in bikes_data.values() if bike.get('status') == 0]
+        keyboard = list([[InlineKeyboardButton('Rent ' + bike, callback_data=bike)] for bike in avail_bikes])
+        keyboard.append([InlineKeyboardButton('Cancel', callback_data='stoprent')])
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
     def history_command(self,update,context):
         """Shows past 10 transaction history"""
         user_data = super().get_user(update,context)
@@ -206,9 +261,9 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             text=f"Your past {len(data)} transaction history are as follows:\n\n"
             for i,line in enumerate(data,1):
                 if line['type']=='admin':
-                    text+=f'{i}: An admin {"added" if line["change"]>=0 else "deducted"} {line["change"]} credits on {line["time"]}. You now have {line["final"]} credits.\n'
+                    text+=f'--: An admin {"added" if line["change"]>=0 else "deducted"} {line["change"]} credits on {line["time"]}. You now have {line["final"]} credits.\n'
                 elif line['type']=='rental':
-                    text+=f'{i}: You rented a bike on {line["time"]}, and spent {line["spent"]} credits.\n'
+                    text+=f'--: You rented a bike on {line["time"]}, and spent {line["spent"]} credits.\n'
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=text
@@ -219,30 +274,40 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 text="You haven't cycled with us before :( Send /bikes to start renting now!"
             )
 
-    def credits_command(self,update,context):
-        """Show your current available credits"""
+    def status_command(self,update,context):
+        """Check the user rental status and current credits"""
         user_data = super().get_user(update,context)
         if user_data is None:
             return context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=START_MESSAGE
                 )
-        credits = user_data.get("credits", 0)
-        text = f'Your remaining credits is: {credits}.'
-        if credits < 10:
-            text+=' Please top up soon!'
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text = text,
-        )
-
-    def calc_deduct(self,time_diff):
-        deduction = time_diff.seconds // self.deduct_rate + int(time_diff.seconds%self.deduct_rate > 0)
-        deduction += time_diff.days * 86400 / self.deduct_rate
-        return deduction
+        try:
+            status = user_data.get('status',None)
+            if status is not None:
+                status = datetime.datetime.fromisoformat(status)
+                curr = self.now()
+                diff = curr - status
+                if diff.days:
+                    strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
+                else:
+                    strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
+                status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}. '
+                deduction = self.calc_deduct(diff)
+                status_text += f'\n\nCREDITS:\nCurrent:  {user_data.get("credits")} \nThis trip:  {deduction}\nProjected final:  {user_data.get("credits") - deduction}'
+            else:
+                creds = user_data.get("credits", 0)
+                status_text = f'You are not renting... \n\nYou have {creds} credits left. '
+                if creds < 100:
+                    status_text+='Please top up soon!'
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=status_text)
+        except Exception as e:
+            print(f'Error occured at {self.now()}. Error is \n{e}')
 
     def rent_command(self,update,context,bike_name=None):
-        """Start a rental service"""
+        """Start to rent a bike"""
         user_data = super().get_user(update,context)
         if user_data is None:
             return context.bot.send_message(
@@ -308,41 +373,23 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             self.bikes_command(update,context)
             return
 
-
-    def status_command(self,update,context):
-        """Check the user rental status"""
-        user_data = super().get_user(update,context)
-        if user_data is None:
-            return context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=START_MESSAGE
-                )
+    def rent_button(self,update,context):
+        """Manage buttons pressed with /rent command"""
+        query = update.callback_query
+        query.answer()
+        bike_name = query.data
         try:
-            status = user_data.get('status',None)
-            if status is not None:
-                status = datetime.datetime.fromisoformat(status)
-                curr = self.now()
-                diff = curr - status
-                if diff.days:
-                    strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
-                else:
-                    strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
-                status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}. '
-                deduction = self.calc_deduct(diff)
-                status_text += f'\nYour current credits:  {user_data.get("credits")} \nThis trip will cost:  {deduction}\nProjected credits after rental:  {user_data.get("credits") - deduction}'
-            else:
-                status_text = "You are not renting..."
-                self.credits_command(update,context)
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=status_text)
-        except AssertionError as e:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f'Error, {e}'
-            )
+            if bike_name == 'stoprent':
+                query.edit_message_text(text="Send /bikes to refresh the available bikes!")
+                return
+            self.rent_command(update,context,bike_name=bike_name)
+            query.edit_message_text(text="Renting in progress...")
         except Exception as e:
-            print(f'Error occured at {self.now()}. Error is \n{e}')
+            print('error with button renting, error is:\n',e)
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Server timed out error..."
+                )
 
     def return_command(self,update,context):
         """Return the current bike"""
@@ -481,69 +528,6 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         )
         return my_handler
 
-    def getpin_command(self,update,context):
-        user_data = super().get_user(update,context)
-        if user_data is None:
-            return context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=START_MESSAGE
-                )
-        bike_name = user_data.get('bike_name', None)
-        if not bike_name:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="You are not renting... Start a rental to get the pin for a bike!"
-            )
-        else:
-            bike_data = self.get_bikes()
-            pin = bike_data[bike_name]['pin']
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f'Your bike pin is {pin}! Please do not share this pin...'
-            )
-
-    def rent_button(self,update,context):
-        query = update.callback_query
-        query.answer()
-        bike_name = query.data
-        try:
-            if bike_name == 'stoprent':
-                query.edit_message_text(text="Send /bikes to refresh the available bikes!")
-                return
-            self.rent_command(update,context,bike_name=bike_name)
-            query.edit_message_text(text="Renting in progress...")
-        except Exception as e:
-            print('error with button renting, error is:\n',e)
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Server timed out error..."
-                )
-
-    def bikes_command(self,update,context):
-        with open('bicycles.json', 'r') as f:
-            bikes_data = json.load(f)
-        avail, not_avail = list(), list()
-        for bike in bikes_data.values():
-            if bike.get('status') == 0:
-                avail.append(bike)
-            else:
-                not_avail.append(bike)
-
-        avail = "\n".join( b["name"]+' '+EMOJI["tick"] for b in avail )
-        not_avail = "\n".join(f'{b["name"]} {EMOJI["cross"]} -- {"on rent" if b.get("username") else b["status"]}'  for b in not_avail )
-        text = f'Bicycles:\n{avail}'
-        text+= '\n\n' if avail else ''
-        text+= f'{not_avail}'
-        text+='\n\nClick below to start renting now!' if avail else '\n\nSorry, no bikes are not unavaialble...'
-        avail_bikes = [bike["name"] for bike in bikes_data.values() if bike.get('status') == 0]
-        keyboard = list([[InlineKeyboardButton('Rent ' + bike, callback_data=bike)] for bike in avail_bikes])
-        keyboard.append([InlineKeyboardButton('Cancel', callback_data='stoprent')])
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=text,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-
     def report_command(self,update,context):
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -651,6 +635,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         update.message.reply_text('This feature will be added soon! Where art thou, bikes...?')
 
     def unrecognized_command(self,update,context):
+        """Let the user know this command is unrecognized"""
         update.message.reply_text('Unrecognized command. Do you need /help...?')
 
     def all_buttons(self,update,context):
@@ -665,63 +650,6 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 chat_id=update.effective_chat.id,
                 text="An unknown error occurred... What did you do?!"
             )
-
-    def ohno_command(self,update,context):
-        text = random.choice([
-            "OH NO!",
-            "Oh no indeed...",
-            "Oh no",
-            "Ah, that is not ideal",
-            "This is a pleasant surprise withouth the pleasant",
-            "Goodness gracious me!",
-            "Oh noes",
-            "Das not good",
-            "Aaaaaaaaaaaaaaaaaaaaaaaaaaaaah",
-            "How could this happen?!",
-            ])
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=text)
-
-    def initialize(self):
-        """Initializes all commands that are required in the bot."""
-
-        self.addcmd('ohno',self.ohno_command)
-        self.addcmd('start',self.start_command)
-        self.addcmd('help', self.help_command)
-        self.addcmd('guide', self.guide_command)
-        self.addcmd('routes', self.routes_command)
-        self.addcmd('history', self.history_command)
-        
-        self.addcmd('payment', self.payment_command)
-        self.addcmd('rent', self.rent_command)
-        self.addcmd('status', self.status_command)
-        # self.addcmd('return', self.return_command) #deprecated, moved to return_handler
-        self.addcmd('getpin', self.getpin_command)
-        self.addcmd('bikes', self.bikes_command)
-
-        # This part is for convo handlers
-        self.addnew(CallbackQueryHandler(self.all_buttons))
-        self.addnew(self.report_handler())
-        self.addnew(self.return_handler())
-
-        # This part for dummy commands, so that it recognizes commands
-        self.addcmd('report', lambda x,y:0) #dummy commmand
-        self.addcmd('return', lambda x,y:0) #dummy commmand
-        self.addcmd('done', lambda x,y:0) #dummy commmand
-        #self.addcmd('cancel', lambda x,y:0) #dummy commmand
-
-        #running python script in bot
-        TeleBot.initialize(self)
-
-        #admin handler
-        AdminBot.initialize(self)
-
-        # Fun stuff 
-        FunBot.initialize(self)
-
-        # Lastly, Filters all unknown commands, put this last!!
-        self.addmsg(Filters.command, self.unrecognized_command)
 
     def reminder(self,context):
         """Reminder for return, every hour"""
@@ -741,7 +669,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                     strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
                 status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}. '
                 deduction = self.calc_deduct(diff)
-                status_text += f'\nYour current credits:  {user_data.get("credits")} \nThis trip will cost:  {deduction}\nProjected credits after rental:  {user_data.get("credits") - deduction}'
+                status_text += f'\n\nCREDITS:\nCurrent:  {user_data.get("credits")} \nThis trip:  {deduction}\nProjected final:  {user_data.get("credits") - deduction}'
                 context.bot.send_message(
                     chat_id=chat_id,
                     text=status_text)
@@ -751,6 +679,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 )
 
     def scheduler(self):
+        """Scheduler for reminder to be run"""
         j = self.updater.job_queue
         print('getting daily queue')
         for hour in range(24):
@@ -759,13 +688,43 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 days=(0, 1, 2, 3, 4, 5, 6), 
                 time=datetime.time(hour=hour, minute=0, second=0))
 
+    def initialize(self):
+        """Initializes all CommandHandlers, MessageHandlers, and job_queues that are required in the bot."""
+        # Super initialize
+        TeleBot.initialize(self)
+        AdminBot.initialize(self)
+        FunBot.initialize(self)
+
+        # User related commands
+        self.addcmd('start',self.start_command)
+        self.addcmd('help', self.help_command)
+        self.addcmd('guide', self.guide_command)
+        self.addcmd('routes', self.routes_command)
+        self.addcmd('history', self.history_command)
+        
+        # Bike related commands
+        self.addcmd('payment', self.payment_command)
+        self.addcmd('rent', self.rent_command) 
+        self.addcmd('status', self.status_command)
+        self.addcmd('getpin', self.getpin_command)
+        self.addcmd('bikes', self.bikes_command)
+
+        # This part is for convo handlers
+        self.addnew(CallbackQueryHandler(self.all_buttons))
+        self.addnew(self.report_handler())
+        self.addnew(self.return_handler())
+
+        # Lastly, Filters all unknown commands
+        self.addmsg(Filters.command, self.unrecognized_command)
+
+        # For scheduling messages
+        self.scheduler()
+
     def main(self):
         """Main bot function to run"""
-        self.scheduler()
         self.initialize()
         super().main()
 
-        
     def handle_admin(self, update, context, keywords, command=''):
         """Handle the admin commands after /admin"""
         try:
@@ -1071,13 +1030,6 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 text=f'Failed, error is {e}\nPlease raise a ticket with @fluffballz, along with what you sent')
 
 
-
-
-
 if __name__=="__main__": 
-    # DEV part, do not run this
-    print('Running the development bot!')
     newbot = OrcaBot(DEV_API_KEY, admin_group_id=DEV_ADMIN_GROUP_ID)
     newbot.main()
-    
-
