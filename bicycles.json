@@ -34,5 +34,14 @@
         "status": 0,
         "type": "mountain",
         "username": ""
+    },
+    "fold_blue": {
+        "colour": "blue",
+        "name": "fold_blue",
+        "oldpin": "12345",
+        "pin": "00000",
+        "status": 0,
+        "type": "foldable",
+        "username": ""
     }
 }

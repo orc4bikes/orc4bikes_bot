@@ -196,7 +196,7 @@ class FunBot(TeleBot):
                 text=f'"{url["text"]}" - {url["author"]}'
             )
         except Exception as e:
-            print(e)
+            self.log_exception(e,"Error with quote_command")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=random.choice(CHEER_LIST)
@@ -228,7 +228,7 @@ class FunBot(TeleBot):
                 sticker=pika
             )
         except Exception as e:
-            print(e, 'error at', self.now().strftime("%Y/%m/%d, %H:%M:%S"))
+            self.log_exception(e,"Error with pika_command")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Pika... boo? 🙂"
@@ -244,7 +244,7 @@ class FunBot(TeleBot):
                 sticker=brawl
             )
         except Exception as e:
-            print(e, 'error at', self.now().strftime("%Y/%m/%d, %H:%M:%S"))
+            self.log_exception(e,"Error with brawl_command")
 
     def bangday_command(self,update,context):
         """Sends a bang don sticker"""
@@ -256,7 +256,7 @@ class FunBot(TeleBot):
                 sticker=bangdong
             )
         except Exception as e:
-            print(e, 'error at', self.now().strftime("%Y/%m/%d, %H:%M:%S"))
+            self.log_exception(e,"Error with bangday_command")
 
     def ohno_command(self,update,context):
         """Sends a version of "Oh no"..."""
@@ -265,12 +265,28 @@ class FunBot(TeleBot):
             "Oh no indeed...",
             "Oh no",
             "Ah, that is not ideal",
-            "This is a pleasant surprise withouth the pleasant",
+            "This is a pleasant surprise without the pleasant",
             "Goodness gracious me!",
             "Oh noes",
             "Das not good",
             "Aaaaaaaaaaaaaaaaaaaaaaaaaaaaah",
             "How could this happen?!",
+            "This calls for an 'Oh no'.",
+            "F in the chat",
+            "What did you do!?",
+            "Seriously...",
+            "ono",
+            "FSKSJFLKSDJFH",
+            "My condolences",
+            "Rest in peace good sir",
+            "ohhh myyy gawwwd",
+            "OMG!",
+            "oh no",
+            "oh no...?",
+            "Bless you",
+            "Are you sure you didn't mean 'Oh yes'?",
+            "This is truly a disaster",
+            "...",
             ])
         context.bot.send_message(
             chat_id=update.effective_chat.id,

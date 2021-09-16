@@ -21,11 +21,13 @@ CHEER_LIST = ["",
     ]
 
 HELP_TEXT = """
+🏦 /payment - Top-up via PayLah / PayNow!
 🗾 /routes - orc4bikes-curated routes
 ℹ️ /status - Credits and rental status
 📜 /history - Recent 10 transactions
 ✨ /fun - Interesting..
 
+🚲 /bikes - See available bikes
 🚴 ️/rent - Start your rental trip here!
 🔓 /getpin - Get the PIN for the bike you rented
 ↩️ /return - End your rental trip here!
@@ -65,6 +67,20 @@ Other commands:
 
 START_MESSAGE = "Please /start me privately to access this service!"
 
+TERMS_TEXT = """Bicycle Rental -- Terms of Use:
+1. You are not to HOG the bike
+2. You must take GOOD CARE of the bike during the duration of rental
+3. If you spot any DEFECTS, /report before your rental. Any defects found after your rental will be your responsibility.
+4. You will be FINANCIALLY held liable for any DAMAGES to the bike, and/or LOSS of equipment on the bike. 
+5. orc4bikes reserve the right to amend the 'Terms of Use' at their discretion.
+6. You agree to take good care of YOURSELF and follow proper safety procedures. 
+
+In case of emergencies, call ambulance 995, and inform either
+ - Lau Jin Ming at 98561839 @Meltingice - ORC4BIKES Head, or
+ - Nicholas Ang at 92242698 @itsnicholasang - ORC4BIKES Safety
+
+If you agree, and ONLY if you agree, to the terms stated above, click "Accept".
+"""
 
 EMOJI = {
         "tick" : "✅",

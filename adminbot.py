@@ -98,7 +98,7 @@ class AdminBot(TeleBot):
                         text=self.admin_text,
                         parse_mode="MarkdownV2")
         except Exception as e:
-            print(e)
+            self.log_exception(e,"Error with admin_command")
 
     def topup_command(self,update,context):
         try:
@@ -190,6 +190,7 @@ class AdminBot(TeleBot):
             else:
                 exec(code)
         except Exception as e:
+            self.log_exception(e,"Error with py_command")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Sorry, this command is not valid."

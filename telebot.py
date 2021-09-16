@@ -40,6 +40,11 @@ class TeleBot:
     def now(self,gmt=GMT):
         return datetime.datetime.utcnow() + datetime.timedelta(hours=gmt)
 
+    def log_exception(self, e, text=""):
+        if text: 
+            print(text)
+        print(f'Error occured at {self.now()}. Error is \n{e}')
+        
     def get_user(self,update=None,context=None,username=None)  -> dict or None:
         if username is not None:
             chat_id = self.get_user_table().get(username)

@@ -10,6 +10,7 @@ from bot_text import (
     CHEER_LIST,
     HELP_TEXT,
     ADMIN_TEXT,
+    TERMS_TEXT,
     START_MESSAGE,
     EMOJI
 )
@@ -57,7 +58,8 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             help_text=HELP_TEXT,
             admin_list=ADMIN_LIST,
             admin_text=ADMIN_TEXT,
-            deduct_rate=DEDUCT_RATE
+            deduct_rate=DEDUCT_RATE, 
+            terms_text=TERMS_TEXT
             ):
         print('running OrcaBot', super().now())
         super().__init__(api_key)
@@ -66,6 +68,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         self.admin_list = admin_list
         self.admin_text = admin_text
         self.deduct_rate = deduct_rate
+        self.terms_text = terms_text
 
     def calc_deduct(self,time_diff):
         """Calculate credits deductable given a time period"""
@@ -135,70 +138,6 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             )
         """        
 
-    def routes_button(self,update,context):
-        """Manage buttons pressed with /routes command"""
-        query = update.callback_query
-        query.answer()
-        colour = query.data
-        try:
-            if colour=='all':
-                for colour, url in ROUTES_PICS.items():
-                    context.bot.send_photo(
-                        chat_id=update.effective_chat.id,
-                        photo=url,
-                        caption=ROUTES_LIST[colour],
-                    )
-            else:
-                context.bot.send_photo(
-                    chat_id=update.effective_chat.id,
-                    photo=ROUTES_PICS[colour],
-                    caption=ROUTES_LIST[colour],
-                )
-        except Exception as e:
-            print('error with routes, error is:\n',e)
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Server timeout... Here are some routes for your consideration\n"
-                       + '\n'.join(ROUTES_LIST.values())
-                )
-        query.edit_message_text(text=f"Selected option: {query.data}")
-
-    def routes_command(self,update,context):
-        """Returns all routes from the list of routes"""
-        keyboard = [
-            [
-                InlineKeyboardButton("Blue", callback_data='blue'),
-                InlineKeyboardButton("Pink", callback_data='pink'),
-            ],
-            [
-                InlineKeyboardButton("Green", callback_data='green'),
-                InlineKeyboardButton("Orange", callback_data='orange'),
-            ],
-            [
-                InlineKeyboardButton("All", callback_data='all')
-            ]
-        ]
-
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text = "Here are some available routes for ya!\n\n" + '\n'.join(ROUTES_LIST.values()),
-            reply_markup=InlineKeyboardMarkup(keyboard)
-            )
-
-    def payment_command(self,update,context):
-        """Payment using Stripe API
-           Currently not ready yet, will work on it soon"""
-        user_data = super().get_user(update,context)
-        if user_data is None:
-            return context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=START_MESSAGE
-                )
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text = "Payment methods will be available soon!"
-            )
-
     def getpin_command(self,update,context):
         """Gets pin of current renting bike.
         Not available if not renting"""
@@ -221,32 +160,6 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 chat_id=update.effective_chat.id,
                 text=f'Your bike pin is {pin}! Please do not share this pin...'
             )
-
-    def bikes_command(self,update,context):
-        """Show all available bikes. Used in /rent"""
-        with open('bicycles.json', 'r') as f:
-            bikes_data = json.load(f)
-        avail, not_avail = list(), list()
-        for bike in bikes_data.values():
-            if bike.get('status') == 0:
-                avail.append(bike)
-            else:
-                not_avail.append(bike)
-
-        avail = "\n".join( b["name"]+' '+EMOJI["tick"] for b in avail )
-        not_avail = "\n".join(f'{b["name"]} {EMOJI["cross"]} -- {"on rent" if b.get("username") else b["status"]}'  for b in not_avail )
-        text = f'Bicycles:\n{avail}'
-        text+= '\n\n' if avail else ''
-        text+= f'{not_avail}'
-        text+='\n\nClick below to start renting now!' if avail else '\n\nSorry, no bikes are not unavaialble...'
-        avail_bikes = [bike["name"] for bike in bikes_data.values() if bike.get('status') == 0]
-        keyboard = list([[InlineKeyboardButton('Rent ' + bike, callback_data=bike)] for bike in avail_bikes])
-        keyboard.append([InlineKeyboardButton('Cancel', callback_data='stoprent')])
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=text,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
 
     def history_command(self,update,context):
         """Shows past 10 transaction history"""
@@ -273,6 +186,27 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 chat_id=update.effective_chat.id,
                 text="You haven't cycled with us before :( Send /bikes to start renting now!"
             )
+
+    def bikes_command(self,update,context):
+        """Show all available bikes. Used in /rent"""
+        with open('bicycles.json', 'r') as f:
+            bikes_data = json.load(f)
+        avail, not_avail = list(), list()
+        for bike in bikes_data.values():
+            if bike.get('status') == 0:
+                avail.append(bike)
+            else:
+                not_avail.append(bike)
+
+        avail = "\n".join( b["name"]+' '+EMOJI["tick"] for b in avail )
+        not_avail = "\n".join(f'{b["name"]} {EMOJI["cross"]} -- {"on rent" if b.get("username") else b["status"]}'  for b in not_avail )
+        text = f'Bicycles:\n{avail}'
+        text+= '\n\n' if avail else ''
+        text+= f'{not_avail}'
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text,
+        )
 
     def status_command(self,update,context):
         """Check the user rental status and current credits"""
@@ -304,92 +238,390 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 chat_id=update.effective_chat.id,
                 text=status_text)
         except Exception as e:
-            print(f'Error occured at {self.now()}. Error is \n{e}')
+            self.log_exception(e,"Error with status_command")
 
-    def rent_command(self,update,context,bike_name=None):
-        """Start to rent a bike"""
+    def routes_command(self,update,context):
+        """Returns all routes from the list of routes"""
+        keyboard = [
+            [
+                InlineKeyboardButton("Blue", callback_data='blue'),
+                InlineKeyboardButton("Pink", callback_data='pink'),
+            ],
+            [
+                InlineKeyboardButton("Green", callback_data='green'),
+                InlineKeyboardButton("Orange", callback_data='orange'),
+            ],
+            [
+                InlineKeyboardButton("All", callback_data='all')
+            ]
+        ]
+
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text = "Here are some available routes for ya!\n\n" + '\n'.join(ROUTES_LIST.values()),
+            reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+        return 51
+
+    def routes_button(self,update,context):
+        """Manage buttons pressed with /routes command"""
+        query = update.callback_query
+        query.answer()
+        colour = query.data
+        try:
+            if colour=='all':
+                for colour, url in ROUTES_PICS.items():
+                    context.bot.send_photo(
+                        chat_id=update.effective_chat.id,
+                        photo=url,
+                        caption=ROUTES_LIST[colour],
+                    )
+            else:
+                context.bot.send_photo(
+                    chat_id=update.effective_chat.id,
+                    photo=ROUTES_PICS[colour],
+                    caption=ROUTES_LIST[colour],
+                )
+        except Exception as e:
+            self.log_exception(e,"Error with routes_button")
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Server timeout... Here are some routes for your consideration\n"
+                       + '\n'.join(ROUTES_LIST.values())
+                )
+        query.edit_message_text(text=f"Selected option: {query.data}")
+        return -1
+
+    def payment_command(self,update,context):
+        """Payment:
+        Returns available amounts to top up by"""
         user_data = super().get_user(update,context)
         if user_data is None:
-            return context.bot.send_message(
+            rcontext.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=START_MESSAGE
                 )
-        if context.args is not None and len(context.args) < 1:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Please indicate which bike you would like to rent\nE.g. /rent orc1bike\
-                    \nAlternatively, you can click on any available bike below to start renting!"
+            return -1
+        keyboard = [
+            [InlineKeyboardButton("$5.00", callback_data='500'),],
+            [InlineKeyboardButton("$10.00", callback_data='1000'),],
+            [InlineKeyboardButton("$20.00", callback_data='2000'),],
+            [InlineKeyboardButton("Cancel", callback_data='CANCEL_PAYMENT')],
+        ]
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text = "Please choose a top-up amount!",
+            reply_markup=InlineKeyboardMarkup(keyboard)
             )
-            self.bikes_command(update,context)
-            return
-        if context.args:
-            bike_name = context.args[0]
-        bikes_data = self.get_bikes()
-        if bikes_data.get(bike_name,None):
-            if bikes_data[bike_name]["status"] == 0:
-                user_data = super().get_user(update,context)
-                status = user_data.get('status',None)
-                if status is not None: #rental in progress
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text="You are already renting! Please return your current bike first"
-                    )
-                    return
-                elif user_data.get('credits', 0) < 1: #not enough credits
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f"You cannot rent, as you do not have enough credits! Current credits: {user_data.get('credits')}"
-                    )
-                    return
-                else:
-                    curr_time = self.now().isoformat()
-                    user_data['status'] = curr_time
-                    user_data['bike_name'] = bike_name
-                    super().update_user(user_data)
+        return 71
 
-                    bikes_data[bike_name]['username'] = user_data.get('username')
-                    bikes_data[bike_name]['status'] = curr_time
-                    self.update_bikes(bikes_data)
-
-                    # Notify user
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f"Rental started! Time of rental, {self.now().strftime('%Y/%m/%d, %H:%M:%S')}")
-
-                    # Notify Admin group
-                    message=f'[RENTAL - RENT] \n@{user_data["username"]} rented {bike_name} at {self.now().strftime("%Y/%m/%d, %H:%M:%S")}'
-                    self.admin_log(update,context,message)
-                    return
-            else: #bike is not available
+    def payment_button(self,update,context):
+        """Manage buttons pressed with /payment command"""
+        query = update.callback_query
+        query.answer()
+        amount = query.data
+        try:
+            if amount=='CANCEL_PAYMENT':
+                print('cancel')
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=f'Sorry, {bike_name} is not available. Please indicate which bike you would like to rent.')
-                self.bikes_command(update,context)
-                return
-        else:
+                    text="Payment cancelled!"
+                )
+                return -1
+            else:
+                print('topup amount', amount)
+                amount = int(amount)
+                context.user_data['amount'] = amount
+                query.edit_message_text(f'Selected amount: {amount}')
+                text = 'Please PayLah/PayNow to Lau Jin Ming, at: \n98561839'
+                text+= '\nOnce done, please send a screenshot to me @orc4bikes_bot!!'
+                text+= '\n\nIf I do not respond after you send the screenshot, please wait for 10 seconds. If I am still not responding, please restart /payment again.'
+                text+= '\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits", your credits has NOT been topped up. To stop, send /cancel'
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=text
+                )
+                return 72
+        except Exception as e:
+            self.log_exception(e,"Error with payment_button")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=f'No such bike {bike_name} found. Please indicate which bike you would like to rent.')
-            self.bikes_command(update,context)
-            return
+                text="Sorry, payment is currently unavailable... Please try /payment again, or contact a orc4bikes comm member to assist you!"
+                )
+            return -1
+
+    def payment_pic(self,update,context):
+        """After photo is sent, save the photo and ask if would like to retake"""
+        if update.message.photo:
+            photo = update.message.photo[-1].file_id
+            context.user_data['photo'] = photo
+            text = '^ This is your PayLah/PayNow confirmation to Lau Jin Ming, at 98561839.'
+            text+= '\nIf you are unsatisfied with your image, please send another one. \nTo CONFIRM PAYMENT, send /done. To cancel, send /cancel'
+            text+= '\n\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits", your credits has NOT been topped up.'
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                photo=context.user_data["photo"],
+                caption=text
+            )
+        else:
+            text = 'Upon completion of payment (to 98561839), please send a screenshot to me @orc4bikes_bot!!'
+            text+= '\nTo CONFIRM PAYMENT, send /done. To cancel, send /cancel'
+            text+= '\n\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits", your credits has NOT been topped up.'
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                text=text
+            )
+        return 72
+
+    def payment_done(self,update,context):
+        try:
+            if context.user_data.get('photo') and context.user_data.get('amount'): #Completed with photo
+                photo = context.user_data.get('photo')
+                amount = context.user_data.get('amount')
+                amount = int(float(amount))
+
+                user_data = self.get_user(update,context)
+                user_data['credits'] += amount
+                super().update_user(user_data)
+
+                # Notify user
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f"Transaction complete! You now have {user_data.get('credits')} credits")
+
+                # Notify Admin group
+                message=f'[FINANCE - PAYMENT] \n@{user_data["username"]} paid ${amount/100:.2f} at {self.now().strftime("%Y/%m/%d, %H:%M:%S")}'
+                self.admin_log(update,context,message,photo)
+
+                # Update finance log
+                finance_log=[
+                    user_data.get('username'),
+                    self.now().strftime("%Y/%m/%d, %H:%M:%S"),
+                    user_data.get('credits')-amount, int(amount), user_data.get('credits'),
+                    'orc4bikes_bot'
+                ]
+                self.update_finance_log(finance_log)
+
+                return -1
+
+            elif context.user_data.get('amount',None) is None: # Unable to get amount, restart payment process
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text="Sorry, your operation timed out, as we are unable to get your amount currently. Please try to make /payment again!"
+                )
+                return -1
+            else: 
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text="Sorry, you have not completed the payment process! \nTo continue, follow the instructions above. To stop, send /cancel"
+                )
+                return None
+        except Exception as e:
+            self.log_exception(e,"Error with payment_done")
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, an error occurred... Please retry to make a /payemnt!"
+            )
+            return -1
+
+    def rent_command(self,update,context):
+        """Start to rent a bike. 
+        Impose 3 checks before rental: Registered, Renting, Credits
+        Get bikes in the format of InlineKeyboardMarkup buttons
+        Usage: click button to rent"""
+        #Impose checks on user before starting
+        user_data = super().get_user(update,context)
+        if user_data is None: # User is not registered
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+            return -1
+        status = user_data.get('status', None)
+        if status is not None: # Rental in progress
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="You are already renting! Please return your current bike first"
+            )
+            return -1
+        elif user_data.get('credits', 0) < 1: # Insufficient credits
+            text = f"You cannot rent, as you don't have enough credits! Current credits: {user_data.get('credits')}"
+            text+= f'\nUse /history to check your previous transactions, or /payment to top up now!'
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=text
+            )
+            return -1
+
+        # Pass all checks, can rent. Get bikes
+        with open('bicycles.json', 'r') as f:
+            bikes_data = json.load(f)
+        avail, not_avail = list(), list()
+        for bike in bikes_data.values():
+            if bike.get('status') == 0:
+                avail.append(bike)
+            else:
+                not_avail.append(bike)
+
+        avail = "\n".join( b["name"]+' '+EMOJI["tick"] for b in avail )
+        not_avail = "\n".join(f'{b["name"]} {EMOJI["cross"]} -- {"on rent" if b.get("username") else b["status"]}'  for b in not_avail )
+        text = f'Bicycles:\n{avail}'
+        text+= '\n\n' if avail else ''
+        text+= f'{not_avail}'
+        text+='\n\nClick below to start renting now!' if avail else '\n\nSorry, no bikes are not unavaialble...'
+        avail_bikes = [bike["name"] for bike in bikes_data.values() if bike.get('status') == 0]
+        keyboard = list([[InlineKeyboardButton('Rent ' + bike, callback_data=bike)] for bike in avail_bikes])
+        keyboard.append([InlineKeyboardButton('Cancel', callback_data='stoprent')])
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        return 11
 
     def rent_button(self,update,context):
         """Manage buttons pressed with /rent command"""
         query = update.callback_query
         query.answer()
         bike_name = query.data
+        bikes_data = self.get_bikes()
         try:
             if bike_name == 'stoprent':
-                query.edit_message_text(text="Send /bikes to refresh the available bikes!")
-                return
-            self.rent_command(update,context,bike_name=bike_name)
-            query.edit_message_text(text="Renting in progress...")
+                query.edit_message_text(text="Rental has been cancelled! Send /rent to refresh the available bikes.")
+                return -1
+            bike_data = bikes_data.get(bike_name,None)
+            if bike_data is None: # Bike doesn't exist
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f'No such bike {bike_name} found. Please indicate which bike you would like to rent.')
+                return -1
+            # Bike exists
+            if bike_data["status"] != 0: # Bike is not available
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f'Sorry, {bike_name} is not available. Please indicate which bike you would like to rent.')
+                return -1
+            else: # Bike is available
+                if bike_name == "fold_blue":
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text="Dear user, we are aware that the Blue Foldable has a dent. No report is needed to be made, thank you!"
+                    )
+                query.edit_message_text(text=f'Selected bike: {bike_name}')
+                context.user_data['bike_name'] = bike_name
+                text=self.terms_text
+                keyboard = list()
+                keyboard.append([InlineKeyboardButton('Accept', callback_data='TERMS_YES')])
+                keyboard.append([InlineKeyboardButton('Decline', callback_data='TERMS_NO')])
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=text,
+                    reply_markup=InlineKeyboardMarkup(keyboard)
+                )
+                return 12
         except Exception as e:
-            print('error with button renting, error is:\n',e)
+            self.log_exception(e,"Error with rent_button")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Server timed out error..."
+                text="Sorry, the server seemed to have disconencted... Please try again!"
                 )
+            return -1
+        
+    def terms_button(self,update,context):
+        """After accepting terms, ask for photo."""
+        query = update.callback_query
+        query.answer()
+        answer = query.data
+        try:
+            if answer=='TERMS_YES':
+                query.edit_message_text(text=f"{self.terms_text}\n\nYou have accepted the terms.")
+                text = 'Please send a picture of the bike you will be renting! Photo must include the BIKE and LOCK.'
+                text+= '\n\nTo cancel, send /cancel'
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=text)
+                return 13
+            else:
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text="Terms of use has not been accepted. Cancelling rental now."
+                )
+                query.edit_message_text(text=f"{self.terms_text}\n\nTo rent, please accept the terms above.")
+                return -1
+        except Exception as e:
+            self.log_exception(e,"Error with terms_button")
+
+    def rent_pic(self,update,context):
+        """After photo is sent, save the photo and ask if would like to retake"""
+        if update.message.photo:
+            photo = update.message.photo[-1].file_id
+            context.user_data['photo'] = photo
+            text="^ This is your image. If you are unsatisfied with your image, please send another one. \nTo CONFIRM RENTAL, send /done. To cancel, send /cancel"
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                photo=context.user_data["photo"],
+                caption=text
+            )
+        else:
+            text = 'Please send a picture of the bike you will be renting! Photo must include the BIKE and LOCK.' # , As shown in the sample photo.'
+            text+= '\n\nTo CONFIRM RENTAL, send /done. \nTo cancel, send /cancel'
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=text)
+            """
+            # SEND SAMPLE PHOTO HERE!!
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sample photo not available at the moment... Please still send a photo though!!"
+            )
+            """
+        return 13
+
+    def rent_done(self,update,context):
+        try:
+            if context.user_data.get('photo') and context.user_data.get('bike_name'): #Completed with photo
+                bike_name = context.user_data.get('bike_name')
+
+                user_data = self.get_user(update,context)
+                curr_time = self.now().isoformat()
+                user_data['status'] = curr_time
+                user_data['bike_name'] = bike_name
+                super().update_user(user_data)
+
+                bikes_data = self.get_bikes()
+                bikes_data[bike_name]['username'] = user_data.get('username')
+                bikes_data[bike_name]['status'] = curr_time
+                self.update_bikes(bikes_data)
+
+                # Notify user
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f"Rental started! Time of rental, {self.now().strftime('%Y/%m/%d, %H:%M:%S')}")
+
+                # Notify Admin group
+                message=f'[RENTAL - RENT] \n@{user_data["username"]} rented {bike_name} at {self.now().strftime("%Y/%m/%d, %H:%M:%S")}'
+                self.admin_log(update,context,message,context.user_data['photo'])
+                return -1
+
+            elif context.user_data.get('bike_name',None) is None: # Unable to get bike_name, restart rental process
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text="Sorry, your operation timed out, as we are unable to get your bike name currently. Please try to /rent again!"
+                )
+                return -1
+            else: 
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text="Sorry, you have not completed the rental process! \nTo continue, follow the instructions above. To stop, send /cancel"
+                )
+                return None
+        except Exception as e:
+            self.log_exception(e,"Error with rent_done")
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, an error occurred... Please retry renting the bike!"
+            )
+            return -1
 
     def return_command(self,update,context):
         """Return the current bike"""
@@ -401,18 +633,18 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 )
             return -1
         status = user_data.get('status', None)
-        if status is not None: #rental in progress
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Please send a photo for proof of return! \nPicture must be a photo, not a file... \nTo continue rental, send /cancel"
-            )
-            return 91
-        else:
+        if status is None: #rental in progress
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="You are not renting..."
             )
             return -1
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Please send a photo for proof of return! \nPicture must be a photo, not a file... \nTo continue rental, send /cancel"
+            )
+            return 91
 
     def return_pic(self,update,context):
         """After photo is sent, save the photo and ask for others"""
@@ -513,27 +745,12 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         context.user_data.clear()
         return -1
 
-    def return_handler(self):
-        my_handler=ConversationHandler(
-            entry_points=[CommandHandler('return', self.return_command)],
-            states={
-                91:[
-                    MessageHandler(~Filters.command, callback=self.return_pic),
-                ]
-            },
-            fallbacks=[
-                CommandHandler('cancel',self.return_cancel),
-                CommandHandler('done', self.return_done),
-                ]
-        )
-        return my_handler
-
     def report_command(self,update,context):
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Please send a short description of the report you would like to make! \nTo stop, send /cancel"
         )
-        return 11
+        return 81
 
     def report_desc(self, update,context):
         """After description is sent, save the description and ask for pics"""
@@ -543,7 +760,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             chat_id=update.effective_chat.id,
             text="Please attach a picture as well! \nPicture must be a photo, not a file...  \nTo stop, send /cancel"
         )
-        return 12
+        return 82
 
     def report_pic(self,update,context):
         """After photo is sent, save the photo and ask for others"""
@@ -556,24 +773,26 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             photo=context.user_data["photo"],
             caption=text
         )
-        return 13
+        return 83
 
     def report_anything(self, update,context):
+        """Change either the photo or the message"""
         if update.message.text:
             desc = update.message.text
             context.user_data['desc'] = desc
-        elif update.message.photo:
+        if update.message.photo:
             photo = update.message.photo[-1].file_id
             context.user_data['photo'] = photo
 
-        text=f'Your report is: \n{context.user_data["desc"]}\n\n'
+        text=f'Your report is: \n{context.user_data.get("desc", "")}\n\n'
         text+="To update your report or image, feel free to send another one. \nTo submit, send /done. To stop, send /cancel"
+
         context.bot.send_photo(
             chat_id=update.effective_chat.id,
             photo=context.user_data.get("photo"),
             caption=text
         )
-        return 13
+        return 83
 
     def report_done(self,update,context):
         if context.user_data.get('photo') and context.user_data.get('desc'):
@@ -604,27 +823,84 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         context.user_data.clear()
         return -1
 
-    def report_handler(self):
-        my_handler=ConversationHandler(
-            entry_points=[CommandHandler('report', self.report_command)],
-            states={
+    def cancel_command(self,update,context):
+        """Used for conversation handlers"""
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Operation successfully cancelled!"
+        )
+        context.user_data.clear()
+        return -1
+
+    def all_handlers(self):
+        my_handler = ConversationHandler(
+            entry_points = [
+                CommandHandler('rent', self.rent_command),
+                CommandHandler('routes',self.routes_command),
+                CommandHandler('payment',self.payment_command),
+                CommandHandler('return', self.return_command),
+                CommandHandler('report', self.report_command)
+            ],
+            states = {
+                # 1-X: Rental
                 11:[
-                    MessageHandler(filters=Filters.text & ~Filters.command, callback=self.report_desc),
-
-                    ],
+                    CallbackQueryHandler(self.rent_button),
+                    CommandHandler('done',callback=self.rent_done),
+                ],
                 12:[
-                    MessageHandler(filters=Filters.photo & ~Filters.command, callback=self.report_pic),
-
-                    ],
+                    CallbackQueryHandler(self.terms_button),
+                    CommandHandler('done',callback=self.rent_done),
+                ],
                 13:[
-                    MessageHandler(filters=(Filters.text | Filters.photo) & ~Filters.command, callback=self.report_anything),
+                    MessageHandler(filters=~Filters.command, callback=self.rent_pic),
+                    CommandHandler('done',callback=self.rent_done),
+                ],
+                
+                # 5-X: Routes
+                51:[
+                    CallbackQueryHandler(self.routes_button),
+                    MessageHandler(filters=Filters.text | Filters.command, callback=lambda x,y:-1),
+                ],
 
-                    ],
+                # 7-X: Payment
+                71:[
+                    CallbackQueryHandler(self.payment_button),
+                    CommandHandler('done',callback=self.payment_done),
+                ],
+                72:[
+                    MessageHandler(filters=Filters.photo & ~Filters.command, callback=self.payment_pic),
+                    CommandHandler('done',callback=self.payment_done),
+                ],
+
+                # 8-X: Reports
+                81:[
+                    MessageHandler(filters=Filters.text & ~Filters.command, callback=self.report_desc),
+                    CommandHandler('done',callback=self.report_done),
+                ],
+                82:[
+                    MessageHandler(filters=Filters.photo & ~Filters.command, callback=self.report_pic),
+                    CommandHandler('done',callback=self.report_done),
+                ],
+                83:[
+                    MessageHandler(filters=(Filters.text | Filters.photo) & ~Filters.command, callback=self.report_anything),
+                    CommandHandler('done',callback=self.report_done),
+                ],
+
+                # 9-X: Returns
+                91:[
+                    MessageHandler(~Filters.command, callback=self.return_pic),
+                    CommandHandler('done',callback=self.return_done)
+                ],
             },
-            fallbacks=[
-                CommandHandler('cancel',self.report_cancel),
-                CommandHandler('done', self.report_done),
-                ]
+            fallbacks = [
+                CommandHandler('cancel',self.cancel_command),
+                # Add entry points, to re-enter the Convo
+                CommandHandler('rent', self.rent_command),
+                CommandHandler('routes',self.routes_command),
+                CommandHandler('payment',self.payment_command),
+                CommandHandler('return', self.return_command),
+                CommandHandler('report', self.report_command)
+                ],
         )
         return my_handler
 
@@ -637,19 +913,6 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
     def unrecognized_command(self,update,context):
         """Let the user know this command is unrecognized"""
         update.message.reply_text('Unrecognized command. Do you need /help...?')
-
-    def all_buttons(self,update,context):
-        """Manages all inline query buttons, as there can only be one wrapper"""
-        data = update.callback_query.data
-        if data in self.get_bikes().keys() or data=='stoprent':
-            self.rent_button(update,context)
-        elif data in ROUTES_PICS.keys() or data=='all':
-            self.routes_button(update,context)
-        else:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="An unknown error occurred... What did you do?!"
-            )
 
     def reminder(self,context):
         """Reminder for return, every hour"""
@@ -699,20 +962,18 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         self.addcmd('start',self.start_command)
         self.addcmd('help', self.help_command)
         self.addcmd('guide', self.guide_command)
-        self.addcmd('routes', self.routes_command)
+        # self.addcmd('routes', self.routes_command)
         self.addcmd('history', self.history_command)
         
         # Bike related commands
-        self.addcmd('payment', self.payment_command)
-        self.addcmd('rent', self.rent_command) 
+        self.addcmd('bikes', self.bikes_command)
+        #self.addcmd('payment', self.payment_command)
         self.addcmd('status', self.status_command)
         self.addcmd('getpin', self.getpin_command)
-        self.addcmd('bikes', self.bikes_command)
 
         # This part is for convo handlers
-        self.addnew(CallbackQueryHandler(self.all_buttons))
-        self.addnew(self.report_handler())
-        self.addnew(self.return_handler())
+        #self.addnew(CallbackQueryHandler(self.all_buttons))  # REMOVED, to do: NEED TO MOVE /routes to convo handler
+        self.addnew(self.all_handlers())
 
         # Lastly, Filters all unknown commands
         self.addmsg(Filters.command, self.unrecognized_command)
@@ -1025,6 +1286,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 chat_id=update.effective_chat.id,
                 text='Hmm, file not found... Please raise a ticket with @fluffballz, along with what you sent.')
         except Exception as e:
+            self.log_exception(e,"Error with handle_admin")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'Failed, error is {e}\nPlease raise a ticket with @fluffballz, along with what you sent')
