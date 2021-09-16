@@ -49,7 +49,7 @@ class FunBot(TeleBot):
 
     def fun_command(self,update,context):
         """Shows you guide to renting bike"""
-        context.bot.send_photo(
+        context.bot.send_message(
             chat_id=update.effective_chat.id,
             text = FUN_TEXT,
             )
@@ -196,7 +196,7 @@ class FunBot(TeleBot):
                 text=f'"{url["text"]}" - {url["author"]}'
             )
         except Exception as e:
-            print(e)
+            self.log_exception(e,"Error with quote_command")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=random.choice(CHEER_LIST)
@@ -205,6 +205,11 @@ class FunBot(TeleBot):
     def pika_command(self,update,context):
         """Sends a pikachu sticker"""
         try:
+            if random.random() < 0.01:
+                return context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text="Pika... boo? 🙂"
+                )
             pika_list = [
                 'pikachu',
                 'pikachu2',
@@ -216,13 +221,18 @@ class FunBot(TeleBot):
             pikas = []
             for pika in pika_list:
                 pikas.extend(context.bot.get_sticker_set(pika).stickers)
+            pikas.extend(context.bot.get_sticker_set('uwumon').stickers[:20])
             pika = random.choice(pikas)
             context.bot.send_sticker(
                 chat_id=update.effective_chat.id,
                 sticker=pika
             )
         except Exception as e:
-            print(e, 'error at', self.now().strftime("%Y/%m/%d, %H:%M:%S"))
+            self.log_exception(e,"Error with pika_command")
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Pika... boo? 🙂"
+            )
 
     def brawl_command(self,update,context):
         """Sends a brawl stars sticker"""
@@ -234,7 +244,7 @@ class FunBot(TeleBot):
                 sticker=brawl
             )
         except Exception as e:
-            print(e, 'error at', self.now().strftime("%Y/%m/%d, %H:%M:%S"))
+            self.log_exception(e,"Error with brawl_command")
 
     def bangday_command(self,update,context):
         """Sends a bang don sticker"""
@@ -246,7 +256,41 @@ class FunBot(TeleBot):
                 sticker=bangdong
             )
         except Exception as e:
-            print(e, 'error at', self.now().strftime("%Y/%m/%d, %H:%M:%S"))
+            self.log_exception(e,"Error with bangday_command")
+
+    def ohno_command(self,update,context):
+        """Sends a version of "Oh no"..."""
+        text = random.choice([
+            "OH NO!",
+            "Oh no indeed...",
+            "Oh no",
+            "Ah, that is not ideal",
+            "This is a pleasant surprise without the pleasant",
+            "Goodness gracious me!",
+            "Oh noes",
+            "Das not good",
+            "Aaaaaaaaaaaaaaaaaaaaaaaaaaaaah",
+            "How could this happen?!",
+            "This calls for an 'Oh no'.",
+            "F in the chat",
+            "What did you do!?",
+            "Seriously...",
+            "ono",
+            "FSKSJFLKSDJFH",
+            "My condolences",
+            "Rest in peace good sir",
+            "ohhh myyy gawwwd",
+            "OMG!",
+            "oh no",
+            "oh no...?",
+            "Bless you",
+            "Are you sure you didn't mean 'Oh yes'?",
+            "This is truly a disaster",
+            "...",
+            ])
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text)
 
     def initialize(self):
         self.addcmd('fun', self.fun_command)
@@ -261,8 +305,10 @@ class FunBot(TeleBot):
         self.addcmd('animal',self.animal_command)
 
         self.addcmd('pika', self.pika_command) #pika sticker
-        self.addcmd('brawl', self.brawl_command) #pika sticker
-        self.addcmd('happybangday', self.bangday_command)
+        self.addcmd('brawl', self.brawl_command) #brawl sticker
+        self.addcmd('happybangday', self.bangday_command) #bangday sticker
+
+        self.addcmd('ohno',self.ohno_command)
 
         #self.addcmd('quote', self.quote_command)   #doesnt work on web...
 
