@@ -983,8 +983,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
     def main(self):
         """Main bot function to run"""
-        self.initialize()
-        super().main()
+        TeleBot.main(self)
 
     def handle_admin(self, update, context, keywords, command=''):
         """Handle the admin commands after /admin"""
