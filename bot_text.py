@@ -87,7 +87,7 @@ TERMS_TEXT = """Bicycle Rental -- Terms of Use:
 6. You agree to take good care of YOURSELF and follow proper safety procedures. 
 
 In case of emergencies, call ambulance 995, and inform either
- - Lau Jin Ming at 98561839 @Meltingice - ORC4BIKES Head, or
+ - Lau Jin Ming at 98561839 @Meltingice7 - ORC4BIKES Head, or
  - Nicholas Ang at 92242698 @itsnicholasang - ORC4BIKES Safety
 
 If you agree, and ONLY if you agree, to the terms stated above, click "Accept".

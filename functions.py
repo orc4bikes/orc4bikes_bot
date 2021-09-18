@@ -324,6 +324,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         Returns available amounts to top up by"""
         if not self.check_user(update,context):
             return -1
+        context.user_data.clear()
         user_data = super().get_user(update,context)
         keyboard = [
             [InlineKeyboardButton("$5.00", callback_data='500'),],
@@ -470,6 +471,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         #Impose checks on user before starting
         if not self.check_user(update,context):
             return -1
+        context.user_data.clear()
         user_data = super().get_user(update,context)
         status = user_data.get('status', None)
         if status is not None: # Rental in progress
@@ -661,6 +663,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         """Return the current bike"""
         if not self.check_user(update,context):
             return -1
+        context.user_data.clear()
         user_data = super().get_user(update,context)
         status = user_data.get('status', None)
         if status is None: #rental in progress
@@ -778,6 +781,8 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         return -1
 
     def report_command(self,update,context):
+        """Starts a report conversation"""
+        context.user_data.clear()
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Please send a short description of the report you would like to make! \nTo stop, send /cancel"
