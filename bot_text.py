@@ -44,15 +44,15 @@ $1 = 100 credits
 
 FUN_TEXT = """
 Feel free to click any of the below, or just send /random...
-/doggo - Get a random dog!
-/shibe - Get a random shiba!
-/neko - Get a random cat!
-/kitty - Get a random kitten!
-/foxy - Get a random fox!
-/birb - Get a random bird!
-/pika - A wild pikachu appeared!
+🐶 /doggo - Get a random dog!
+🐕 /shibe - Get a random shiba!
+🐈 /neko - Get a random cat!
+🐱 /kitty - Get a random kitten!
+🦊 /foxy - Get a random fox!
+🐥 /birb - Get a random bird!
+🐹 /pika - A wild pikachu appeared!
 
-Try other commands for easter eggs... :)
+Look out for more easter eggs 🥚... :)
 """
 
 ADMIN_TEXT = """List of admin commands:
