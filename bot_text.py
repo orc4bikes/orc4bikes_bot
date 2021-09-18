@@ -55,11 +55,14 @@ User commands:
 /topup `username` AMOUNT \\- Top up the user's credit by an integer amount
 /deduct `username` AMOUNT \\- Deduct the user's credit by an integer amount
 /setcredit `username` AMOUNT \\- Set the user's credit to an integer amount
+/ban `username` \\- Ban a selected user
+/unban `username` \\- Unban a selected user
 
 Bikes commands:
 /admin `bikes` \\- Get all bikes and their current status
 /setpin `BIKENAME` NEWPIN \\- Change the bike's pin in the server to a new pin
 /setstatus `BIKENAME` NEWSTATUS \\- Change the bike's status in the server to a new status
+/forcereturn  `BIKENAME` \\- Forcefully return a selected bike 
 
 Other commands:
 /logs \\- Get rental and report logs as a csv file
