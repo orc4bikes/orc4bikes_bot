@@ -297,7 +297,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         Returns available amounts to top up by"""
         user_data = super().get_user(update,context)
         if user_data is None:
-            rcontext.bot.send_message(
+            context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=START_MESSAGE
                 )
@@ -446,7 +446,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             return -1
         elif user_data.get('credits', 0) < 1: # Insufficient credits
             text = f"You cannot rent, as you don't have enough credits! Current credits: {user_data.get('credits')}"
-            text+= f'\nUse /history to check your previous transactions, or /payment to top up now!'
+            text+= '\nUse /history to check your previous transactions, or /payment to top up now!'
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=text
@@ -914,6 +914,17 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         """Let the user know this command is unrecognized"""
         update.message.reply_text('Unrecognized command. Do you need /help...?')
 
+    def unrecognized_buttons(self,update,context):
+        """Edit the query so the user knows button is not accepted."""
+        try:
+            query = update.callback_query
+            query.answer()
+            text = query.message.text
+            text+= '\n\nSorry, this button has expired. Please send the previous command again'
+            query.edit_message_text(text)
+        except Exception as e:
+            self.log_exception(e,"Error with unrecognized_buttons")
+
     def reminder(self,context):
         """Reminder for return, every hour"""
         bikes_data = self.get_bikes()
@@ -950,6 +961,13 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 self.reminder, 
                 days=(0, 1, 2, 3, 4, 5, 6), 
                 time=datetime.time(hour=hour, minute=0, second=0))
+        j.run_daily(
+            lambda context: context.bot.send_message(
+                chat_id=self.admin_group_id,
+                text=f'Bot last seen at {self.now().strftime("%H:%M:%S")}'
+            ), 
+            days=(0, 1, 2, 3, 4, 5, 6), 
+            time=datetime.time(hour=8, minute=45, second=0))
 
     def initialize(self):
         """Initializes all CommandHandlers, MessageHandlers, and job_queues that are required in the bot."""
@@ -972,11 +990,11 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         self.addcmd('getpin', self.getpin_command)
 
         # This part is for convo handlers
-        #self.addnew(CallbackQueryHandler(self.all_buttons))  # REMOVED, to do: NEED TO MOVE /routes to convo handler
         self.addnew(self.all_handlers())
 
-        # Lastly, Filters all unknown commands
+        # Lastly, Filters all unknown commands, and remove unrecognized queries
         self.addmsg(Filters.command, self.unrecognized_command)
+        self.addnew(CallbackQueryHandler(self.unrecognized_buttons))
 
         # For scheduling messages
         self.scheduler()
@@ -1268,19 +1286,23 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
 
         except IndexError as e:
+            self.log_exception(e,"Error with handle_admin")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f"Sorry, too little info provided.\nPlease send more info after /{command}"
                 )
         except ValueError as e:
+            self.log_exception(e,"Error with handle_admin")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'Number entered, {number}, is not valid!')
         except KeyError as e:
+            self.log_exception(e,"Error with handle_admin")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'Could not find key {e} in dictionary! Please check database again')
-        except FileNotFoundError:
+        except FileNotFoundError as e:
+            self.log_exception(e,"Error with handle_admin")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text='Hmm, file not found... Please raise a ticket with @fluffballz, along with what you sent.')
