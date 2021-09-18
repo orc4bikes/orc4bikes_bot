@@ -20,6 +20,8 @@ CHEER_LIST = ["",
     "You got this!",
     ]
 
+GUIDE_PIC = "https://www.dropbox.com/s/couqqkedvunq3ee/guide.png"
+
 HELP_TEXT = """
 🏦 /payment - Top-up via PayLah / PayNow!
 🗾 /routes - orc4bikes-curated routes
@@ -27,11 +29,17 @@ HELP_TEXT = """
 📜 /history - Recent 10 transactions
 ✨ /fun - Interesting..
 
+Rental rates:
+3 credits per minute
+
 🚲 /bikes - See available bikes
 🚴 ️/rent - Start your rental trip here!
 🔓 /getpin - Get the PIN for the bike you rented
 ↩️ /return - End your rental trip here!
 📢 /report - Report damages or anything sus
+
+Top-up:
+$1 = 100 credits
 """
 
 FUN_TEXT = """

@@ -12,7 +12,8 @@ from bot_text import (
     ADMIN_TEXT,
     TERMS_TEXT,
     START_MESSAGE,
-    EMOJI
+    EMOJI,
+    GUIDE_PIC,
 )
 
 from telebot import TeleBot
@@ -150,14 +151,18 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
     def guide_command(self,update,context):
         """Shows you guide to renting bike"""
-        self.random_command(update,context) #random for placeholder
-        """
-        context.bot.send_photo(
-            chat_id=update.effective_chat.id,
-            caption = "instructions here",
-            photo = "url to photo here"
+        try:
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                caption = "Here's the guide!",
+                photo = GUIDE_PIC,
             )
-        """
+        except Exception as e:
+            self.log_exception(e,"Error with guide_command")
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, /guide currently not available... please try again!",
+            )
 
     def getpin_command(self,update,context):
         """Gets pin of current renting bike.
