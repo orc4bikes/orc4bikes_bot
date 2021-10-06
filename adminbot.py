@@ -164,6 +164,22 @@ class AdminBot(TeleBot):
         except AssertionError:
             pass
 
+    def ban_command(self,update,context):
+        try:
+            assert(self.admin_check(update,context))
+            keywords = context.args
+            self.handle_admin(update,context,keywords,command='ban')
+        except AssertionError:
+            pass
+
+    def unban_command(self,update,context):
+        try:
+            assert(self.admin_check(update,context))
+            keywords = context.args
+            self.handle_admin(update,context,keywords,command='unban')
+        except AssertionError:
+            pass
+
     def py_command(self,update,context):
         def reply(item):
             item=str(item)
@@ -207,6 +223,8 @@ class AdminBot(TeleBot):
         self.addcmd('setstatus',self.setstatus_command)
         self.addcmd('logs',self.logs_command)
         self.addcmd('forcereturn',self.forcereturn_command)
+        self.addcmd('ban',self.ban_command)
+        self.addcmd('unban',self.unban_command)
         self.addcmd('py',self.py_command)
 
     def main(self):

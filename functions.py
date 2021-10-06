@@ -1,6 +1,6 @@
 from admin import (
     DEV_ADMIN_GROUP_ID,
-    ADMIN_LIST, 
+    ADMIN_LIST,
     DEV_API_KEY,
 )
 
@@ -12,7 +12,8 @@ from bot_text import (
     ADMIN_TEXT,
     TERMS_TEXT,
     START_MESSAGE,
-    EMOJI
+    EMOJI,
+    GUIDE_PIC,
 )
 
 from telebot import TeleBot
@@ -28,10 +29,10 @@ import requests
 import re
 
 from telegram import (
-    InlineKeyboardMarkup, 
+    InlineKeyboardMarkup,
     InlineKeyboardButton,
-    ParseMode, 
-    ReplyKeyboardMarkup, 
+    ParseMode,
+    ReplyKeyboardMarkup,
     KeyboardButton
 )
 
@@ -58,8 +59,9 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             help_text=HELP_TEXT,
             admin_list=ADMIN_LIST,
             admin_text=ADMIN_TEXT,
-            deduct_rate=DEDUCT_RATE, 
-            terms_text=TERMS_TEXT
+            deduct_rate=DEDUCT_RATE,
+            terms_text=TERMS_TEXT,
+            promo = False,
             ):
         print('running OrcaBot', super().now())
         super().__init__(api_key)
@@ -69,12 +71,30 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         self.admin_text = admin_text
         self.deduct_rate = deduct_rate
         self.terms_text = terms_text
+        self.promo = promo
 
     def calc_deduct(self,time_diff):
         """Calculate credits deductable given a time period"""
         deduction = time_diff.seconds // self.deduct_rate + int(time_diff.seconds%self.deduct_rate > 0)
         deduction += time_diff.days * 86400 / self.deduct_rate
         return deduction
+
+    def check_user(self,update,context):
+        """Check if user is registered, and not banned"""
+        user_data = self.get_user(update,context)
+        if user_data is None:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+            return False
+        if user_data.get('is_ban'):
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="You are on Santa's naughty list... What have you done?!"
+                )
+            return False
+        return True
 
     def start_command(self,update,context):
         """Initializes the bot
@@ -108,6 +128,8 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             text = f'Hello, {update.message.from_user.first_name}! '
         text+='This is your orc4bikes friendly neighbourhood bot :)'
         text += "\nFor more info, send /help"
+        text += "\nTo check your credits, send /status"
+        text += "\nTo see available bikes, send /bikes"
 
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -129,24 +151,25 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
     def guide_command(self,update,context):
         """Shows you guide to renting bike"""
-        self.random_command(update,context) #random for placeholder
-        """
-        context.bot.send_photo(
-            chat_id=update.effective_chat.id,
-            caption = "instructions here",
-            photo = "url to photo here"
+        try:
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                caption = "Here's the guide!",
+                photo = GUIDE_PIC,
             )
-        """        
+        except Exception as e:
+            self.log_exception(e,"Error with guide_command")
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Sorry, /guide currently not available... please try again!",
+            )
 
     def getpin_command(self,update,context):
         """Gets pin of current renting bike.
         Not available if not renting"""
+        if not self.check_user(update,context):
+            return -1
         user_data = super().get_user(update,context)
-        if user_data is None:
-            return context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=START_MESSAGE
-                )
         bike_name = user_data.get('bike_name', None)
         if not bike_name:
             context.bot.send_message(
@@ -163,12 +186,9 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
     def history_command(self,update,context):
         """Shows past 10 transaction history"""
+        if not self.check_user(update,context):
+            return -1
         user_data = super().get_user(update,context)
-        if user_data is None:
-            return context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=START_MESSAGE
-                )
         data = user_data.get('finance',[])[-10:] # get the last 10 transactions
         if data:
             text=f"Your past {len(data)} transaction history are as follows:\n\n"
@@ -203,6 +223,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         text = f'Bicycles:\n{avail}'
         text+= '\n\n' if avail else ''
         text+= f'{not_avail}'
+        text+= "\n\nTo start your journey, send /rent"
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=text,
@@ -210,12 +231,9 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
     def status_command(self,update,context):
         """Check the user rental status and current credits"""
+        if not self.check_user(update,context):
+            return -1
         user_data = super().get_user(update,context)
-        if user_data is None:
-            return context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=START_MESSAGE
-                )
         try:
             status = user_data.get('status',None)
             if status is not None:
@@ -234,6 +252,8 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 status_text = f'You are not renting... \n\nYou have {creds} credits left. '
                 if creds < 100:
                     status_text+='Please top up soon!'
+            status_text+= "\n\nFor more details, send /history"
+            status_text+= "\nTo start your journey, send /rent"
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=status_text)
@@ -256,9 +276,10 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             ]
         ]
 
+        text = "Here are some available routes for ya!\n\n" + '\n'.join(ROUTES_LIST.values()),
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text = "Here are some available routes for ya!\n\n" + '\n'.join(ROUTES_LIST.values()),
+            text = text,
             reply_markup=InlineKeyboardMarkup(keyboard)
             )
         return 51
@@ -282,6 +303,12 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                     photo=ROUTES_PICS[colour],
                     caption=ROUTES_LIST[colour],
                 )
+                text = "To see more routes, send /routes"
+                text+= "\nTo start your journey, send /rent"
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=text
+                )
         except Exception as e:
             self.log_exception(e,"Error with routes_button")
             context.bot.send_message(
@@ -295,22 +322,22 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
     def payment_command(self,update,context):
         """Payment:
         Returns available amounts to top up by"""
-        user_data = super().get_user(update,context)
-        if user_data is None:
-            rcontext.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=START_MESSAGE
-                )
+        if not self.check_user(update,context):
             return -1
+        context.user_data.clear()
+        user_data = super().get_user(update,context)
         keyboard = [
             [InlineKeyboardButton("$5.00", callback_data='500'),],
             [InlineKeyboardButton("$10.00", callback_data='1000'),],
             [InlineKeyboardButton("$20.00", callback_data='2000'),],
             [InlineKeyboardButton("Cancel", callback_data='CANCEL_PAYMENT')],
         ]
+        text = "Please choose a top-up amount."
+        if self.promo:
+            text+= "\nPromotion: double credits!"
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text = "Please choose a top-up amount!",
+            text = text,
             reply_markup=InlineKeyboardMarkup(keyboard)
             )
         return 71
@@ -322,24 +349,29 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         amount = query.data
         try:
             if amount=='CANCEL_PAYMENT':
-                print('cancel')
+                query.edit_message_text('Please choose at top-up amount!')
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text="Payment cancelled!"
                 )
                 return -1
             else:
-                print('topup amount', amount)
                 amount = int(amount)
                 context.user_data['amount'] = amount
-                query.edit_message_text(f'Selected amount: {amount}')
-                text = 'Please PayLah/PayNow to Lau Jin Ming, at: \n98561839'
-                text+= '\nOnce done, please send a screenshot to me @orc4bikes_bot!!'
-                text+= '\n\nIf I do not respond after you send the screenshot, please wait for 10 seconds. If I am still not responding, please restart /payment again.'
-                text+= '\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits", your credits has NOT been topped up. To stop, send /cancel'
+                query.edit_message_text(f'Selected amount: ${amount//100:.2f}')
+                text1 = '[1] PayLah/PayNow to Lau Jin Ming, at 98561839, or https://bit.ly/3tQGTvO'
+                text1+= '\n[2] Once done, send a screenshot to @orc4bikes_bot!!'
+                text1+= '\n[3] You will receive "Transaction complete! You now have XXXX credits" for comfirmation'
+
+                text2 = 'If I don\'t respond after 10 seconds, please restart /payment again.'
+                text2+= '\n\nTo stop, send /cancel'
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=text
+                    text=text1
+                )
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=text2
                 )
                 return 72
         except Exception as e:
@@ -381,13 +413,20 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 amount = int(float(amount))
 
                 user_data = self.get_user(update,context)
+                initial_amount = user_data.get('credits')
                 user_data['credits'] += amount
                 super().update_user(user_data)
 
                 # Notify user
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=f"Transaction complete! You now have {user_data.get('credits')} credits")
+                    text=f"Transaction complete! You now have {user_data.get('credits')} credits.\nTo start your journey, /rent now!")
+
+                if self.promo: #Promotion period, credits are doubled
+                    user_data['credits'] += amount
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f"Promotion applied! An additional {amount} credits was added to your account. Happy cycling!")
 
                 # Notify Admin group
                 message=f'[FINANCE - PAYMENT] \n@{user_data["username"]} paid ${amount/100:.2f} at {self.now().strftime("%Y/%m/%d, %H:%M:%S")}'
@@ -397,7 +436,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 finance_log=[
                     user_data.get('username'),
                     self.now().strftime("%Y/%m/%d, %H:%M:%S"),
-                    user_data.get('credits')-amount, int(amount), user_data.get('credits'),
+                    initial_amount, user_data.get('credits')-initial_amount, user_data.get('credits'),
                     'orc4bikes_bot'
                 ]
                 self.update_finance_log(finance_log)
@@ -410,7 +449,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                     text="Sorry, your operation timed out, as we are unable to get your amount currently. Please try to make /payment again!"
                 )
                 return -1
-            else: 
+            else:
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text="Sorry, you have not completed the payment process! \nTo continue, follow the instructions above. To stop, send /cancel"
@@ -425,18 +464,15 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             return -1
 
     def rent_command(self,update,context):
-        """Start to rent a bike. 
+        """Start to rent a bike.
         Impose 3 checks before rental: Registered, Renting, Credits
         Get bikes in the format of InlineKeyboardMarkup buttons
         Usage: click button to rent"""
         #Impose checks on user before starting
-        user_data = super().get_user(update,context)
-        if user_data is None: # User is not registered
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=START_MESSAGE
-                )
+        if not self.check_user(update,context):
             return -1
+        context.user_data.clear()
+        user_data = super().get_user(update,context)
         status = user_data.get('status', None)
         if status is not None: # Rental in progress
             context.bot.send_message(
@@ -446,7 +482,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             return -1
         elif user_data.get('credits', 0) < 1: # Insufficient credits
             text = f"You cannot rent, as you don't have enough credits! Current credits: {user_data.get('credits')}"
-            text+= f'\nUse /history to check your previous transactions, or /payment to top up now!'
+            text+= '\nUse /history to check your previous transactions, or /payment to top up now!'
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=text
@@ -526,7 +562,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 text="Sorry, the server seemed to have disconencted... Please try again!"
                 )
             return -1
-        
+
     def terms_button(self,update,context):
         """After accepting terms, ask for photo."""
         query = update.callback_query
@@ -596,7 +632,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 # Notify user
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=f"Rental started! Time of rental, {self.now().strftime('%Y/%m/%d, %H:%M:%S')}")
+                    text=f"Rental started! Time of rental, {self.now().strftime('%Y/%m/%d, %H:%M:%S')}\nUse /getpin to unlock bike.")
 
                 # Notify Admin group
                 message=f'[RENTAL - RENT] \n@{user_data["username"]} rented {bike_name} at {self.now().strftime("%Y/%m/%d, %H:%M:%S")}'
@@ -609,7 +645,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                     text="Sorry, your operation timed out, as we are unable to get your bike name currently. Please try to /rent again!"
                 )
                 return -1
-            else: 
+            else:
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text="Sorry, you have not completed the rental process! \nTo continue, follow the instructions above. To stop, send /cancel"
@@ -619,19 +655,16 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
             self.log_exception(e,"Error with rent_done")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Sorry, an error occurred... Please retry renting the bike!"
+                text="Sorry, an error occurred... Please retry to /rent the bike!"
             )
             return -1
 
     def return_command(self,update,context):
         """Return the current bike"""
-        user_data = super().get_user(update,context)
-        if user_data is None:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=START_MESSAGE
-                )
+        if not self.check_user(update,context):
             return -1
+        context.user_data.clear()
+        user_data = super().get_user(update,context)
         status = user_data.get('status', None)
         if status is None: #rental in progress
             context.bot.send_message(
@@ -642,7 +675,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         else:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Please send a photo for proof of return! \nPicture must be a photo, not a file... \nTo continue rental, send /cancel"
+                text="Please send a photo for proof of return! Photo must include the BIKE and LOCK. \nPicture must be a photo, not a file... \nTo continue rental, send /cancel"
             )
             return 91
 
@@ -718,8 +751,10 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 chat_id=update.effective_chat.id,
                 text=f"Successfully returned! Your total rental time is {strdiff}."
             )
-            
+
             deduction_text = f"{deduction} credits was deducted. Remaining credits: {user_data['credits']}"
+            deduction_text+= "\n\nTo top-up your credits, send /payment"
+            deduction_text+= "\nTo start a new journey, send /rent"
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=deduction_text
@@ -746,6 +781,8 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         return -1
 
     def report_command(self,update,context):
+        """Starts a report conversation"""
+        context.user_data.clear()
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Please send a short description of the report you would like to make! \nTo stop, send /cancel"
@@ -796,9 +833,12 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
     def report_done(self,update,context):
         if context.user_data.get('photo') and context.user_data.get('desc'):
+            text = "You have successfully sent a report! A comm member will respond in typically 3-5 working days..."
+            text+= '\n\nTo start a journey, send /rent'
+            text+= '\nTo see available bikes, send /bikes'
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="You have successfully sent a report! A comm member will respond in typically 3-5 working days..."
+                text=text
             )
             #update admin group
             admin_text=f'[REPORT] \n@{update.message.from_user.username or update.message.from_user.first_name} sent the following report:\n{context.user_data["desc"]}'
@@ -855,7 +895,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                     MessageHandler(filters=~Filters.command, callback=self.rent_pic),
                     CommandHandler('done',callback=self.rent_done),
                 ],
-                
+
                 # 5-X: Routes
                 51:[
                     CallbackQueryHandler(self.routes_button),
@@ -914,6 +954,17 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         """Let the user know this command is unrecognized"""
         update.message.reply_text('Unrecognized command. Do you need /help...?')
 
+    def unrecognized_buttons(self,update,context):
+        """Edit the query so the user knows button is not accepted."""
+        try:
+            query = update.callback_query
+            query.answer()
+            text = query.message.text
+            text+= '\n\nSorry, this button has expired. Please send the previous command again'
+            query.edit_message_text(text)
+        except Exception as e:
+            self.log_exception(e,"Error with unrecognized_buttons")
+
     def reminder(self,context):
         """Reminder for return, every hour"""
         bikes_data = self.get_bikes()
@@ -947,9 +998,24 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         print('getting daily queue')
         for hour in range(24):
             j.run_daily(
-                self.reminder, 
-                days=(0, 1, 2, 3, 4, 5, 6), 
+                self.reminder,
+                days=(0, 1, 2, 3, 4, 5, 6),
                 time=datetime.time(hour=hour, minute=0, second=0))
+            if hour%12==2:
+                j.run_daily( #Update admin group
+                    lambda context: context.bot.send_message(
+                        chat_id=self.admin_group_id,
+                        text=f'Bot is working at {self.now().strftime("%H:%M:%S")}'
+                    ),
+                    days=(0, 1, 2, 3, 4, 5, 6),
+                    time=datetime.time(hour=hour, minute=0, second=2))
+            j.run_daily( #Update Jin Ming
+                lambda context: context.bot.send_message(
+                    chat_id=253089925,
+                    text=f'Bot is working at {self.now().strftime("%H:%M:%S")}'
+                ),
+                days=(0, 1, 2, 3, 4, 5, 6),
+                time=datetime.time(hour=hour, minute=0, second=2))
 
     def initialize(self):
         """Initializes all CommandHandlers, MessageHandlers, and job_queues that are required in the bot."""
@@ -964,7 +1030,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         self.addcmd('guide', self.guide_command)
         # self.addcmd('routes', self.routes_command)
         self.addcmd('history', self.history_command)
-        
+
         # Bike related commands
         self.addcmd('bikes', self.bikes_command)
         #self.addcmd('payment', self.payment_command)
@@ -972,11 +1038,11 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
         self.addcmd('getpin', self.getpin_command)
 
         # This part is for convo handlers
-        #self.addnew(CallbackQueryHandler(self.all_buttons))  # REMOVED, to do: NEED TO MOVE /routes to convo handler
         self.addnew(self.all_handlers())
 
-        # Lastly, Filters all unknown commands
+        # Lastly, Filters all unknown commands, and remove unrecognized queries
         self.addmsg(Filters.command, self.unrecognized_command)
+        self.addnew(CallbackQueryHandler(self.unrecognized_buttons))
 
         # For scheduling messages
         self.scheduler()
@@ -1002,7 +1068,7 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                     )
                     return
 
-            elif command in ['topup','deduct','setcredit','user']: # user commands
+            elif command in ['topup','deduct','setcredit','user','ban','unban']: # user commands
                 username = keywords.pop(0) #set the username as name
                 all_users = self.get_user_table()
                 chat_id = all_users.get(username, None)
@@ -1119,6 +1185,38 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=text)
+
+            elif command == "ban":
+                """Ban a user"""
+                is_ban = user_data.get('is_ban')
+                if not is_ban:
+                    user_data['is_ban'] = True
+                    self.update_user(user_data)
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f'@{username} is now BANNED.'
+                    )
+                else:
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f'@{username} was already banned.'
+                    )
+
+            elif command == "unban":
+                """Unban a user"""
+                is_ban = user_data.get('is_ban')
+                if is_ban:
+                    user_data['is_ban'] = None
+                    self.update_user(user_data)
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f'@{username} is now UNBANNED.'
+                    )
+                else:
+                    context.bot.send_message(
+                        chat_id=update.effective_chat.id,
+                        text=f'@{username} was not banned'
+                    )
 
             elif command == "forcereturn":
                 username = bike.get('username',"")
@@ -1268,19 +1366,23 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
 
 
         except IndexError as e:
+            self.log_exception(e,"Error with handle_admin")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f"Sorry, too little info provided.\nPlease send more info after /{command}"
                 )
         except ValueError as e:
+            self.log_exception(e,"Error with handle_admin")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'Number entered, {number}, is not valid!')
         except KeyError as e:
+            self.log_exception(e,"Error with handle_admin")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'Could not find key {e} in dictionary! Please check database again')
-        except FileNotFoundError:
+        except FileNotFoundError as e:
+            self.log_exception(e,"Error with handle_admin")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text='Hmm, file not found... Please raise a ticket with @fluffballz, along with what you sent.')
@@ -1291,6 +1393,6 @@ class OrcaBot(AdminBot, FunBot, TeleBot):
                 text=f'Failed, error is {e}\nPlease raise a ticket with @fluffballz, along with what you sent')
 
 
-if __name__=="__main__": 
+if __name__=="__main__":
     newbot = OrcaBot(DEV_API_KEY, admin_group_id=DEV_ADMIN_GROUP_ID)
     newbot.main()

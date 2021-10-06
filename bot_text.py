@@ -20,6 +20,8 @@ CHEER_LIST = ["",
     "You got this!",
     ]
 
+GUIDE_PIC = "https://www.dropbox.com/s/couqqkedvunq3ee/guide.png"
+
 HELP_TEXT = """
 🏦 /payment - Top-up via PayLah / PayNow!
 🗾 /routes - orc4bikes-curated routes
@@ -27,24 +29,30 @@ HELP_TEXT = """
 📜 /history - Recent 10 transactions
 ✨ /fun - Interesting..
 
+Rental rates:
+3 credits per minute
+
 🚲 /bikes - See available bikes
 🚴 ️/rent - Start your rental trip here!
 🔓 /getpin - Get the PIN for the bike you rented
 ↩️ /return - End your rental trip here!
 📢 /report - Report damages or anything sus
+
+Top-up:
+$1 = 100 credits
 """
 
 FUN_TEXT = """
 Feel free to click any of the below, or just send /random...
-/doggo - Get a random dog!
-/shibe - Get a random shiba!
-/neko - Get a random cat!
-/kitty - Get a random kitten!
-/foxy - Get a random fox!
-/birb - Get a random bird!
-/pika - A wild pikachu appeared!
+🐶 /doggo - Get a random dog!
+🐕 /shibe - Get a random shiba!
+🐈 /neko - Get a random cat!
+🐱 /kitty - Get a random kitten!
+🦊 /foxy - Get a random fox!
+🐥 /birb - Get a random bird!
+🐹 /pika - A wild pikachu appeared!
 
-Try other commands for easter eggs... :)
+Look out for more easter eggs 🥚... :)
 """
 
 ADMIN_TEXT = """List of admin commands:
@@ -55,11 +63,14 @@ User commands:
 /topup `username` AMOUNT \\- Top up the user's credit by an integer amount
 /deduct `username` AMOUNT \\- Deduct the user's credit by an integer amount
 /setcredit `username` AMOUNT \\- Set the user's credit to an integer amount
+/ban `username` \\- Ban a selected user
+/unban `username` \\- Unban a selected user
 
 Bikes commands:
 /admin `bikes` \\- Get all bikes and their current status
 /setpin `BIKENAME` NEWPIN \\- Change the bike's pin in the server to a new pin
 /setstatus `BIKENAME` NEWSTATUS \\- Change the bike's status in the server to a new status
+/forcereturn  `BIKENAME` \\- Forcefully return a selected bike 
 
 Other commands:
 /logs \\- Get rental and report logs as a csv file
@@ -76,7 +87,7 @@ TERMS_TEXT = """Bicycle Rental -- Terms of Use:
 6. You agree to take good care of YOURSELF and follow proper safety procedures. 
 
 In case of emergencies, call ambulance 995, and inform either
- - Lau Jin Ming at 98561839 @Meltingice - ORC4BIKES Head, or
+ - Lau Jin Ming at 98561839 @Meltingice7 - ORC4BIKES Head, or
  - Nicholas Ang at 92242698 @itsnicholasang - ORC4BIKES Safety
 
 If you agree, and ONLY if you agree, to the terms stated above, click "Accept".
