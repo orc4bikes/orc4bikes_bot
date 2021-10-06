@@ -2,3 +2,4 @@
 
 # Telegram Bot
 python-telegram-bot
+requests
