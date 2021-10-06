@@ -3,3 +3,5 @@
 # Python Version
 python~=3.9.4
 
+# Telegram Bot
+python-telegram-bot
