@@ -1,6 +1,6 @@
 from admin import (
     DEV_ADMIN_GROUP_ID,
-    ADMIN_LIST, 
+    ADMIN_LIST,
     DEV_API_KEY,
 )
 
@@ -25,10 +25,10 @@ import requests
 import re
 
 from telegram import (
-    InlineKeyboardMarkup, 
+    InlineKeyboardMarkup,
     InlineKeyboardButton,
-    ParseMode, 
-    ReplyKeyboardMarkup, 
+    ParseMode,
+    ReplyKeyboardMarkup,
     KeyboardButton
 )
 
@@ -100,13 +100,13 @@ class AdminBot(TeleBot):
         except Exception as e:
             self.log_exception(e,"Error with admin_command")
 
-    def topup_command(self,update,context):
-        try:
-            assert(self.admin_check(update,context))
-            keywords = context.args
-            self.handle_admin(update,context,keywords,command='topup')
-        except AssertionError:
-            pass
+    #def topup_command(self,update,context):
+    #    try:
+    #        assert(self.admin_check(update,context))
+    #        keywords = context.args
+    #        self.handle_admin(update,context,keywords,command='topup')
+    #    except AssertionError:
+    #        pass
 
     def deduct_command(self,update,context):
         try:
@@ -193,7 +193,7 @@ class AdminBot(TeleBot):
             files = [f for f in listdir('users/') if isfile(join('users/', f))]
             files = [json.load(open(f'users/{file}')) for file in files]
             return files
-        
+
         code = update.message.text[4:].strip()
         try:
             if code == '':
@@ -215,7 +215,7 @@ class AdminBot(TeleBot):
 
     def initialize(self):
         self.addcmd('admin',self.admin_command)
-        self.addcmd('topup',self.topup_command)
+        #self.addcmd('topup',self.topup_command) # Removed topup command as part of admin commands
         self.addcmd('deduct',self.deduct_command)
         self.addcmd('setcredit',self.setcredit_command)
         self.addcmd('user',self.user_command)
