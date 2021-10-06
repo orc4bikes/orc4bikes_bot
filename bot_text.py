@@ -23,7 +23,7 @@ CHEER_LIST = ["",
 GUIDE_PIC = "https://www.dropbox.com/s/couqqkedvunq3ee/guide.png"
 
 HELP_TEXT = """
-🏦 /payment - Top-up via PayLah / PayNow!
+🏦 /topup - Top up to use the bot now!
 🗾 /routes - orc4bikes-curated routes
 ℹ️ /status - Credits and rental status
 📜 /history - Recent 10 transactions
@@ -60,17 +60,20 @@ Please do NOT add @ before a username
 Usernames are case sensitive
 User commands:
 /user `username` \\- View the user's current status
-/topup `username` AMOUNT \\- Top up the user's credit by an integer amount
+/admin `topup` `username` AMOUNT \\- Top up the user's credit by an integer amount
+\\*\\*\\*NOTE that topup has been used as a user function, to access admin topup, please send /admin topup\\*\\*\\*
+
 /deduct `username` AMOUNT \\- Deduct the user's credit by an integer amount
 /setcredit `username` AMOUNT \\- Set the user's credit to an integer amount
 /ban `username` \\- Ban a selected user
 /unban `username` \\- Unban a selected user
 
+
 Bikes commands:
 /admin `bikes` \\- Get all bikes and their current status
 /setpin `BIKENAME` NEWPIN \\- Change the bike's pin in the server to a new pin
 /setstatus `BIKENAME` NEWSTATUS \\- Change the bike's status in the server to a new status
-/forcereturn  `BIKENAME` \\- Forcefully return a selected bike 
+/forcereturn  `BIKENAME` \\- Forcefully return a selected bike
 
 Other commands:
 /logs \\- Get rental and report logs as a csv file
@@ -82,9 +85,9 @@ TERMS_TEXT = """Bicycle Rental -- Terms of Use:
 1. You are not to HOG the bike
 2. You must take GOOD CARE of the bike during the duration of rental
 3. If you spot any DEFECTS, /report before your rental. Any defects found after your rental will be your responsibility.
-4. You will be FINANCIALLY held liable for any DAMAGES to the bike, and/or LOSS of equipment on the bike. 
+4. You will be FINANCIALLY held liable for any DAMAGES to the bike, and/or LOSS of equipment on the bike.
 5. orc4bikes reserve the right to amend the 'Terms of Use' at their discretion.
-6. You agree to take good care of YOURSELF and follow proper safety procedures. 
+6. You agree to take good care of YOURSELF and follow proper safety procedures.
 
 In case of emergencies, call ambulance 995, and inform either
  - Lau Jin Ming at 98561839 @Meltingice7 - ORC4BIKES Head, or
