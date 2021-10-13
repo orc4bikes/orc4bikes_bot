@@ -32,6 +32,9 @@ from telegram.ext import (
 GMT = 8
 
 class TeleBot:
+
+    USER_PATH = 'users'
+
     def __init__(self,api_key):
         self.api_key = api_key
         self.updater = Updater(token=api_key, use_context=True)
@@ -45,7 +48,9 @@ class TeleBot:
             print(text)
         print(f'Error occured at {self.now()}. Error is \n{e}')
         
-    def get_user(self,update=None,context=None,username=None)  -> dict or None:
+    def get_user(self,update=None,context=None,username=None, path=None)  -> dict or None:
+        if path is None:
+          path = self.USER_PATH
         if username is not None:
             chat_id = self.get_user_table().get(username)
             if chat_id is None:
@@ -53,7 +58,7 @@ class TeleBot:
         else:
             chat_id = update.effective_chat.id
         try:
-            with open(f'users/{chat_id}.json', 'r') as f:
+            with open(f'{self.USER_PATH}/{chat_id}.json', 'r') as f:
                 user_data = json.load(f)
         except FileNotFoundError:
             # User doesn't exist!
@@ -64,20 +69,24 @@ class TeleBot:
         chat_id = user_data.get('chat_id', None)
         if not chat_id:
             return None
-        with open(f'users/{chat_id}.json', 'w') as f:
+        with open(f'{self.USER_PATH}/{chat_id}.json', 'w') as f:
             json.dump(user_data, f, sort_keys=True, indent=4)
     
-    def get_user_table(self) -> dict:
+    def get_user_table(self, path=None) -> dict:
+        if path is None:
+            path = self.USER_PATH
         table_data = dict()
         try:
-            with open('users/table.json', 'r') as f:
+            with open(f'{path}/table.json', 'r') as f:
                 table_data = json.load(f)
         except FileNotFoundError:
             self.update_user_table({})
         return table_data
     
-    def update_user_table(self, update_field):
-        with open('users/table.json', 'w') as f:
+    def update_user_table(self, update_field, path=None):
+        if path is None:
+            path = self.USER_PATH
+        with open(f'{path}/table.json', 'w') as f:
             json.dump(update_field, f, sort_keys=True, indent=4)
 
     def get_bikes(self) -> dict:
@@ -114,7 +123,7 @@ class TeleBot:
         self.dispatcher.add_handler(handler)
 
     def addcmd(self, command, methodname):
-        handler = CommandHandler(command,methodname)
+        handler = CommandHandler(command, methodname)
         self.addnew(handler)
 
     def addmsg(self, filters, methodname):
