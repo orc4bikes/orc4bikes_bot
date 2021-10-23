@@ -8,6 +8,11 @@ from os import (path, mkdir)
 import requests
 import re
 
+from bot_text import (
+    START_MESSAGE,
+    BAN_MESSAGE,
+)
+
 from admin import DEV_API_KEY
 
 from telegram import (
@@ -33,6 +38,11 @@ from telegram.ext import (
 
 
 class TeleBot:
+    """
+    Base Telegram bot for other classes to inherit 
+    Provides data manipulation methods here
+    
+    """
     GMT = 8
     def __init__(self,api_key):
         self.api_key = api_key
@@ -55,7 +65,24 @@ class TeleBot:
         This is a dummy command, that should be implemented in the main bot!
         """
         return 0
-    
+
+    def check_user(self,update,context):
+        """Check if user is registered, and not banned"""
+        user_data = self.get_user(update,context)
+        if user_data is None:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+            return False
+        if user_data.get('is_ban'):
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=BAN_MESSAGE
+                )
+            return False
+        return True
+
     def get_user(self,update=None,context=None,username=None)  -> dict or None:
         if username is not None:
             chat_id = self.get_user_table().get(username)

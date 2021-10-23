@@ -172,12 +172,14 @@ class AdminBot(TeleBot):
             pass
 
     def py_command(self,update,context):
+        if self.admin_check(update,context):
+            return
         def reply(item):
             item=str(item)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=item
-        )
+            )
         def accounts():
             from os import listdir
             from os.path import isfile, join
@@ -200,7 +202,7 @@ class AdminBot(TeleBot):
             self.log_exception(e,"Error with py_command")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Sorry, this command is not valid."
+                text=f"Sorry, this command is not valid. Error is {e}"
             )
             print(e)
 
@@ -548,8 +550,8 @@ class AdminBot(TeleBot):
                 text=f'Failed, error is {e}\nPlease raise a ticket with @fluffballz, along with what you sent')
 
     def initialize(self):
+        """Initialze all admin commands"""
         self.addcmd('admin',self.admin_command)
-        #self.addcmd('topup',self.topup_command) # Removed topup command as part of admin commands
         self.addcmd('deduct',self.deduct_command)
         self.addcmd('setcredit',self.setcredit_command)
         self.addcmd('user',self.user_command)
