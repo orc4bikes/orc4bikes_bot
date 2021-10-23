@@ -1,6 +1,9 @@
 # ignore all users
 users/
 
+# rental and response logs
+logs/
+
 #ignore all pycache
 __pycache__/
 
@@ -10,6 +13,3 @@ test.py
 
 # old code prior to optimizing...
 old_code.py
-
-# rental and response logs
-logs/
