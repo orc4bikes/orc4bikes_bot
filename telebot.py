@@ -48,7 +48,14 @@ class TeleBot:
         if text: 
             print(text)
         print(f'Error occured at {self.now()}. Error is \n{e}')
-        
+
+    def calc_deduct(self,time_diff):
+        """
+        Calculate credits deductable given a time period
+        This is a dummy command, that should be implemented in the main bot!
+        """
+        return 0
+    
     def get_user(self,update=None,context=None,username=None)  -> dict or None:
         if username is not None:
             chat_id = self.get_user_table().get(username)

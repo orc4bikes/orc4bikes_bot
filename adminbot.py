@@ -57,13 +57,6 @@ class AdminBot(TeleBot):
         self.admin_text = admin_text
         super().__init__(api_key)
 
-    def calc_deduct(self,time_diff):
-        """
-        Calculate credits deductable given a time period
-        This is a dummy command, that should be implemented in the main telegram bot!
-        """
-        return 0
-
     def admin_command(self,update,context,keywords,command=''):
         """Admin command handler, actual one in OrcaBot"""
         print("Run OrcaBot for admin commands!!")

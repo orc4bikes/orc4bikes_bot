@@ -366,7 +366,7 @@ class OrcaBot(ConvoBot, AdminBot, FunBot, TeleBot):
         self.addcmd('status', self.status_command)
         self.addcmd('getpin', self.getpin_command)
 
-        # Check if user cancels outside of ConversationHandler (ConvoBot)
+        # Check if user sends converation commands outside of ConversationHandler (ConvoBot)
         self.addcmd('cancel', self.convo_outside_command)
         self.addcmd('done', self.convo_outside_command)
 
