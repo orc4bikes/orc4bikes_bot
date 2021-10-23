@@ -103,3 +103,6 @@ EMOJI = {
         "tick" : "✅",
         "cross": "❌"
         }
+
+PAYMENT_URL = "https://bit.ly/3tQGTvO"
+PAYMENT_URL = "https://www.dbs.com.sg/personal/mobile/paylink/index.html?tranRef=6nXf99ZBVA"

@@ -11,7 +11,8 @@ from bot_text import (
     HELP_TEXT,
     ADMIN_TEXT,
     START_MESSAGE,
-    EMOJI
+    EMOJI,
+    PAYMENT_URL
 )
 
 from telebot import TeleBot
@@ -159,7 +160,7 @@ class ConvoBot(TeleBot):
                 amount = int(amount)
                 context.user_data['amount'] = amount
                 query.edit_message_text(f'Selected amount: ${amount//100:.2f}')
-                text1 = '[1] PayLah/PayNow to Lau Jin Ming, at 98561839, or https://bit.ly/3tQGTvO'
+                text1 = f'[1] PayLah/PayNow to Lau Jin Ming, at 98561839'
                 text1+= '\n[2] Once done, send a screenshot to @orc4bikes_bot!!'
                 text1+= '\n[3] You will receive "Transaction complete! You now have XXXX credits" for comfirmation'
 
@@ -167,7 +168,10 @@ class ConvoBot(TeleBot):
                 text2+= '\n\nTo stop, send /cancel'
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=text1
+                    text=text1,
+                    reply_markup = InlineKeyboardMarkup([
+                        [InlineKeyboardButton("Go to PayLah", callback_data='redirect_paylah', url=PAYMENT_URL)]
+                    ]),
                 )
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
@@ -184,6 +188,8 @@ class ConvoBot(TeleBot):
 
     def payment_pic(self,update,context):
         """After photo is sent, save the photo and ask if would like to retake"""
+        query = update.callback_query
+        query.answer()
         if update.message.photo:
             photo = update.message.photo[-1].file_id
             context.user_data['photo'] = photo
@@ -710,6 +716,7 @@ class ConvoBot(TeleBot):
                     CommandHandler('done',callback=self.payment_done),
                 ],
                 72:[
+                    CallbackQueryHandler(self.payment_pic),
                     MessageHandler(filters=Filters.photo & ~Filters.command, callback=self.payment_pic),
                     CommandHandler('done',callback=self.payment_done),
                 ],
