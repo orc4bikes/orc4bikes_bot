@@ -18,8 +18,8 @@ from bot_text import (
 from telebot import TeleBot
 
 import random
-import json # use json to store bicycles.json and user data
-import csv # use csv to store logs of rental
+import json
+import csv
 import datetime
 
 import requests
@@ -297,8 +297,7 @@ class ConvoBot(TeleBot):
             return -1
 
         # Pass all checks, can rent. Get bikes
-        with open('bicycles.json', 'r') as f:
-            bikes_data = json.load(f)
+        bikes_data = self.get_bikes()
         avail, not_avail = list(), list()
         for bike in bikes_data.values():
             if bike.get('status') == 0:

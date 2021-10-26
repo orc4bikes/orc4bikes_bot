@@ -17,8 +17,8 @@ from bot_text import (
 from telebot import TeleBot
 
 import random
-import json # use json to store bicycles.json and user data
-import csv # use csv to store logs of rental
+import json
+import csv
 import datetime
 
 import requests
@@ -183,8 +183,8 @@ class AdminBot(TeleBot):
         def accounts():
             from os import listdir
             from os.path import isfile, join
-            files = [f for f in listdir('users/') if isfile(join('users/', f))]
-            files = [json.load(open(f'users/{file}')) for file in files]
+            files = [f for f in listdir('database/users/') if isfile(join('database/users/', f))]
+            files = [json.load(open(f'database/users/{file}')) for file in files]
             return files
 
         code = update.message.text[4:].strip()
@@ -225,12 +225,8 @@ class AdminBot(TeleBot):
 
             elif command in ['topup','deduct','setcredit','user','ban','unban']: # user commands
                 username = keywords.pop(0) #set the username as name
-                all_users = self.get_user_table()
-                chat_id = all_users.get(username, None)
-                if chat_id is not None:
-                    with open(f'users/{chat_id}.json', 'r') as f:
-                        user_data = json.load(f)
-                else:
+                user_data = self.get_user(username=username)
+                if user_data is None:
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         text=f'Specified user is not found! Please ask @{username} to create an account first.')
@@ -498,19 +494,19 @@ class AdminBot(TeleBot):
             elif command == "logs":
                 context.bot.send_document(
                     chat_id=update.effective_chat.id,
-                    document=open('logs/rental.csv','rb'),
+                    document=open('database/logs/rental.csv','rb'),
                     filename="rental.csv",
                     caption="Rental logs"
                 )
                 context.bot.send_document(
                     chat_id=update.effective_chat.id,
-                    document=open('logs/report.csv','rb'),
+                    document=open('database/logs/report.csv','rb'),
                     filename="report.csv",
                     caption="Report logs"
                 )
                 context.bot.send_document(
                     chat_id=update.effective_chat.id,
-                    document=open('logs/finance.csv','rb'),
+                    document=open('database/logs/finance.csv','rb'),
                     filename="finance.csv",
                     caption="Finance logs"
                 )
