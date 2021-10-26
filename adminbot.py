@@ -58,11 +58,11 @@ class AdminBot(TeleBot):
         super().__init__(api_key)
 
     def admin_command(self,update,context,keywords,command=''):
-        """Admin command handler, actual one in OrcaBot"""
-        print("Run OrcaBot for admin commands!!")
+        """Admin command handler, actual one in Orc4bikesBot"""
+        print("Run Orc4bikesBot for admin commands!!")
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="Run OrcaBot for admin commands!!"
+            text="Run Orc4bikesBot for admin commands!!"
         )
 
     def admin_log(self, update, context, message, photo=None):

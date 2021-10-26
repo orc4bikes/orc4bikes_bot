@@ -52,7 +52,7 @@ from telegram.ext import (
 )
 
 
-class OrcaBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
+class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
     DEDUCT_RATE = 20 # deduct 1 credit every 20 seconds or part thereof
 
     def __init__(self,
@@ -65,7 +65,7 @@ class OrcaBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
             terms_text=TERMS_TEXT,
             promo = False,
             ):
-        print('running OrcaBot', super().now())
+        print('running Orc4bikesBot at', super().now())
         super().__init__(api_key)
         self.help_text = help_text
         self.admin_group_id = admin_group_id
@@ -188,5 +188,5 @@ class OrcaBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
         TeleBot.main(self)
 
 if __name__=="__main__":
-    newbot = OrcaBot(DEV_API_KEY, admin_group_id=DEV_ADMIN_GROUP_ID)
+    newbot = Orc4bikesBot(DEV_API_KEY, admin_group_id=DEV_ADMIN_GROUP_ID)
     newbot.main()
