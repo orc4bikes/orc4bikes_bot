@@ -1,8 +1,8 @@
 # ignore all users
-users/
+database/users/
 
 # rental and response logs
-logs/
+database/logs/
 
 #ignore all pycache
 __pycache__/

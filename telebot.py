@@ -135,11 +135,11 @@ class TeleBot:
            bike,username,start_time,end_time"""
         if not path.exists('database/logs'):
             mkdir('database/logs')
-        try:
+        if path.exists('database/logs/rental.csv'):
             with open('database/logs/rental.csv','a',newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(update_list)
-        except FileNotFoundError:
+        else:
             with open('database/logs/rental.csv', 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(['bike','username','start_time','end_time','credits'])
@@ -150,11 +150,11 @@ class TeleBot:
            username,time,report"""
         if not path.exists('database/logs'):
             mkdir('database/logs')
-        try:
+        if path.exists('database/logs/report.csv'):
             with open('database/logs/report.csv','a',newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(update_list)
-        except FileNotFoundError:
+        else:
             with open('database/logs/report.csv', 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(['username','time','report'])
@@ -165,11 +165,11 @@ class TeleBot:
            username,time,initial_amt,change_amt,final_amt"""
         if not path.exists('database/logs'):
             mkdir('database/logs')
-        try:
+        if path.exists('database/logs/finance.csv'):
             with open('database/logs/finance.csv', 'a', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(update_list)
-        except FileNotFoundError:
+        else:
             with open('database/logs/finance.csv', 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(['username','time','initial_amt','change_amt','final_amt','action_by'])
