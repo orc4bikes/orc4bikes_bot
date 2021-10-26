@@ -135,27 +135,45 @@ class TeleBot:
            bike,username,start_time,end_time"""
         if not path.exists('database/logs'):
             mkdir('database/logs')
-        with open('database/logs/rental.csv','a',newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(update_list)
+        try:
+            with open('database/logs/rental.csv','a',newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(update_list)
+        except FileNotFoundError:
+            with open('database/logs/rental.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['bike','username','start_time','end_time','credits'])
+                writer.writerow(update_list)
 
     def update_report_log(self, update_list):
         """Updates report logs with headers:
            username,time,report"""
         if not path.exists('database/logs'):
             mkdir('database/logs')
-        with open('database/logs/report.csv','a',newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(update_list)
+        try:
+            with open('database/logs/report.csv','a',newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(update_list)
+        except FileNotFoundError:
+            with open('database/logs/report.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['username','time','report'])
+                writer.writerow(update_list)
 
     def update_finance_log(self, update_list):
         """Updates finance logs with headers:
            username,time,initial_amt,change_amt,final_amt"""
         if not path.exists('database/logs'):
             mkdir('database/logs')
-        with open('database/logs/finance.csv', 'a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(update_list)
+        try:
+            with open('database/logs/finance.csv', 'a', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(update_list)
+        except FileNotFoundError:
+            with open('database/logs/finance.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['username','time','initial_amt','change_amt','final_amt','action_by'])
+                writer.writerow(update_list)
 
     def addnew(self,handler):
         self.dispatcher.add_handler(handler)
