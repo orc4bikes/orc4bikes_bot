@@ -23,8 +23,8 @@ from userbot import UserBot
 from convobot import ConvoBot
 
 import random
-import json # use json to store bicycles.json and user data
-import csv # use csv to store logs of rental
+import json
+import csv
 import datetime
 
 import requests
