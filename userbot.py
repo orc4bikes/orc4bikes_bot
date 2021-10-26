@@ -11,7 +11,8 @@ from bot_text import (
     HELP_TEXT,
     ADMIN_TEXT,
     START_MESSAGE,
-    EMOJI
+    EMOJI,
+    GUIDE_PIC
 )
 
 from telebot import TeleBot

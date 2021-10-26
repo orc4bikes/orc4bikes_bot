@@ -461,15 +461,11 @@ class AdminBot(TeleBot):
                     )
             elif command == "setstatus":
                 if not keywords:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text="Please send a status update!"
-                    )
-                    return
+                    status = 0
                 status = ' '.join(keywords)
                 rented = bike.get('username',"")
                 if rented == "":
-                    if status.isnumeric(): #to reset the status to 0
+                    if status == '0': #to reset the status to 0
                         status=int(status)
                     bikes_data[bike_name]['status'] = status
                     self.update_bikes(bikes_data)
