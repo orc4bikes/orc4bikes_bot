@@ -3,8 +3,15 @@ import json # use json to store bicycles.json and user data
 import csv # use csv to store logs of rental
 import datetime
 
+from os import (path, mkdir)
+
 import requests
 import re
+
+from bot_text import (
+    START_MESSAGE,
+    BAN_MESSAGE,
+)
 
 from admin import DEV_API_KEY
 
@@ -29,22 +36,53 @@ from telegram.ext import (
     TypeHandler,
 )
 
-GMT = 8
 
 class TeleBot:
+    """
+    Base Telegram bot for other classes to inherit 
+    Provides data manipulation methods here
+    
+    """
+    GMT = 8
     def __init__(self,api_key):
         self.api_key = api_key
         self.updater = Updater(token=api_key, use_context=True)
         self.dispatcher = self.updater.dispatcher
 
-    def now(self,gmt=GMT):
+    def now(self,gmt=None):
+        if gmt is None:
+            gmt = self.GMT
         return datetime.datetime.utcnow() + datetime.timedelta(hours=gmt)
 
     def log_exception(self, e, text=""):
         if text: 
             print(text)
         print(f'Error occured at {self.now()}. Error is \n{e}')
-        
+
+    def calc_deduct(self,time_diff):
+        """
+        Calculate credits deductable given a time period
+        This is a dummy command, that should be implemented in the main bot!
+        """
+        return 0
+
+    def check_user(self,update,context):
+        """Check if user is registered, and not banned"""
+        user_data = self.get_user(update,context)
+        if user_data is None:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=START_MESSAGE
+                )
+            return False
+        if user_data.get('is_ban'):
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=BAN_MESSAGE
+                )
+            return False
+        return True
+
     def get_user(self,update=None,context=None,username=None)  -> dict or None:
         if username is not None:
             chat_id = self.get_user_table().get(username)
@@ -53,10 +91,11 @@ class TeleBot:
         else:
             chat_id = update.effective_chat.id
         try:
+            if not path.exists('users'):
+                mkdir('users')
             with open(f'users/{chat_id}.json', 'r') as f:
                 user_data = json.load(f)
-        except FileNotFoundError:
-            # User doesn't exist!
+        except FileNotFoundError: # User doesn't exist!
             user_data = None
         return user_data
 
@@ -64,6 +103,8 @@ class TeleBot:
         chat_id = user_data.get('chat_id', None)
         if not chat_id:
             return None
+        if not path.exists('users'):
+            mkdir('users')
         with open(f'users/{chat_id}.json', 'w') as f:
             json.dump(user_data, f, sort_keys=True, indent=4)
     
@@ -92,6 +133,8 @@ class TeleBot:
     def update_rental_log(self, update_list):
         """Updates rental logs with headers:
            bike,username,start_time,end_time"""
+        if not path.exists('logs'):
+            mkdir('logs')
         with open('logs/rental.csv','a',newline='') as f:
             writer = csv.writer(f)
             writer.writerow(update_list)
@@ -99,6 +142,8 @@ class TeleBot:
     def update_report_log(self, update_list):
         """Updates report logs with headers:
            username,time,report"""
+        if not path.exists('logs'):
+            mkdir('logs')
         with open('logs/report.csv','a',newline='') as f:
             writer = csv.writer(f)
             writer.writerow(update_list)
@@ -106,6 +151,8 @@ class TeleBot:
     def update_finance_log(self, update_list):
         """Updates finance logs with headers:
            username,time,initial_amt,change_amt,final_amt"""
+        if not path.exists('logs'):
+            mkdir('logs')
         with open('logs/finance.csv', 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(update_list)

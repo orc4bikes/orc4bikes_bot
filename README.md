@@ -29,3 +29,8 @@ Handles the rental of bicycles from Orcabikes
 # Requirements
 This projects uses python-telegram-bot, before running please install it using this command: <br />
 pip install python-telegram-bot
+
+
+# For Developers
+Please run this code before starting:
+`git update-index --skip-worktree admin.py`
