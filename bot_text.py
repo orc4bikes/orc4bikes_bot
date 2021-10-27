@@ -81,6 +81,9 @@ Other commands:
 
 START_MESSAGE = "Please /start me privately to access this service!"
 
+BAN_MESSAGE = '''You are on Santa's naughty list... What have you done?!
+If you believe this is a mistake, contact the current admins at @meltingice7 or @Fusion_mix25'''
+
 TERMS_TEXT = """Bicycle Rental -- Terms of Use:
 1. You are not to HOG the bike
 2. You must take GOOD CARE of the bike during the duration of rental
@@ -100,3 +103,6 @@ EMOJI = {
         "tick" : "✅",
         "cross": "❌"
         }
+
+PAYMENT_URL = "https://bit.ly/3tQGTvO"
+PAYMENT_URL = "https://www.dbs.com.sg/personal/mobile/paylink/index.html?tranRef=6nXf99ZBVA"
