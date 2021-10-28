@@ -122,9 +122,9 @@ class TeleBot:
             with open(f'{userpath}/table.json', 'r') as f:
                 table_data = json.load(f)
         except FileNotFoundError:
-            self.update_user_table({})
+            self.update_user_table({}, userpath)
         return table_data
-    
+  
     def update_user_table(self, update_field, userpath=None):
         if userpath is None:
             userpath = self.USER_PATH
