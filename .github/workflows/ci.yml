@@ -3,9 +3,11 @@ on:
   push:
     branches:
       - features
+      - unit-tests
   pull_request:
     branches:
       - features
+      - unit-tests
 
 jobs:
   build:
