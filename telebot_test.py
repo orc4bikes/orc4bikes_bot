@@ -42,22 +42,26 @@ class TestTelebotMethods(unittest.TestCase):
       }
     }
 
-    def test_log_exception(self):
+    @patch.object(TeleBot, "now")
+    def test_log_exception(self, mock_date):
+        test_time = "2021-10-31 00:22:00.154766"
+        mock_date.return_value = test_time
+
         '''Without optional input'''
         capturedOutput = io.StringIO()      
         sys.stdout = capturedOutput                   
         self.telebot.log_exception(self.TEST_ERROR_1)                                    
         sys.stdout = sys.__stdout__  
-        self.assertAlmostEqual(capturedOutput.getvalue(), 
-            self.LOG_EXCEPTION_ERRORMESSAGE.format(dt.datetime.now(), self.TEST_ERROR_1))
+        self.assertEqual(capturedOutput.getvalue(), 
+            self.LOG_EXCEPTION_ERRORMESSAGE.format(test_time, self.TEST_ERROR_1))
 
         '''With additional input'''
         capturedOutput = io.StringIO()      
         sys.stdout = capturedOutput 
         self.telebot.log_exception(self.TEST_ERROR_2, "~")                                    
         sys.stdout = sys.__stdout__  
-        self.assertAlmostEqual(capturedOutput.getvalue(), "~\n" 
-            + self.LOG_EXCEPTION_ERRORMESSAGE.format(dt.datetime.now(), self.TEST_ERROR_2))
+        self.assertEqual(capturedOutput.getvalue(), "~\n" 
+            + self.LOG_EXCEPTION_ERRORMESSAGE.format(test_time, self.TEST_ERROR_2))
 
     def test_update_user_table(self):
         '''Empty folder path'''
