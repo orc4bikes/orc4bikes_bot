@@ -46,6 +46,8 @@ class TeleBot:
     """
     GMT = 8
     USER_PATH = 'database/users'
+    BICYCLE_PATH = 'database/bicycles.json'
+    LOG_PATH = 'database/logs'
 
     def __init__(self,api_key):
         self.api_key = api_key
@@ -90,7 +92,7 @@ class TeleBot:
         if userpath is None:
             userpath = self.USER_PATH
         if username is not None:
-            chat_id = self.get_user_table().get(username)
+            chat_id = self.get_user_table(userpath).get(username)
             if chat_id is None:
                 return None
         else:
@@ -105,13 +107,16 @@ class TeleBot:
             user_data = None
         return user_data
 
-    def update_user(self, user_data):
+    def update_user(self, user_data, userpath=None):
+        if userpath is None:
+            userpath = self.USER_PATH
         chat_id = user_data.get('chat_id', None)
         if not chat_id:
             return None
-        if not path.exists(self.USER_PATH):
-            mkdir(self.USER_PATH)
-        with open(f'{self.USER_PATH}/{chat_id}.json', 'w') as f:
+        if not path.exists(userpath):
+              mkdir('database/users')
+              userpath = 'database/users'
+        with open(f'{userpath}/{chat_id}.json', 'w') as f:
             json.dump(user_data, f, sort_keys=True, indent=4)
     
     def get_user_table(self, userpath=None) -> dict:
@@ -131,13 +136,17 @@ class TeleBot:
         with open(f'{userpath}/table.json', 'w') as f:
             json.dump(update_field, f, sort_keys=True, indent=4)
 
-    def get_bikes(self) -> dict:
-        with open('database/bicycles.json', 'r') as f:
+    def get_bikes(self, bikepath=None) -> dict:
+        if bikepath is None:
+          bikepath = self.BICYCLE_PATH
+        with open(bikepath, 'r') as f:
             bikes_data = json.load(f)
         return bikes_data
 
-    def update_bikes(self, bikes_data) -> None:
-        with open('database/bicycles.json', 'w') as f:
+    def update_bikes(self, bikes_data, bikepath=None) -> None:
+        if bikepath is None:
+            bikepath = self.BICYCLE_PATH
+        with open(bikepath, 'w') as f:
             json.dump(bikes_data, f, sort_keys=True, indent=4)
 
     def update_rental_log(self, update_list):
