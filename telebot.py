@@ -38,12 +38,17 @@ from telegram.ext import (
 
 
 class TeleBot:
+
     """
     Base Telegram bot for other classes to inherit 
     Provides data manipulation methods here
     
     """
     GMT = 8
+    USER_PATH = 'database/users'
+    BICYCLE_PATH = 'database/bicycles.json'
+    LOG_PATH = 'database/logs'
+
     def __init__(self,api_key):
         self.api_key = api_key
         self.updater = Updater(token=api_key, use_context=True)
@@ -83,51 +88,65 @@ class TeleBot:
             return False
         return True
 
-    def get_user(self,update=None,context=None,username=None)  -> dict or None:
+    def get_user(self,update=None,context=None,username=None, userpath=None)  -> dict or None:
+        if userpath is None:
+            userpath = self.USER_PATH
         if username is not None:
-            chat_id = self.get_user_table().get(username)
+            chat_id = self.get_user_table(userpath).get(username)
             if chat_id is None:
                 return None
         else:
             chat_id = update.effective_chat.id
         try:
-            if not path.exists('database/users'):
+            if not path.exists(userpath):
                 mkdir('database/users')
-            with open(f'database/users/{chat_id}.json', 'r') as f:
+                userpath = 'database/users'
+            with open(f'{userpath}/{chat_id}.json', 'r') as f:
                 user_data = json.load(f)
         except FileNotFoundError: # User doesn't exist!
             user_data = None
         return user_data
 
-    def update_user(self, user_data):
+    def update_user(self, user_data, userpath=None):
+        if userpath is None:
+            userpath = self.USER_PATH
         chat_id = user_data.get('chat_id', None)
         if not chat_id:
             return None
-        if not path.exists('database/users'):
-            mkdir('database/users')
-        with open(f'database/users/{chat_id}.json', 'w') as f:
+        if not path.exists(userpath):
+              mkdir('database/users')
+              userpath = 'database/users'
+        with open(f'{userpath}/{chat_id}.json', 'w') as f:
             json.dump(user_data, f, sort_keys=True, indent=4)
     
-    def get_user_table(self) -> dict:
+    def get_user_table(self, userpath=None) -> dict:
+        if userpath is None:
+            userpath = self.USER_PATH
         table_data = dict()
         try:
-            with open('database/users/table.json', 'r') as f:
+            with open(f'{userpath}/table.json', 'r') as f:
                 table_data = json.load(f)
         except FileNotFoundError:
-            self.update_user_table({})
+            self.update_user_table({}, userpath)
         return table_data
-    
-    def update_user_table(self, update_field):
-        with open('database/users/table.json', 'w') as f:
+  
+    def update_user_table(self, update_field, userpath=None):
+        if userpath is None:
+            userpath = self.USER_PATH
+        with open(f'{userpath}/table.json', 'w') as f:
             json.dump(update_field, f, sort_keys=True, indent=4)
 
-    def get_bikes(self) -> dict:
-        with open('database/bicycles.json', 'r') as f:
+    def get_bikes(self, bikepath=None) -> dict:
+        if bikepath is None:
+          bikepath = self.BICYCLE_PATH
+        with open(bikepath, 'r') as f:
             bikes_data = json.load(f)
         return bikes_data
 
-    def update_bikes(self, bikes_data) -> None:
-        with open('database/bicycles.json', 'w') as f:
+    def update_bikes(self, bikes_data, bikepath=None) -> None:
+        if bikepath is None:
+            bikepath = self.BICYCLE_PATH
+        with open(bikepath, 'w') as f:
             json.dump(bikes_data, f, sort_keys=True, indent=4)
 
     def update_rental_log(self, update_list):
@@ -161,7 +180,7 @@ class TeleBot:
         self.dispatcher.add_handler(handler)
 
     def addcmd(self, command, methodname):
-        handler = CommandHandler(command,methodname)
+        handler = CommandHandler(command, methodname)
         self.addnew(handler)
 
     def addmsg(self, filters, methodname):
