@@ -17,6 +17,7 @@ from bot_text import (
 
 from telebot import TeleBot
 
+import os
 import random
 import json
 import csv
@@ -160,7 +161,7 @@ class ConvoBot(TeleBot):
                 amount = int(amount)
                 context.user_data['amount'] = amount
                 query.edit_message_text(f'Selected amount: ${amount//100:.2f}')
-                text1 = f'[1] PayLah/PayNow to Lau Jin Ming, at 98561839'
+                text1 = '[1] PayLah/PayNow to Lim Yu Jie, at 90817788.' #, or shorturl.at/dBLW6'  ## TODO: shorturl not working!!
                 text1+= '\n[2] Once done, send a screenshot to @orc4bikes_bot!!'
                 text1+= '\n[3] You will receive "Transaction complete! You now have XXXX credits" for comfirmation'
 
@@ -189,11 +190,13 @@ class ConvoBot(TeleBot):
     def payment_pic(self,update,context):
         """After photo is sent, save the photo and ask if would like to retake"""
         query = update.callback_query
-        query.answer()
+        if query: 
+            query.answer() 
+            return 72
         if update.message.photo:
             photo = update.message.photo[-1].file_id
             context.user_data['photo'] = photo
-            text = '^ This is your PayLah/PayNow confirmation to Lau Jin Ming, at 98561839.'
+            text = '^ This is your PayLah/PayNow confirmation to Lim Yu Jie, at 9081 7788.'
             text+= '\nIf you are unsatisfied with your image, please send another one. \nTo CONFIRM PAYMENT, send /done. To cancel, send /cancel'
             text+= '\n\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits", your credits has NOT been topped up.'
             context.bot.send_photo(
@@ -202,7 +205,7 @@ class ConvoBot(TeleBot):
                 caption=text
             )
         else:
-            text = 'Upon completion of payment (to 98561839), please send a screenshot to me @orc4bikes_bot!!'
+            text = 'Upon completion of payment (to 9081 7788), please send a screenshot to me @orc4bikes_bot!!'
             text+= '\nTo CONFIRM PAYMENT, send /done. To cancel, send /cancel'
             text+= '\n\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits", your credits has NOT been topped up.'
             context.bot.send_photo(
@@ -233,6 +236,15 @@ class ConvoBot(TeleBot):
                         chat_id=update.effective_chat.id,
                         text=f"Promotion applied! An additional {amount} credits was added to your account. You now have {user_data.get('credits')} credits.\nHappy cycling!")
 
+                user_data['finance'] = user_data.get('finance',[])
+                f_log = {
+                    'type':'payment',
+                    'time':self.now().strftime("%Y/%m/%d, %H:%M:%S"),
+                    'initial':initial_amount,
+                    'change': user_data.get('credits') - initial_amount,
+                    'final': user_data.get('credits'),
+                }
+                user_data['finance'].append(f_log)
                 super().update_user(user_data)
 
                 # Notify Admin group
@@ -299,8 +311,8 @@ class ConvoBot(TeleBot):
         # Pass all checks, can rent. Get bikes
         bikes_data = self.get_bikes()
         avail, not_avail = list(), list()
-        for bike in bikes_data.values():
-            if bike.get('status') == 0:
+        for bike in bikes_data:
+            if not bike.get('status'):
                 avail.append(bike)
             else:
                 not_avail.append(bike)
@@ -311,7 +323,7 @@ class ConvoBot(TeleBot):
         text+= '\n\n' if avail else ''
         text+= f'{not_avail}'
         text+='\n\nClick below to start renting now!' if avail else '\n\nSorry, no bikes are not unavaialble...'
-        avail_bikes = [bike["name"] for bike in bikes_data.values() if bike.get('status') == 0]
+        avail_bikes = [bike["name"] for bike in bikes_data if not bike.get('status')]
         keyboard = list([[InlineKeyboardButton('Rent ' + bike, callback_data=bike)] for bike in avail_bikes])
         keyboard.append([InlineKeyboardButton('Cancel', callback_data='stoprent')])
         context.bot.send_message(
@@ -326,12 +338,11 @@ class ConvoBot(TeleBot):
         query = update.callback_query
         query.answer()
         bike_name = query.data
-        bikes_data = self.get_bikes()
         try:
             if bike_name == 'stoprent':
                 query.edit_message_text(text="Rental has been cancelled! Send /rent to refresh the available bikes.")
                 return -1
-            bike_data = bikes_data.get(bike_name,None)
+            bike_data = self.get_bike(bike_name)
             if bike_data is None: # Bike doesn't exist
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
@@ -430,10 +441,10 @@ class ConvoBot(TeleBot):
                 user_data['bike_name'] = bike_name
                 super().update_user(user_data)
 
-                bikes_data = self.get_bikes()
-                bikes_data[bike_name]['username'] = user_data.get('username')
-                bikes_data[bike_name]['status'] = curr_time
-                self.update_bikes(bikes_data)
+                bike = self.get_bike(bike_name)
+                bike['username'] = user_data.get('username')
+                bike['status'] = curr_time
+                self.update_bike(bike)
 
                 # Notify user
                 context.bot.send_message(
@@ -523,15 +534,15 @@ class ConvoBot(TeleBot):
             #update return logs
             username = user_data.get('username')
             bike_name = user_data['bike_name']
-            bikes_data = self.get_bikes()
-            start_time = datetime.datetime.fromisoformat(bikes_data[bike_name]['status']).strftime('%Y/%m/%d, %H:%M:%S')
+            bike_data = self.get_bike(bike_name)
+            start_time = datetime.datetime.fromisoformat(bike_data['status']).strftime('%Y/%m/%d, %H:%M:%S')
             end_time = self.now().strftime('%Y/%m/%d, %H:%M:%S')
             self.update_rental_log([bike_name,username,start_time,end_time,deduction])
 
             #update bike first, because bike uses user_data.bike_name
-            bikes_data[bike_name]['status'] = 0
-            bikes_data[bike_name]['username'] = ""
-            self.update_bikes(bikes_data)
+            bike_data['status'] = 0
+            bike_data['username'] = ""
+            self.update_bike(bike_data)
 
             #update user data
             log = user_data.get('log',[])
@@ -559,11 +570,11 @@ class ConvoBot(TeleBot):
             )
 
             deduction_text = f"{deduction} credits was deducted. Remaining credits: {user_data['credits']}"
-            deduction_text+= "\n\nTo top-up your credits, send /topup"
-            deduction_text+= "\nTo start a new journey, send /rent"
+            final_text = deduction_text + "\n\nTo top-up your credits, send /topup"
+            final_text+= "\nTo start a new journey, send /rent"
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=deduction_text
+                text=final_text
             )
             # Notify Admin group
             admin_text=f'[RENTAL - RETURN] \n@{update.message.from_user.username} returned {bike_name} at following time:\n{self.now().strftime("%Y/%m/%d, %H:%M:%S")}'
@@ -669,6 +680,228 @@ class ConvoBot(TeleBot):
         context.user_data.clear()
         return -1
 
+
+    def save_feedback(self, feedback_data, filename=None):
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+            print('making dir')
+        filename = 'logs/feedbacks.csv'
+
+        if not os.path.exists(filename):
+            print('feedback doesnt exist')
+            with open(filename, 'w', newline='') as f:
+                writer = csv.DictWriter(
+                    f, fieldnames=list(feedback_data.keys()))
+                writer.writeheader()
+
+        with open(filename, 'a', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=list(feedback_data.keys()))
+            writer.writerow(feedback_data)
+            print('write success')
+
+    def whichevent(self, update, context):
+        questiontext = "A penny for your thoughts! You get one credit for doing this feedback :)\n"
+        questiontext+= "Which of the events did you participate in? Press /cancel if you entered this feedback function accidentally.\n\n"
+        keyboard = [
+            [
+                InlineKeyboardButton("One-North 15 Aug", callback_data="One-North 15 Aug"),
+                InlineKeyboardButton("uTown 18 Aug", callback_data="uTown 18 Aug")
+            ],
+            [
+                InlineKeyboardButton("Holland 25 Aug", callback_data="Holland 25 Aug"),
+                InlineKeyboardButton("IKEA 17 Sep", callback_data="IKEA 17 Sep")
+            ],
+            [
+                InlineKeyboardButton("Marina Bay 21 Sep", callback_data="Marina Bay 21 Sep"),
+                InlineKeyboardButton("Jurong Lakes 22 Sep", callback_data="Jurong Lakes 22 Sep"),
+            ],
+            [
+                InlineKeyboardButton("Kent Ridge 6 Oct", callback_data="Kent Ridge 6 Oct"),
+                InlineKeyboardButton("Quarry 19 Oct", callback_data="Quarry 19 Oct")
+            ],
+            [
+                InlineKeyboardButton("Haw Par Villa 27 Oct", callback_data="Haw Par Villa 27 Oct")
+            ],
+        ]
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=questiontext,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        context.user_data['feedback_data'] = {'user': None,
+                                              'time': None
+                                              }
+        return 101
+
+    def whichevent_button(self, update, context):
+        query = update.callback_query
+        if query is not None:
+            query.answer()
+            whicheventinput = query.data
+            query.edit_message_text(text=f"Event: {query.data}")
+            context.user_data['feedback_data']['event'] = whicheventinput
+
+            question_text = "On a scale of 0-10 (10 being the best), how do you feel about this event?"
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=question_text,
+            )
+            return 102
+            # return 91
+
+    def eventrank(self, update, context):
+        rank = update.message.text
+        if rank not in [str(i) for i in range(1, 11)]:
+            reply = "Please send a number from 0 to 10!"
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=reply,
+            )
+            return 102
+
+        # reply = "Event rating: "
+        # context.bot.send_message(
+        #     chat_id=update.effective_chat.id,
+        #     text=reply + rank,
+        # )
+        update.message.reply_text(f"Event rating: {rank}")
+        context.user_data['feedback_data']['rating'] = rank
+        question_text = "The length of the event was"
+        keyboard = [
+            [InlineKeyboardButton("Too short", callback_data="Too short")],
+            [InlineKeyboardButton("Just nice", callback_data="Just nice")],
+            [InlineKeyboardButton("Too long", callback_data="Too long")]
+        ]
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=question_text,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        return 103
+
+    def eventlength_button(self, update, context):
+        query = update.callback_query
+        query.answer()
+        query.edit_message_text(text=f"Event length: {query.data}")
+        context.user_data['feedback_data']['length'] = query.data
+
+        question_text = "The difficulty of the route was"
+        keyboard = [
+            [InlineKeyboardButton("Easy", callback_data="Easy")],
+            [InlineKeyboardButton("Okay", callback_data="Okay")],
+            [InlineKeyboardButton("Hard", callback_data="Hard")]
+        ]
+
+        # update.message.reply_text(question_text, reply_markup=InlineKeyboardMarkup(keyboard))
+
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=question_text,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        return 104
+
+    def eventdifficulty_button(self, update, context):
+        query = update.callback_query
+        query.answer()
+        query.edit_message_text(text=f"Route difficulty: {query.data}")
+        context.user_data['feedback_data']['difficulty'] = query.data
+
+        question_text = "The pace of the route was"
+        keyboard = [
+            [InlineKeyboardButton("Easy", callback_data="Easy")],
+            [InlineKeyboardButton("Okay", callback_data="Okay")],
+            [InlineKeyboardButton("Hard", callback_data="Hard")]
+        ]
+        # update.message.reply_text(
+        #     "The pace of the route was",
+        #     reply_markup=InlineKeyboardMarkup(keyboard)
+        # )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=question_text,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        return 105
+
+    def eventpace_button(self, update, context):
+        query = update.callback_query
+        query.answer()
+        query.edit_message_text(text=f"Pace of route: {query.data}")
+        context.user_data['feedback_data']['pace'] = query.data
+
+        question_text = "If you rented a bike: On a scale of 1-10 (10 being the best), how serviceable was the bike provided by orc4bikes?"
+
+
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=question_text,
+        )
+        return 106
+
+    def bikeservice(self, update, context):
+        rank = update.message.text
+        if rank not in [str(i) for i in range(1, 11)]:
+            update.message.reply_text("Please send a number from 0 to 10!")
+            return 106
+
+        update.message.reply_text(f"Bike servicing rating: {rank}")
+        context.user_data['feedback_data']['servicing'] = rank
+        update.message.reply_text(
+            "Do you have any places that you want orc4bike to head to in the next event? If none, please send NIL"
+        )
+        return 107
+
+    def placetogo(self, update, context):
+        rank = update.message.text  # saving the response?
+        # reply = "Other places to go: "
+        # context.bot.send_message(
+        #     chat_id=update.effective_chat.id,
+        #     text=reply + rank,
+        # )
+        update.message.reply_text(f"Other places to go: {rank}")
+        context.user_data['feedback_data']['other_places'] = rank
+
+        # question_text = "Do you have any other feedback, suggestions, area of improvement? If none, please send NIL"
+        # context.bot.send_message(
+        #     chat_id=update.effective_chat.id,
+        #     text=question_text,
+        # )
+        update.message.reply_text(
+            "Do you have any other feedback, suggestions, area of improvement?")
+        return 108
+
+    def other(self, update, context):
+        rank = update.message.text  # saving the response?
+        update.message.reply_text("Other feedback: " + rank)
+        context.user_data['feedback_data']['other_feedback'] = rank
+
+        # ending_text = "Feedback captured. Thank you for your time!"
+        # context.bot.send_message(
+        #     chat_id=update.effective_chat.id,
+        #     text=ending_text,
+        # )
+        update.message.reply_text(
+            "Feedback captured. Thank you for your time!")
+
+        # print(context.user_data['feedback_data'])
+
+        context.user_data['feedback_data']['user'] = update.message.from_user.username
+        context.user_data['feedback_data']['time'] = self.now().strftime(
+            "%Y.%m.%d,%H.%M.%S")
+        self.save_feedback(feedback_data=context.user_data['feedback_data'])
+
+        user_data = self.get_user(username=update.message.from_user.username)
+        if user_data is not None:
+            user_data["credits"] += 1
+            self.update_user(user_data)
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"One penny has been given for your thoughts! You now have {user_data['credits']} credits."
+            )
+
+        return -1
+
     def cancel_command(self,update,context):
         """Used for conversation handlers"""
         context.bot.send_message(
@@ -686,7 +919,8 @@ class ConvoBot(TeleBot):
                 CommandHandler('payment',self.payment_command),
                 CommandHandler('topup',self.payment_command),
                 CommandHandler('return', self.return_command),
-                CommandHandler('report', self.report_command)
+                CommandHandler('report', self.report_command),
+                CommandHandler('feedback', self.whichevent),
             ],
             states = {
                 # 1-X: Rental
@@ -739,6 +973,23 @@ class ConvoBot(TeleBot):
                     MessageHandler(~Filters.command, callback=self.return_pic),
                     CommandHandler('done',callback=self.return_done)
                 ],
+
+                101: [
+                    CallbackQueryHandler(self.whichevent_button),
+                ],
+                102: [
+                    MessageHandler(filters=Filters.text,
+                                   callback=self.eventrank)
+                ],
+                103: [CallbackQueryHandler(self.eventlength_button)],
+                104: [CallbackQueryHandler(self.eventdifficulty_button)],
+                105: [CallbackQueryHandler(self.eventpace_button)],
+                106: [MessageHandler(filters=Filters.text,
+                                    callback=self.bikeservice)],
+                107: [MessageHandler(filters=Filters.text,
+                                    callback=self.placetogo)],
+                108: [MessageHandler(filters=Filters.text,
+                                    callback=self.other)],
             },
             fallbacks = [
                 CommandHandler('cancel',self.cancel_command),
@@ -748,7 +999,9 @@ class ConvoBot(TeleBot):
                 CommandHandler('payment',self.payment_command),
                 CommandHandler('topup',self.payment_command),
                 CommandHandler('return', self.return_command),
-                CommandHandler('report', self.report_command)
+                CommandHandler('report', self.report_command),
+                CommandHandler('feedback', self.whichevent),
+
                 ],
         )
         return my_handler

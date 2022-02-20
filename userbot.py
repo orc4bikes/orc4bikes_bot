@@ -63,8 +63,8 @@ class UserBot(TeleBot):
         """
         Initializes the bot
         This is where we initialize a new user
-        If the user is not created, a new json is created
-        with json name as chatid.json
+        If the user is not created, a new entry is created
+        in the database with primary key as chat_id
         """
         user_data = super().get_user(update,context)
         if user_data is not None:
@@ -101,11 +101,9 @@ class UserBot(TeleBot):
             text=text)
 
         if update.effective_chat.id > 0:
-            table_data = super().get_user_table()
             username=update.message.from_user.username
-            if username:
-                table_data[username] = update.effective_chat.id
-            super().update_user_table(table_data)
+            if username: 
+                super().update_user_id(username, update.effective_chat.id)
 
     def help_command(self,update,context):
         """Show a list of possible commands"""
@@ -140,8 +138,10 @@ class UserBot(TeleBot):
             for i,line in enumerate(data,1):
                 if line['type']=='admin':
                     text+=f'--: An admin {"added" if line["change"]>=0 else "deducted"} {line["change"]} credits on {line["time"]}. You now have {line["final"]} credits.\n'
+                elif line['type']=='payment':
+                    text+=f'--: You topped up {line["change"]} credits on {line["time"]}. You now have {line["final"]} credits.\n'
                 elif line['type']=='rental':
-                    text+=f'--: You rented a bike on {line["time"]}, and spent {line["spent"]} credits.\n'
+                    text+=f'--: You rented a bike on {line["time"]}, and spent {line["spent"]} credits. You now have {line["remaining"]} credits.\n'
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=text
@@ -156,8 +156,8 @@ class UserBot(TeleBot):
         """Show all available bikes. Used in /rent"""
         bikes_data = self.get_bikes()
         avail, not_avail = list(), list()
-        for bike in bikes_data.values():
-            if bike.get('status') == 0:
+        for bike in bikes_data:
+            if not bike.get('status'):
                 avail.append(bike)
             else:
                 not_avail.append(bike)
@@ -193,11 +193,9 @@ class UserBot(TeleBot):
                 status_text += f'\n\nCREDITS:\nCurrent:  {user_data.get("credits")} \nThis trip:  {deduction}\nProjected final:  {user_data.get("credits") - deduction}'
             else:
                 creds = user_data.get("credits", 0)
-                status_text = f'You are not renting... \n\nYou have {creds} credits left. '
+                status_text = f'You are not renting... \n\nYou have {creds} credits left. Would you like to /topup? '
                 if creds < 100:
-                    status_text+='\nPlease /topup soon, you\'re low on credits!'
-                else:
-                    status_text+='Would you like to /topup?'
+                    status_text+='Please top up soon!'
             status_text+= "\n\nFor more details, send /history"
             status_text+= "\nTo start your journey, send /rent"
             context.bot.send_message(
@@ -219,11 +217,11 @@ class UserBot(TeleBot):
                 text="You are not renting... Start /rent to get the pin for a bike!"
             )
         else:
-            bike_data = self.get_bikes()
-            pin = bike_data[bike_name]['pin']
+            bike_data = self.get_bike(bike_name)
+            pin = bike_data['pin']
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=f'Your bike pin is {pin}! Please do not share this pin... Cant unlock? Pls /report or contact @awwwsome_by or @Meltingice7'
+                text=f'Your bike pin is {pin}! Please do not share this pin... Can\'t unlock? Please contact one of the admins!'
             )
 
     def initialize(self):

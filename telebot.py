@@ -1,7 +1,8 @@
 import random
-import json # use json to store bicycles.json and user data
-import csv # use csv to store logs of rental
+import json
+import csv
 import datetime
+from decimal import Decimal
 
 from os import (path, mkdir)
 
@@ -14,6 +15,8 @@ from bot_text import (
 )
 
 from admin import DEV_API_KEY
+
+import database.controller as db
 
 from telegram import (
     InlineKeyboardMarkup, 
@@ -64,7 +67,7 @@ class TeleBot:
         Calculate credits deductable given a time period
         This is a dummy command, that should be implemented in the main bot!
         """
-        return 0
+        return Decimal(0)
 
     def check_user(self,update,context):
         """Check if user is registered, and not banned"""
@@ -84,18 +87,16 @@ class TeleBot:
         return True
 
     def get_user(self,update=None,context=None,username=None)  -> dict or None:
+        """Gets the user data"""
         if username is not None:
-            chat_id = self.get_user_table().get(username)
+            chat_id = self.get_user_id(username)
             if chat_id is None:
                 return None
         else:
             chat_id = update.effective_chat.id
         try:
-            if not path.exists('database/users'):
-                mkdir('database/users')
-            with open(f'database/users/{chat_id}.json', 'r') as f:
-                user_data = json.load(f)
-        except FileNotFoundError: # User doesn't exist!
+            user_data = db.get_user_data(chat_id)
+        except Exception: # User doesn't exist!
             user_data = None
         return user_data
 
@@ -103,59 +104,85 @@ class TeleBot:
         chat_id = user_data.get('chat_id', None)
         if not chat_id:
             return None
-        if not path.exists('database/users'):
-            mkdir('database/users')
-        with open(f'database/users/{chat_id}.json', 'w') as f:
-            json.dump(user_data, f, sort_keys=True, indent=4)
-    
-    def get_user_table(self) -> dict:
-        table_data = dict()
         try:
-            with open('database/users/table.json', 'r') as f:
-                table_data = json.load(f)
-        except FileNotFoundError:
-            self.update_user_table({})
-        return table_data
+            db.set_user_data(chat_id, user_data)
+        except Exception as e:
+            print(e)
     
-    def update_user_table(self, update_field):
-        with open('database/users/table.json', 'w') as f:
-            json.dump(update_field, f, sort_keys=True, indent=4)
+    def get_user_id(self, username='') -> int:
+        # table_data = dict()
+        if not username:
+            return None
+        try:
+            return db.get_username(username)
+        except Exception:
+            pass
+    
+    def update_user_id(self, username, chat_id):
+        try:
+            db.set_username(username, chat_id)
+        except:
+            pass
 
     def get_bikes(self) -> dict:
-        with open('database/bicycles.json', 'r') as f:
-            bikes_data = json.load(f)
-        return bikes_data
+        return db.get_all_bikes()
+    
+    def get_bike(self, bike_name) -> dict:
+        return db.get_bike_data(bike_name)
 
     def update_bikes(self, bikes_data) -> None:
-        with open('database/bicycles.json', 'w') as f:
-            json.dump(bikes_data, f, sort_keys=True, indent=4)
+        raise FileNotFoundError
+
+    def update_bike(self, bike_data) -> None:
+        bike_name = bike_data.get('name')
+        if not bike_name:
+            return
+        db.set_bike_data(bike_name, bike_data)
 
     def update_rental_log(self, update_list):
         """Updates rental logs with headers:
            bike,username,start_time,end_time"""
         if not path.exists('database/logs'):
             mkdir('database/logs')
-        with open('database/logs/rental.csv','a',newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(update_list)
+        if path.exists('database/logs/rental.csv'):
+            with open('database/logs/rental.csv','a',newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(update_list)
+        else:
+            with open('database/logs/rental.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['bike','username','start_time','end_time','credits'])
+                writer.writerow(update_list)
 
     def update_report_log(self, update_list):
         """Updates report logs with headers:
            username,time,report"""
         if not path.exists('database/logs'):
             mkdir('database/logs')
-        with open('database/logs/report.csv','a',newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(update_list)
+        if path.exists('database/logs/report.csv'):
+            with open('database/logs/report.csv','a',newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(update_list)
+        else:
+            with open('database/logs/report.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['username','time','report'])
+                writer.writerow(update_list)
 
     def update_finance_log(self, update_list):
         """Updates finance logs with headers:
            username,time,initial_amt,change_amt,final_amt"""
         if not path.exists('database/logs'):
             mkdir('database/logs')
-        with open('database/logs/finance.csv', 'a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(update_list)
+        if path.exists('database/logs/finance.csv'):
+            with open('database/logs/finance.csv', 'a', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(update_list)
+        else:
+            with open('database/logs/finance.csv', 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['username','time','initial_amt','change_amt','final_amt','action_by'])
+                writer.writerow(update_list)
 
     def addnew(self,handler):
         self.dispatcher.add_handler(handler)
