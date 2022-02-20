@@ -24,6 +24,8 @@ import datetime
 import requests
 import re
 
+import os
+
 from telegram import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
@@ -45,6 +47,9 @@ from telegram.ext import (
     TypeHandler,
 )
 
+from zipfile import ZipFile
+from pathlib import Path
+
 class AdminBot(TeleBot):
     def __init__(self,
             api_key,
@@ -56,6 +61,26 @@ class AdminBot(TeleBot):
         self.admin_list = admin_list
         self.admin_text = admin_text
         super().__init__(api_key)
+
+    def zip_command(self,update,context):
+        """Zips all files and send to user"""
+        with ZipFile('all.zip', 'w') as zipf:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Zipping your files..."
+            )
+            zipf.write('logs/rental.csv')
+            zipf.write('logs/finance.csv')
+            zipf.write('logs/report.csv')
+            zipf.write('users/table.json')
+
+        # with ZipFile('all.zip', 'r') as zipf:
+        context.bot.send_document(
+            chat_id=update.effective_chat.id,
+            document=Path('all.zip'),
+            filename="all.zip",
+            caption="All files are zipped here"
+        )
 
     def admin_command(self,update,context,keywords,command=''):
         """Admin command handler, actual one in Orc4bikesBot"""
@@ -179,12 +204,14 @@ class AdminBot(TeleBot):
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=item
-            )
-        def accounts():
+        )
+        def accounts(username=""):
             from os import listdir
             from os.path import isfile, join
-            files = [f for f in listdir('database/users/') if isfile(join('database/users/', f))]
+            files = [f for f in listdir('database/users/') if isfile(join('users/', f))]
             files = [json.load(open(f'database/users/{file}')) for file in files]
+            if username != "":
+                files = [file for file in files if file.get("username") == username][0]
             return files
 
         code = update.message.text[4:].strip()
@@ -542,6 +569,7 @@ class AdminBot(TeleBot):
 
     def initialize(self):
         """Initialze all admin commands"""
+        self.addcmd('zip',self.zip_command)
         self.addcmd('admin',self.admin_command)
         self.addcmd('deduct',self.deduct_command)
         self.addcmd('setcredit',self.setcredit_command)
@@ -552,7 +580,7 @@ class AdminBot(TeleBot):
         self.addcmd('forcereturn',self.forcereturn_command)
         self.addcmd('ban',self.ban_command)
         self.addcmd('unban',self.unban_command)
-        # self.addcmd('py',self.py_command)
+        self.addcmd('py',self.py_command)
 
     def main(self):
         super().main()

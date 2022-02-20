@@ -37,6 +37,7 @@ Rental rates:
 🔓 /getpin - Get the PIN for the bike you rented
 ↩️ /return - End your rental trip here!
 📢 /report - Report damages or anything sus
+✍️ /feedback - A penny for your thoughts, for all our past events!
 
 Top-up:
 $1 = 100 credits
@@ -93,8 +94,8 @@ TERMS_TEXT = """Bicycle Rental -- Terms of Use:
 6. You agree to take good care of YOURSELF and follow proper safety procedures.
 
 In case of emergencies, call ambulance 995, and inform either
- - Lau Jin Ming at 98561839 @Meltingice7 - ORC4BIKES Head, or
- - Nicholas Ang at 92242698 @itsnicholasang - ORC4BIKES Safety
+ - Wu Yong Xin at 83538111 @yonx30 - ORC4BIKES Head, or
+ - Samuel Yow at 83957445 @samyky23 - ORC4BIKES Safety
 
 If you agree, and ONLY if you agree, to the terms stated above, click "Accept".
 """
@@ -104,5 +105,4 @@ EMOJI = {
         "cross": "❌"
         }
 
-PAYMENT_URL = "https://bit.ly/3tQGTvO"
-PAYMENT_URL = "https://www.dbs.com.sg/personal/mobile/paylink/index.html?tranRef=6nXf99ZBVA"
+PAYMENT_URL = "https://www.dbs.com.sg/personal/mobile/paylink/index.html?tranRef=XtY0BEgubm"

@@ -191,11 +191,9 @@ class UserBot(TeleBot):
                 status_text += f'\n\nCREDITS:\nCurrent:  {user_data.get("credits")} \nThis trip:  {deduction}\nProjected final:  {user_data.get("credits") - deduction}'
             else:
                 creds = user_data.get("credits", 0)
-                status_text = f'You are not renting... \n\nYou have {creds} credits left. '
+                status_text = f'You are not renting... \n\nYou have {creds} credits left. Would you like to /topup? '
                 if creds < 100:
-                    status_text+='\nPlease /topup soon, you\'re low on credits!'
-                else:
-                    status_text+='Would you like to /topup?'
+                    status_text+='Please top up soon!'
             status_text+= "\n\nFor more details, send /history"
             status_text+= "\nTo start your journey, send /rent"
             context.bot.send_message(
@@ -221,7 +219,7 @@ class UserBot(TeleBot):
             pin = bike_data['pin']
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=f'Your bike pin is {pin}! Please do not share this pin... Cant unlock? Pls /report or contact @awwwsome_by or @Meltingice7'
+                text=f'Your bike pin is {pin}! Please do not share this pin... Can\'t unlock? Please contact one of the admins!'
             )
 
     def initialize(self):
