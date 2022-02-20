@@ -114,10 +114,10 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
     def reminder(self,context):
         """Reminder for return, every hour"""
         bikes_data = self.get_bikes()
-        for bike_name, bike_data in bikes_data.items():
+        for bike_data in bikes_data:
             username = bike_data.get('username')
             if username:
-                chat_id = self.get_user_table().get(username)
+                chat_id = self.get_user_id(username)
                 user_data = self.get_user(username=username)
                 status = user_data.get('status')
                 start = datetime.datetime.fromisoformat(status)

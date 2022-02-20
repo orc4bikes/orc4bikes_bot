@@ -101,11 +101,9 @@ class UserBot(TeleBot):
             text=text)
 
         if update.effective_chat.id > 0:
-            table_data = super().get_user_table()
             username=update.message.from_user.username
-            if username:
-                table_data[username] = update.effective_chat.id
-            super().update_user_table(table_data)
+            if username: 
+                super().update_user_id(username, update.effective_chat.id)
 
     def help_command(self,update,context):
         """Show a list of possible commands"""
@@ -156,7 +154,7 @@ class UserBot(TeleBot):
         """Show all available bikes. Used in /rent"""
         bikes_data = self.get_bikes()
         avail, not_avail = list(), list()
-        for bike in bikes_data.values():
+        for bike in bikes_data:
             if bike.get('status') == 0:
                 avail.append(bike)
             else:
@@ -219,8 +217,8 @@ class UserBot(TeleBot):
                 text="You are not renting... Start /rent to get the pin for a bike!"
             )
         else:
-            bike_data = self.get_bikes()
-            pin = bike_data[bike_name]['pin']
+            bike_data = self.get_bike(bike_name)
+            pin = bike_data['pin']
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'Your bike pin is {pin}! Please do not share this pin... Cant unlock? Pls /report or contact @awwwsome_by or @Meltingice7'

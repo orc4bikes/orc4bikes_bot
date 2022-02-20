@@ -15,6 +15,8 @@ from bot_text import (
 
 from admin import DEV_API_KEY
 
+import database.controller as db
+
 from telegram import (
     InlineKeyboardMarkup, 
     InlineKeyboardButton,
@@ -84,18 +86,20 @@ class TeleBot:
         return True
 
     def get_user(self,update=None,context=None,username=None)  -> dict or None:
+        """Gets the user data"""
         if username is not None:
-            chat_id = self.get_user_table().get(username)
+            chat_id = self.get_user_id(username)
             if chat_id is None:
                 return None
         else:
             chat_id = update.effective_chat.id
         try:
-            if not path.exists('database/users'):
-                mkdir('database/users')
-            with open(f'database/users/{chat_id}.json', 'r') as f:
-                user_data = json.load(f)
-        except FileNotFoundError: # User doesn't exist!
+            # if not path.exists('database/users'):
+            #     mkdir('database/users')
+            # with open(f'database/users/{chat_id}.json', 'r') as f:
+            #     user_data = json.load(f)
+            user_data = db.get_user_data(chat_id)
+        except Exception: # User doesn't exist!
             user_data = None
         return user_data
 
@@ -103,32 +107,46 @@ class TeleBot:
         chat_id = user_data.get('chat_id', None)
         if not chat_id:
             return None
-        if not path.exists('database/users'):
-            mkdir('database/users')
-        with open(f'database/users/{chat_id}.json', 'w') as f:
-            json.dump(user_data, f, sort_keys=True, indent=4)
-    
-    def get_user_table(self) -> dict:
-        table_data = dict()
+        # if not path.exists('database/users'):
+        #     mkdir('database/users')
+        # with open(f'database/users/{chat_id}.json', 'w') as f:
+        #     json.dump(user_data, f, sort_keys=True, indent=4)
         try:
-            with open('database/users/table.json', 'r') as f:
-                table_data = json.load(f)
-        except FileNotFoundError:
-            self.update_user_table({})
-        return table_data
+            db.set_user_data(chat_id, user_data)
+        except Exception:
+            pass
     
-    def update_user_table(self, update_field):
-        with open('database/users/table.json', 'w') as f:
-            json.dump(update_field, f, sort_keys=True, indent=4)
+    def get_user_id(self, username='') -> int:
+        # table_data = dict()
+        if not username:
+            return None
+        try:
+            # with open('database/users/table.json', 'r') as f:
+            #     table_data = json.load(f)
+            return db.get_username(username)
+        except Exception:
+            pass
+    
+    def update_user_id(self, username, chat_id):
+        try:
+            db.set_username(username, chat_id)
+        except:
+            pass
 
     def get_bikes(self) -> dict:
-        with open('database/bicycles.json', 'r') as f:
-            bikes_data = json.load(f)
-        return bikes_data
+        return db.get_all_bikes()
+    
+    def get_bike(self, bike_name) -> dict:
+        return db.get_bike_data(bike_name)
 
     def update_bikes(self, bikes_data) -> None:
-        with open('database/bicycles.json', 'w') as f:
-            json.dump(bikes_data, f, sort_keys=True, indent=4)
+        raise FileNotFoundError
+
+    def update_bike(self, bike_data) -> None:
+        bike_name = bike_data.get('bike_name')
+        if not bike_name:
+            return
+        db.set_bike_data(bike_name, bike_data)
 
     def update_rental_log(self, update_list):
         """Updates rental logs with headers:

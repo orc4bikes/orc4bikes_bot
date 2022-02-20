@@ -214,8 +214,7 @@ class AdminBot(TeleBot):
 
             if command in ['setpin','setstatus','forcereturn']: #bike commands
                 bike_name  = keywords.pop(0) # set the bike_name as name
-                bikes_data = self.get_bikes()
-                bike = bikes_data.get(bike_name, None)
+                bike = self.get_bike(bike_name, None)
                 if bike is None:
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
@@ -398,15 +397,15 @@ class AdminBot(TeleBot):
                 deduction = self.calc_deduct(diff)
 
                 #update return logs
-                bikes_data = self.get_bikes()
-                start_time = datetime.datetime.fromisoformat(bikes_data[bike_name]['status']).strftime('%Y/%m/%d, %H:%M:%S')
+                bike = self.get_bike(bike_name)
+                start_time = datetime.datetime.fromisoformat(bike['status']).strftime('%Y/%m/%d, %H:%M:%S')
                 end_time = self.now().strftime('%Y/%m/%d, %H:%M:%S')
                 self.update_rental_log([bike_name,username,start_time,end_time,deduction])
 
                 #update bike first, because bike uses user_data.bike_name
-                bikes_data[bike_name]['status'] = 0
-                bikes_data[bike_name]['username'] = ""
-                self.update_bikes(bikes_data)
+                bike['status'] = 0
+                bike['username'] = ""
+                self.update_bike(bike)
 
                 #update user data
                 log = user_data.get('log',[])
@@ -447,9 +446,9 @@ class AdminBot(TeleBot):
             elif command == "setpin":
                 number = keywords.pop(0)
                 if bike['pin']!=number:
-                    bikes_data[bike_name]['oldpin'] = bike['pin']
-                    bikes_data[bike_name]['pin'] = number
-                    self.update_bikes(bikes_data)
+                    bike['oldpin'] = bike['pin']
+                    bike['pin'] = number
+                    self.update_bike(bike)
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         text=f"Pin for {bike_name} updated to {number}!"
@@ -467,8 +466,8 @@ class AdminBot(TeleBot):
                 if rented == "":
                     if status == '0': #to reset the status to 0
                         status=int(status)
-                    bikes_data[bike_name]['status'] = status
-                    self.update_bikes(bikes_data)
+                    bike['status'] = status
+                    self.update_bike(bike)
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         text=f"Status for {bike_name} updated to {status}!"
@@ -482,7 +481,7 @@ class AdminBot(TeleBot):
 
             elif "bike" in command:
                 bikes_data = self.get_bikes()
-                text= '\n'.join(f'{bike["name"]}  --  {bike["username"] or bike["status"] or EMOJI["tick"]} (Pin: {bike["pin"]})' for bike in bikes_data.values())
+                text= '\n'.join(f'{bike["name"]}  --  {bike["username"] or bike["status"] or EMOJI["tick"]} (Pin: {bike["pin"]})' for bike in bikes_data)
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=text)

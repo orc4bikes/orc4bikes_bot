@@ -13,3 +13,5 @@ test.py
 
 # old code prior to optimizing...
 old_code.py
+
+.env
