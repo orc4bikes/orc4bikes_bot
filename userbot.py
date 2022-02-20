@@ -63,8 +63,8 @@ class UserBot(TeleBot):
         """
         Initializes the bot
         This is where we initialize a new user
-        If the user is not created, a new json is created
-        with json name as chatid.json
+        If the user is not created, a new entry is created
+        in the database with primary key as chat_id
         """
         user_data = super().get_user(update,context)
         if user_data is not None:
@@ -138,8 +138,10 @@ class UserBot(TeleBot):
             for i,line in enumerate(data,1):
                 if line['type']=='admin':
                     text+=f'--: An admin {"added" if line["change"]>=0 else "deducted"} {line["change"]} credits on {line["time"]}. You now have {line["final"]} credits.\n'
+                elif line['type']=='payment':
+                    text+=f'--: You topped up {line["change"]} credits on {line["time"]}. You now have {line["final"]} credits.\n'
                 elif line['type']=='rental':
-                    text+=f'--: You rented a bike on {line["time"]}, and spent {line["spent"]} credits.\n'
+                    text+=f'--: You rented a bike on {line["time"]}, and spent {line["spent"]} credits. You now have {line["remaining"]} credits.\n'
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=text
@@ -155,7 +157,7 @@ class UserBot(TeleBot):
         bikes_data = self.get_bikes()
         avail, not_avail = list(), list()
         for bike in bikes_data:
-            if bike.get('status') == 0:
+            if not bike.get('status'):
                 avail.append(bike)
             else:
                 not_avail.append(bike)

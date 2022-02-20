@@ -3,6 +3,7 @@ database/users/
 
 # rental and response logs
 database/logs/
+logs/
 
 #ignore all pycache
 __pycache__/

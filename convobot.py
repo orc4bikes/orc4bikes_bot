@@ -161,7 +161,7 @@ class ConvoBot(TeleBot):
                 amount = int(amount)
                 context.user_data['amount'] = amount
                 query.edit_message_text(f'Selected amount: ${amount//100:.2f}')
-                text1 = '[1] PayLah/PayNow to Lim Yu Jie, at 90817788, or shorturl.at/dBLW6'
+                text1 = '[1] PayLah/PayNow to Lim Yu Jie, at 90817788.' #, or shorturl.at/dBLW6'  ## TODO: shorturl not working!!
                 text1+= '\n[2] Once done, send a screenshot to @orc4bikes_bot!!'
                 text1+= '\n[3] You will receive "Transaction complete! You now have XXXX credits" for comfirmation'
 
@@ -236,6 +236,15 @@ class ConvoBot(TeleBot):
                         chat_id=update.effective_chat.id,
                         text=f"Promotion applied! An additional {amount} credits was added to your account. You now have {user_data.get('credits')} credits.\nHappy cycling!")
 
+                user_data['finance'] = user_data.get('finance',[])
+                f_log = {
+                    'type':'payment',
+                    'time':self.now().strftime("%Y/%m/%d, %H:%M:%S"),
+                    'initial':initial_amount,
+                    'change': user_data.get('credits') - initial_amount,
+                    'final': user_data.get('credits'),
+                }
+                user_data['finance'].append(f_log)
                 super().update_user(user_data)
 
                 # Notify Admin group
@@ -302,8 +311,8 @@ class ConvoBot(TeleBot):
         # Pass all checks, can rent. Get bikes
         bikes_data = self.get_bikes()
         avail, not_avail = list(), list()
-        for bike in bikes_data.values():
-            if bike.get('status') == 0:
+        for bike in bikes_data:
+            if not bike.get('status'):
                 avail.append(bike)
             else:
                 not_avail.append(bike)
@@ -314,7 +323,7 @@ class ConvoBot(TeleBot):
         text+= '\n\n' if avail else ''
         text+= f'{not_avail}'
         text+='\n\nClick below to start renting now!' if avail else '\n\nSorry, no bikes are not unavaialble...'
-        avail_bikes = [bike["name"] for bike in bikes_data.values() if bike.get('status') == 0]
+        avail_bikes = [bike["name"] for bike in bikes_data if not bike.get('status')]
         keyboard = list([[InlineKeyboardButton('Rent ' + bike, callback_data=bike)] for bike in avail_bikes])
         keyboard.append([InlineKeyboardButton('Cancel', callback_data='stoprent')])
         context.bot.send_message(
@@ -526,6 +535,7 @@ class ConvoBot(TeleBot):
             username = user_data.get('username')
             bike_name = user_data['bike_name']
             bike_data = self.get_bike(bike_name)
+            print('bike_data', bike_data)
             start_time = datetime.datetime.fromisoformat(bike_data['status']).strftime('%Y/%m/%d, %H:%M:%S')
             end_time = self.now().strftime('%Y/%m/%d, %H:%M:%S')
             self.update_rental_log([bike_name,username,start_time,end_time,deduction])
@@ -561,11 +571,11 @@ class ConvoBot(TeleBot):
             )
 
             deduction_text = f"{deduction} credits was deducted. Remaining credits: {user_data['credits']}"
-            deduction_text+= "\n\nTo top-up your credits, send /topup"
-            deduction_text+= "\nTo start a new journey, send /rent"
+            final_text = deduction_text + "\n\nTo top-up your credits, send /topup"
+            final_text+= "\nTo start a new journey, send /rent"
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=deduction_text
+                text=final_text
             )
             # Notify Admin group
             admin_text=f'[RENTAL - RETURN] \n@{update.message.from_user.username} returned {bike_name} at following time:\n{self.now().strftime("%Y/%m/%d, %H:%M:%S")}'

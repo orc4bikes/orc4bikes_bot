@@ -83,7 +83,7 @@ Other commands:
 START_MESSAGE = "Please /start me privately to access this service!"
 
 BAN_MESSAGE = '''You are on Santa's naughty list... What have you done?!
-If you believe this is a mistake, contact the current admins at @meltingice7 or @Fusion_mix25'''
+If you believe this is a mistake, contact the current admins at @yonx30'''
 
 TERMS_TEXT = """Bicycle Rental -- Terms of Use:
 1. You are not to HOG the bike

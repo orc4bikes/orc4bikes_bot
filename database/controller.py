@@ -3,7 +3,8 @@ import json
 from decimal import Decimal
 import boto3
 from botocore.exceptions import ClientError
-from torch import exp_
+
+import datetime
 
 ACCESS_KEY = os.environ.get('ACCESS_KEY')
 SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -69,7 +70,8 @@ def get_user_data(chat_id=None, dynamodb=None):
 
 def set_user_data(chat_id=None, user_data={}, dynamodb=None):
     """Updating single user's data"""
-    user_data = json.loads(json.dumps(user_data), parse_float=Decimal)
+    # Only json dump if importing data
+    # user_data = json.loads(json.dumps(user_data), parse_float=Decimal)
     if not chat_id:
         return None
     # create_users_table()
@@ -207,7 +209,6 @@ def get_all_bikes(dynamodb=None):
         while 'LastEvaluatedKey' in response:
             response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
             data.extend(response['Items'])
-        print(data)
     except ClientError as e:
         print(e.response['Error']['Message'])
     except KeyError as e:
@@ -231,8 +232,6 @@ def set_bike_data(bike_name=None, bike_data={}, dynamodb=None):
     table = dynamodb.Table('bikes')
     response=None
     
-    print('bike name', bike_name)
-
     def keywords(k, a=""):
         if k=="status":
             k= a+"s"
@@ -241,11 +240,8 @@ def set_bike_data(bike_name=None, bike_data={}, dynamodb=None):
         if k=="type":
             k= a+"t"
         return k
-    print('testing')
     exp_attr_val = {f':{keywords(k)}':v for k,v in bike_data.items() if k!='name'}
     update_exp = 'set ' + ', '.join([f'{keywords(k,"#")}=:{keywords(k)}' for k in bike_data.keys() if k!='name'])
-    print(exp_attr_val)
-    print(update_exp)
     try:
         response = table.update_item(
             Key={
@@ -317,13 +313,14 @@ def get_username(username="", dynamodb=None):
     response = None
     try:
         response = table.get_item(Key={'username': username})['Item']
+        chat_id = int(response.get('chat_id'))
     except ClientError as e:
         print(e.response['Error']['Message'])
     except KeyError as e:
         print('Key Error! Item not found')
         print(e)
     finally:
-        return response
+        return chat_id
 
 def set_username(username="", chat_id=0, dynamodb=None):
     """Updating single bike's data"""
@@ -357,76 +354,5 @@ def set_username(username="", chat_id=0, dynamodb=None):
     finally:
         return response
 
-user_data = {
-    "bike_name": "",
-    "chat_id": 1,
-    "credits": 2071.0,
-    "finance": [
-        {
-            "change": 1000,
-            "final": 1000,
-            "initial": 0,
-            "time": "2021/09/21, 13:28:42",
-            "type": "admin"
-        },
-        {
-            "credits": -429.0,
-            "remaining": -1858.0,
-            "spent": 1429.0,
-            "time": "2021/09/22, 00:32:44",
-            "type": "rental"
-        },
-        {
-            "change": 2000,
-            "final": 1571.0,
-            "initial": -429.0,
-            "time": "2021/09/22, 22:14:34",
-            "type": "admin"
-        },
-        {
-            "change": 500,
-            "final": 2071.0,
-            "initial": 1571.0,
-            "time": "2021/09/26, 18:11:30",
-            "type": "admin"
-        }
-    ],
-    "first_name": "Yan Quan",
-    "last_name": "Tan",
-    "log": [
-        {
-            "end": "2021-09-22T00:32:44.265262",
-            "start": "2021-09-21T16:36:41.786845",
-            "time": "7 hours, 56 minutes, and 2 seconds"
-        }
-    ],
-    "status": None,
-    "username": "yanquan"
-}
-
 if __name__ == '__main__':
-    # print('create table',create_bikes_table())
-    # print('get_data', get_bike_data('fold_blue'))
-    # print('set data', set_bike_data('fold_blue',
-    #     {
-    #         "colour": "blue",
-    #         "name": "fold_blue",
-    #         "oldpin": "12345",
-    #         "pin": "00000",
-    #         "status": 0,
-    #         "type": "foldable",
-    #         "username": ""
-    #     }
-    # ))
-    # print('get again', get_bike_data('fold_blue'))
-    # print('all', get_all_bikes())
-    # print('create table', create_usernames_table())
-    # print('get username', get_username('tt'))
-    # print('set username', set_username('tt',44487))
-    # print('get username', get_username('tt'))
-    # print('Set up DB OK.')
-    # print('get user', get_user_data(1))
-    # print('set user', set_user_data(1,user_data))
-    # print('get user', get_user_data(1))
-    print(type(get_all_bikes()))
     print('Set up DB OK.')

@@ -1,7 +1,8 @@
 import random
-import json # use json to store bicycles.json and user data
-import csv # use csv to store logs of rental
+import json
+import csv
 import datetime
+from decimal import Decimal
 
 from os import (path, mkdir)
 
@@ -66,7 +67,7 @@ class TeleBot:
         Calculate credits deductable given a time period
         This is a dummy command, that should be implemented in the main bot!
         """
-        return 0
+        return Decimal(0)
 
     def check_user(self,update,context):
         """Check if user is registered, and not banned"""
@@ -94,10 +95,6 @@ class TeleBot:
         else:
             chat_id = update.effective_chat.id
         try:
-            # if not path.exists('database/users'):
-            #     mkdir('database/users')
-            # with open(f'database/users/{chat_id}.json', 'r') as f:
-            #     user_data = json.load(f)
             user_data = db.get_user_data(chat_id)
         except Exception: # User doesn't exist!
             user_data = None
@@ -107,22 +104,16 @@ class TeleBot:
         chat_id = user_data.get('chat_id', None)
         if not chat_id:
             return None
-        # if not path.exists('database/users'):
-        #     mkdir('database/users')
-        # with open(f'database/users/{chat_id}.json', 'w') as f:
-        #     json.dump(user_data, f, sort_keys=True, indent=4)
         try:
             db.set_user_data(chat_id, user_data)
-        except Exception:
-            pass
+        except Exception as e:
+            print(e)
     
     def get_user_id(self, username='') -> int:
         # table_data = dict()
         if not username:
             return None
         try:
-            # with open('database/users/table.json', 'r') as f:
-            #     table_data = json.load(f)
             return db.get_username(username)
         except Exception:
             pass
@@ -143,7 +134,7 @@ class TeleBot:
         raise FileNotFoundError
 
     def update_bike(self, bike_data) -> None:
-        bike_name = bike_data.get('bike_name')
+        bike_name = bike_data.get('name')
         if not bike_name:
             return
         db.set_bike_data(bike_name, bike_data)

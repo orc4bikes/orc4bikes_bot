@@ -20,6 +20,7 @@ import random
 import json
 import csv
 import datetime
+from decimal import Decimal
 
 import requests
 import re
@@ -241,7 +242,7 @@ class AdminBot(TeleBot):
 
             if command in ['setpin','setstatus','forcereturn']: #bike commands
                 bike_name  = keywords.pop(0) # set the bike_name as name
-                bike = self.get_bike(bike_name, None)
+                bike = self.get_bike(bike_name)
                 if bike is None:
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
@@ -297,7 +298,7 @@ class AdminBot(TeleBot):
                 number = keywords.pop(0)
                 user_data['credits'] = user_data.get('credits', 0)
                 initial_amt = user_data.get('credits', 0)
-                user_data['credits'] -= int(number)
+                user_data['credits'] -= Decimal(int(number))
                 final_amt = user_data.get('credits')
 
                 #update user data
@@ -358,7 +359,7 @@ class AdminBot(TeleBot):
 
             elif command == "user":
                 text=f'@{user_data["username"]} has {user_data.get("credits",0)} credits left.\n'
-                text+=f'User has been renting {user_data["bike_name"]} since {user_data["status"]}' if user_data.get("bike_name") else "User is not renting currently."
+                text+=f'User has been renting {user_data["bike_name"]} since {datetime.datetime.fromisoformat(user_data["status"]).strftime("%Y/%m/%d, %H:%M:%S")}' if user_data.get("bike_name") else "User is not renting currently."
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=text)
@@ -405,6 +406,7 @@ class AdminBot(TeleBot):
                     return
                     
                 user_data = self.get_user(username=username)
+                print('\nuser data\n', user_data)
                 status = user_data.get('status')
                 if not status:
                     return context.bot.send_message(
@@ -425,6 +427,7 @@ class AdminBot(TeleBot):
 
                 #update return logs
                 bike = self.get_bike(bike_name)
+                print('\nbike data\n', bike)
                 start_time = datetime.datetime.fromisoformat(bike['status']).strftime('%Y/%m/%d, %H:%M:%S')
                 end_time = self.now().strftime('%Y/%m/%d, %H:%M:%S')
                 self.update_rental_log([bike_name,username,start_time,end_time,deduction])
@@ -454,19 +457,20 @@ class AdminBot(TeleBot):
 
                 admin_username = update.message.from_user.username
                 context.bot.send_message(
-                    chat_id=user_data.get('chat_id'),
+                    chat_id=int(user_data.get('chat_id')),
                     text=f"An admin, @{admin_username} has returned your bike for you! Your total rental time is {strdiff}."
                 )
                 deduction_text = f"{deduction} credits was deducted. Remaining credits: {user_data['credits']}"
                 deduction_text+= '\nIf you have any queries, please ask a comm member for help.'
                 context.bot.send_message(
-                    chat_id=user_data.get('chat_id'),
+                    chat_id=int(user_data.get('chat_id')),
                     text=deduction_text
                 )
                 # Notify Admin group
                 admin_text=f'[RENTAL - RETURN] \n@{update.message.from_user.username} returned {bike_name} at following time:\n{self.now().strftime("%Y/%m/%d, %H:%M:%S")}'
                 admin_text+=f'\nThis return was force-returned by @{admin_username}.'
                 admin_text+='\n'+deduction_text
+                print('3    ', admin_text)
                 self.admin_log(update,context, admin_text)
                 
 
@@ -561,11 +565,11 @@ class AdminBot(TeleBot):
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text='Hmm, file not found... Please raise a ticket with @fluffballz, along with what you sent.')
-        except Exception as e:
-            self.log_exception(e,"Error with handle_admin")
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f'Failed, error is {e}\nPlease raise a ticket with @fluffballz, along with what you sent')
+        # except Exception as e:
+        #     self.log_exception(e,"Error with handle_admin")
+        #     context.bot.send_message(
+        #         chat_id=update.effective_chat.id,
+        #         text=f'Failed, error is {e}\nPlease raise a ticket with @fluffballz, along with what you sent')
 
     def initialize(self):
         """Initialze all admin commands"""

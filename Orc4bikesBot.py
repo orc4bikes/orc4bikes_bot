@@ -26,6 +26,7 @@ import random
 import json
 import csv
 import datetime
+from decimal import Decimal
 
 import requests
 import re
@@ -79,7 +80,7 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
         """Calculate credits deductable given a time period"""
         deduction = time_diff.seconds // self.deduct_rate + int(time_diff.seconds%self.deduct_rate > 0)
         deduction += time_diff.days * 86400 / self.deduct_rate
-        return deduction
+        return Decimal(deduction)
 
     def echo_command(self,update,context):
         update.message.reply_text(update.message.text)
