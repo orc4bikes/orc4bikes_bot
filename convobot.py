@@ -189,7 +189,9 @@ class ConvoBot(TeleBot):
     def payment_pic(self,update,context):
         """After photo is sent, save the photo and ask if would like to retake"""
         query = update.callback_query
-        query.answer()
+        if query: 
+            query.answer() 
+            return 72
         if update.message.photo:
             photo = update.message.photo[-1].file_id
             context.user_data['photo'] = photo
