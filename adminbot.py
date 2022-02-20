@@ -406,7 +406,6 @@ class AdminBot(TeleBot):
                     return
                     
                 user_data = self.get_user(username=username)
-                print('\nuser data\n', user_data)
                 status = user_data.get('status')
                 if not status:
                     return context.bot.send_message(
@@ -427,7 +426,6 @@ class AdminBot(TeleBot):
 
                 #update return logs
                 bike = self.get_bike(bike_name)
-                print('\nbike data\n', bike)
                 start_time = datetime.datetime.fromisoformat(bike['status']).strftime('%Y/%m/%d, %H:%M:%S')
                 end_time = self.now().strftime('%Y/%m/%d, %H:%M:%S')
                 self.update_rental_log([bike_name,username,start_time,end_time,deduction])
@@ -470,7 +468,6 @@ class AdminBot(TeleBot):
                 admin_text=f'[RENTAL - RETURN] \n@{update.message.from_user.username} returned {bike_name} at following time:\n{self.now().strftime("%Y/%m/%d, %H:%M:%S")}'
                 admin_text+=f'\nThis return was force-returned by @{admin_username}.'
                 admin_text+='\n'+deduction_text
-                print('3    ', admin_text)
                 self.admin_log(update,context, admin_text)
                 
 
