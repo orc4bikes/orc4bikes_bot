@@ -326,12 +326,11 @@ class ConvoBot(TeleBot):
         query = update.callback_query
         query.answer()
         bike_name = query.data
-        bikes_data = self.get_bikes()
         try:
             if bike_name == 'stoprent':
                 query.edit_message_text(text="Rental has been cancelled! Send /rent to refresh the available bikes.")
                 return -1
-            bike_data = bikes_data.get(bike_name,None)
+            bike_data = self.get_bike(bike_name)
             if bike_data is None: # Bike doesn't exist
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
@@ -430,10 +429,10 @@ class ConvoBot(TeleBot):
                 user_data['bike_name'] = bike_name
                 super().update_user(user_data)
 
-                bikes_data = self.get_bikes()
-                bikes_data[bike_name]['username'] = user_data.get('username')
-                bikes_data[bike_name]['status'] = curr_time
-                self.update_bikes(bikes_data)
+                bike = self.get_bike(bike_name)
+                bike['username'] = user_data.get('username')
+                bike['status'] = curr_time
+                self.update_bike(bike)
 
                 # Notify user
                 context.bot.send_message(
@@ -523,15 +522,15 @@ class ConvoBot(TeleBot):
             #update return logs
             username = user_data.get('username')
             bike_name = user_data['bike_name']
-            bikes_data = self.get_bikes()
-            start_time = datetime.datetime.fromisoformat(bikes_data[bike_name]['status']).strftime('%Y/%m/%d, %H:%M:%S')
+            bike_data = self.get_bike(bike_name)
+            start_time = datetime.datetime.fromisoformat(bike_data['status']).strftime('%Y/%m/%d, %H:%M:%S')
             end_time = self.now().strftime('%Y/%m/%d, %H:%M:%S')
             self.update_rental_log([bike_name,username,start_time,end_time,deduction])
 
             #update bike first, because bike uses user_data.bike_name
-            bikes_data[bike_name]['status'] = 0
-            bikes_data[bike_name]['username'] = ""
-            self.update_bikes(bikes_data)
+            bike_data['status'] = 0
+            bike_data['username'] = ""
+            self.update_bike(bike_data)
 
             #update user data
             log = user_data.get('log',[])
