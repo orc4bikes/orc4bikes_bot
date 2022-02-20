@@ -562,11 +562,11 @@ class AdminBot(TeleBot):
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text='Hmm, file not found... Please raise a ticket with @fluffballz, along with what you sent.')
-        # except Exception as e:
-        #     self.log_exception(e,"Error with handle_admin")
-        #     context.bot.send_message(
-        #         chat_id=update.effective_chat.id,
-        #         text=f'Failed, error is {e}\nPlease raise a ticket with @fluffballz, along with what you sent')
+        except Exception as e:
+            self.log_exception(e,"Error with handle_admin")
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f'Failed, error is {e}\nPlease raise a ticket with @fluffballz, along with what you sent')
 
     def initialize(self):
         """Initialze all admin commands"""
