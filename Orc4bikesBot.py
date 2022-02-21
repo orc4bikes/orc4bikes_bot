@@ -23,9 +23,10 @@ from userbot import UserBot
 from convobot import ConvoBot
 
 import random
-import json # use json to store bicycles.json and user data
-import csv # use csv to store logs of rental
+import json
+import csv
 import datetime
+from decimal import Decimal
 
 import requests
 import re
@@ -79,7 +80,7 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
         """Calculate credits deductable given a time period"""
         deduction = time_diff.seconds // self.deduct_rate + int(time_diff.seconds%self.deduct_rate > 0)
         deduction += time_diff.days * 86400 / self.deduct_rate
-        return deduction
+        return Decimal(deduction)
 
     def echo_command(self,update,context):
         update.message.reply_text(update.message.text)
@@ -114,10 +115,10 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
     def reminder(self,context):
         """Reminder for return, every hour"""
         bikes_data = self.get_bikes()
-        for bike_name, bike_data in bikes_data.items():
+        for bike_data in bikes_data:
             username = bike_data.get('username')
             if username:
-                chat_id = self.get_user_table().get(username)
+                chat_id = self.get_user_id(username)
                 user_data = self.get_user(username=username)
                 status = user_data.get('status')
                 start = datetime.datetime.fromisoformat(status)

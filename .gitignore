@@ -1,7 +1,8 @@
 # ignore all users
-users/
+database/users/
 
 # rental and response logs
+database/logs/
 logs/
 
 #ignore all pycache
@@ -13,3 +14,5 @@ test.py
 
 # old code prior to optimizing...
 old_code.py
+
+.env
