@@ -570,11 +570,11 @@ class ConvoBot(TeleBot):
             )
 
             deduction_text = f"{deduction} credits was deducted. Remaining credits: {user_data['credits']}"
-            final_text = deduction_text + "\n\nTo top-up your credits, send /topup"
-            final_text+= "\nTo start a new journey, send /rent"
+            user_text = deduction_text + "\n\nTo top-up your credits, send /topup"
+            user_text+= "\nTo start a new journey, send /rent"
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=final_text
+                text=user_text
             )
             # Notify Admin group
             admin_text=f'[RENTAL - RETURN] \n@{update.message.from_user.username} returned {bike_name} at following time:\n{self.now().strftime("%Y/%m/%d, %H:%M:%S")}'

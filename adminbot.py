@@ -459,10 +459,10 @@ class AdminBot(TeleBot):
                     text=f"An admin, @{admin_username} has returned your bike for you! Your total rental time is {strdiff}."
                 )
                 deduction_text = f"{deduction} credits was deducted. Remaining credits: {user_data['credits']}"
-                deduction_text+= '\nIf you have any queries, please ask a comm member for help.'
+                user_text = deduction_text + '\nIf you have any queries, please ask a comm member for help.'
                 context.bot.send_message(
                     chat_id=int(user_data.get('chat_id')),
-                    text=deduction_text
+                    text=user_text
                 )
                 # Notify Admin group
                 admin_text=f'[RENTAL - RETURN] \n@{update.message.from_user.username} returned {bike_name} at following time:\n{self.now().strftime("%Y/%m/%d, %H:%M:%S")}'
