@@ -1,8 +1,10 @@
-# orcabikes_bot
-Telegram bot for Orcabikes, a RC4 interest group
+# @orc4bikes_bot
+Telegram bot for orc4bikes, a RC4 interest group
 
 # What this bot does
-Handles the rental of bicycles from Orcabikes
+Handles the rental of bicycles from orc4bikes.
+
+Using telegram, users are able to check the availability of bikes, and rent them after verification.
 
 # Commands
 /start initializes the bot <br/>
@@ -29,8 +31,3 @@ Handles the rental of bicycles from Orcabikes
 # Requirements
 This projects uses python-telegram-bot, before running please install it using this command: <br />
 pip install python-telegram-bot
-
-
-# For Developers
-Please run this code before starting:
-`git update-index --skip-worktree admin.py`
