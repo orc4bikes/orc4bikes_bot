@@ -4,6 +4,7 @@ import csv
 import datetime
 from decimal import Decimal
 
+import os
 from os import (path, mkdir)
 
 import requests
@@ -17,6 +18,8 @@ from bot_text import (
 from admin import DEV_API_KEY
 
 import database.controller as db
+
+LOGGING_URL = os.environ.get('LOGGING_URL')
 
 from telegram import (
     InlineKeyboardMarkup, 
@@ -39,6 +42,18 @@ from telegram.ext import (
     TypeHandler,
 )
 
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        super().default(obj)  # Let the json module throw the error
+
+def float_to_decimal(obj):
+    """DynamoDB require Decimal in place of float"""
+    return json.loads(json.dumps(obj, cls=DecimalEncoder), parse_float=Decimal)
+
+def decimal_to_float(obj):
+    return json.loads(json.dumps(obj, cls=DecimalEncoder))
 
 class TeleBot:
     """
@@ -142,47 +157,21 @@ class TeleBot:
     def update_rental_log(self, update_list):
         """Updates rental logs with headers:
            bike,username,start_time,end_time"""
-        if not path.exists('database/logs'):
-            mkdir('database/logs')
-        if path.exists('database/logs/rental.csv'):
-            with open('database/logs/rental.csv','a',newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(update_list)
-        else:
-            with open('database/logs/rental.csv', 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(['bike','username','start_time','end_time','credits'])
-                writer.writerow(update_list)
+
+        data = decimal_to_float(update_list)
+        requests.post(f"{LOGGING_URL}?file=rental", json=data)
 
     def update_report_log(self, update_list):
         """Updates report logs with headers:
            username,time,report"""
-        if not path.exists('database/logs'):
-            mkdir('database/logs')
-        if path.exists('database/logs/report.csv'):
-            with open('database/logs/report.csv','a',newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(update_list)
-        else:
-            with open('database/logs/report.csv', 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(['username','time','report'])
-                writer.writerow(update_list)
+        data = decimal_to_float(update_list)
+        requests.post(f"{LOGGING_URL}?file=report", json=data)
 
     def update_finance_log(self, update_list):
         """Updates finance logs with headers:
            username,time,initial_amt,change_amt,final_amt"""
-        if not path.exists('database/logs'):
-            mkdir('database/logs')
-        if path.exists('database/logs/finance.csv'):
-            with open('database/logs/finance.csv', 'a', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(update_list)
-        else:
-            with open('database/logs/finance.csv', 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(['username','time','initial_amt','change_amt','final_amt','action_by'])
-                writer.writerow(update_list)
+        data = decimal_to_float(update_list)
+        requests.post(f"{LOGGING_URL}?file=finance", json=data)
 
     def addnew(self,handler):
         self.dispatcher.add_handler(handler)

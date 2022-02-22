@@ -515,25 +515,28 @@ class AdminBot(TeleBot):
                     text=text)
 
             elif command == "logs":
-                context.bot.send_document(
+                context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    document=open('database/logs/rental.csv','rb'),
-                    filename="rental.csv",
-                    caption="Rental logs"
-                )
-                context.bot.send_document(
-                    chat_id=update.effective_chat.id,
-                    document=open('database/logs/report.csv','rb'),
-                    filename="report.csv",
-                    caption="Report logs"
-                )
-                context.bot.send_document(
-                    chat_id=update.effective_chat.id,
-                    document=open('database/logs/finance.csv','rb'),
-                    filename="finance.csv",
-                    caption="Finance logs"
-                )
-
+                    text='This feature is temporarily unavailable. Please visit the orc4bikes Google Drive for updated logs! -@heyzec')
+            
+                # context.bot.send_document(
+                #     chat_id=update.effective_chat.id,
+                #     document=open('database/logs/rental.csv','rb'),
+                #     filename="rental.csv",
+                #     caption="Rental logs"
+                # )
+                # context.bot.send_document(
+                #     chat_id=update.effective_chat.id,
+                #     document=open('database/logs/report.csv','rb'),
+                #     filename="report.csv",
+                #     caption="Report logs"
+                # )
+                # context.bot.send_document(
+                #     chat_id=update.effective_chat.id,
+                #     document=open('database/logs/finance.csv','rb'),
+                #     filename="finance.csv",
+                #     caption="Finance logs"
+                # )
 
             else: # unrecognized command...
                 context.bot.send_message(

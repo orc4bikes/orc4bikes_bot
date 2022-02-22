@@ -47,6 +47,8 @@ from telegram.ext import (
     TypeHandler,
 )
 
+LOGGING_URL = os.environ.get('LOGGING_URL')
+
 class ConvoBot(TeleBot):
     def __init__(self,
             api_key,
@@ -682,22 +684,8 @@ class ConvoBot(TeleBot):
 
 
     def save_feedback(self, feedback_data, filename=None):
-        if not os.path.exists('logs'):
-            os.mkdir('logs')
-            print('making dir')
-        filename = 'logs/feedbacks.csv'
+        requests.post(f"{LOGGING_URL}?file=feedback", json=list(feedback_data.values()))
 
-        if not os.path.exists(filename):
-            print('feedback doesnt exist')
-            with open(filename, 'w', newline='') as f:
-                writer = csv.DictWriter(
-                    f, fieldnames=list(feedback_data.keys()))
-                writer.writeheader()
-
-        with open(filename, 'a', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=list(feedback_data.keys()))
-            writer.writerow(feedback_data)
-            print('write success')
 
     def whichevent(self, update, context):
         questiontext = "A penny for your thoughts! You get one credit for doing this feedback :)\n"
