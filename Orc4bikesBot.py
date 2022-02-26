@@ -52,6 +52,8 @@ from telegram.ext import (
     TypeHandler,
 )
 
+import logging
+logger = logging.getLogger()
 
 class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
     DEDUCT_RATE = 20 # deduct 1 credit every 20 seconds or part thereof
@@ -66,7 +68,7 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
             terms_text=TERMS_TEXT,
             promo = False,
             ):
-        print('running Orc4bikesBot at', super().now())
+        logger.info('running Orc4bikesBot now')
         super().__init__(api_key)
         self.help_text = help_text
         self.admin_group_id = admin_group_id
@@ -110,7 +112,7 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
             text+= '\n\nSorry, this button has expired. Please send the previous command again'
             query.edit_message_text(text)
         except Exception as e:
-            self.log_exception(e,"Error with unrecognized_buttons")
+            logger.exception(e)
 
     def reminder(self,context):
         """Reminder for return, every hour"""
@@ -142,7 +144,7 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
     def scheduler(self):
         """Scheduler for reminder to be run"""
         j = self.updater.job_queue
-        print('getting daily queue')
+        logger.debug('getting daily queue')
         for hour in range(24):
             j.run_daily(
                 self.reminder,

@@ -17,6 +17,7 @@ import csv
 import datetime
 
 import requests
+from requests.exceptions import RequestException
 import re
 
 from telegram import (
@@ -39,6 +40,10 @@ from telegram.ext import (
     CallbackQueryHandler,
     TypeHandler,
 )
+
+import logging
+logger = logging.getLogger()
+
 
 
 class FunBot(TeleBot):
@@ -190,73 +195,70 @@ class FunBot(TeleBot):
         """Sends an inspirational quote"""
         try:
             url = requests.get('https://type.fit/api/quotes').json()
+        except RequestException as e:
+            logger.exception(e)
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=random.choice(CHEER_LIST)
+            )
+        else:
             url = random.choice(url)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'"{url["text"]}" - {url["author"]}'
             )
-        except Exception as e:
-            self.log_exception(e,"Error with quote_command")
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=random.choice(CHEER_LIST)
-            )
 
     def pika_command(self,update,context):
         """Sends a pikachu sticker"""
-        try:
-            if random.random() < 0.01:
-                return context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text="Pika... boo? 🙂"
-                )
-            pika_list = [
-                'pikachu',
-                'pikachu2',
-                'PikachuDetective',
-                'pikachu6',
-                'pikach',
-                'pikach_memes'
-                ]
-            pikas = []
-            for pika in pika_list:
-                pikas.extend(context.bot.get_sticker_set(pika).stickers)
-            pikas.extend(context.bot.get_sticker_set('uwumon').stickers[:20])
-            pika = random.choice(pikas)
-            context.bot.send_sticker(
-                chat_id=update.effective_chat.id,
-                sticker=pika
-            )
-        except Exception as e:
-            self.log_exception(e,"Error with pika_command")
-            context.bot.send_message(
+
+        if random.random() < 0.01:
+            return context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Pika... boo? 🙂"
             )
+        pika_list = [
+            'pikachu',
+            'pikachu2',
+            'PikachuDetective',
+            'pikachu6',
+            'pikach',
+            'pikach_memes'
+            ]
+        pikas = []
+        for pika in pika_list:
+            pikas.extend(context.bot.get_sticker_set(pika).stickers)
+        pikas.extend(context.bot.get_sticker_set('uwumon').stickers[:20])
+        pika = random.choice(pikas)
+        context.bot.send_sticker(
+            chat_id=update.effective_chat.id,
+            sticker=pika
+        )
+        # except Exception as e:
+        #     logger.exception(e)
+        #     context.bot.send_message(
+        #         chat_id=update.effective_chat.id,
+        #         text="Pika... boo? 🙂"
+        #     )
 
     def brawl_command(self,update,context):
         """Sends a brawl stars sticker"""
-        try:
-            brawls = context.bot.get_sticker_set('BrawlStarsbyHerolias')
-            brawl = random.choice(brawls.stickers)
-            context.bot.send_sticker(
-                chat_id=update.effective_chat.id,
-                sticker=brawl
-            )
-        except Exception as e:
-            self.log_exception(e,"Error with brawl_command")
+
+        brawls = context.bot.get_sticker_set('BrawlStarsbyHerolias')
+        brawl = random.choice(brawls.stickers)
+        context.bot.send_sticker(
+            chat_id=update.effective_chat.id,
+            sticker=brawl
+        )
 
     def bangday_command(self,update,context):
         """Sends a bang don sticker"""
-        try:
-            bangdongs = context.bot.get_sticker_set('happybangday')
-            bangdong = random.choice(bangdongs.stickers)
-            context.bot.send_sticker(
-                chat_id=update.effective_chat.id,
-                sticker=bangdong
-            )
-        except Exception as e:
-            self.log_exception(e,"Error with bangday_command")
+
+        bangdongs = context.bot.get_sticker_set('happybangday')
+        bangdong = random.choice(bangdongs.stickers)
+        context.bot.send_sticker(
+            chat_id=update.effective_chat.id,
+            sticker=bangdong
+        )
 
     def ohno_command(self,update,context):
         """Sends a version of "Oh no"..."""
@@ -291,6 +293,7 @@ class FunBot(TeleBot):
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=text)
+        raise ZeroDivisionError  # This function is now for testing
 
     def initialize(self):
         self.addcmd('fun', self.fun_command)

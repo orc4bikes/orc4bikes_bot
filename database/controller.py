@@ -6,6 +6,9 @@ from botocore.exceptions import ClientError
 
 import datetime
 
+import logging
+logger = logging.getLogger()
+
 ACCESS_KEY = os.environ.get('ACCESS_KEY')
 SECRET_KEY = os.environ.get('SECRET_KEY')
 REGION_NAME = os.environ.get('REGION_NAME')
@@ -61,10 +64,9 @@ def get_user_data(chat_id=None, dynamodb=None):
     try:
         response = table.get_item(Key={'chat_id': chat_id})['Item']
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        print('Key Error! Item not found')
-        print(e)
+        logger.warning('Key Error! Item not found')
     finally:
         return response
 
@@ -124,12 +126,9 @@ def set_user_data(chat_id=None, user_data={}, dynamodb=None):
             ReturnValues="UPDATED_NEW"
         )
     except ClientError as e:
-        print('error', e.response['Error']['Message'])
-    except KeyError as e:   
-        print('Key Error! Item not found')
-        print(e)
-    except Exception as e:
-        print('error,', e)
+        logger.exception(e.response['Error']['Message'])
+    except KeyError as e:
+        logger.warning('Key Error! Item not found')
     finally:
         return response
 
@@ -184,10 +183,9 @@ def get_bike_data(bike_name=None, dynamodb=None):
     try:
         response = table.get_item(Key={'name': bike_name})['Item']
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        print('Key Error! Item not found')
-        print(e)
+        logger.warning('Key Error! Item not found')
     finally:
         return response
 
@@ -210,10 +208,9 @@ def get_all_bikes(dynamodb=None):
             response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
             data.extend(response['Items'])
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        print('Key Error! Item not found')
-        print(e)
+        logger.warning('Key Error! Item not found')
     finally:
         return data
 
@@ -257,10 +254,9 @@ def set_bike_data(bike_name=None, bike_data={}, dynamodb=None):
             ReturnValues="UPDATED_NEW"
         )
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        print('Key Error! Item not found')
-        print(e)
+        logger.warning('Key Error! Item not found')
     finally:
         return response
 
@@ -311,14 +307,14 @@ def get_username(username="", dynamodb=None):
         )
     table = dynamodb.Table('usernames')
     response = None
+    chat_id = None
     try:
         response = table.get_item(Key={'username': username})['Item']
         chat_id = int(response.get('chat_id'))
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        print('Key Error! Item not found')
-        print(e)
+        logger.warning('Key Error! Item not found')
     finally:
         return chat_id
 
@@ -347,10 +343,9 @@ def set_username(username="", chat_id=0, dynamodb=None):
             ReturnValues="UPDATED_NEW"
         )
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        print('Key Error! Item not found')
-        print(e)
+        logger.warning('Key Error! Item not found')
     finally:
         return response
 

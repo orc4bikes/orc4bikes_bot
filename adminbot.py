@@ -51,6 +51,9 @@ from telegram.ext import (
 from zipfile import ZipFile
 from pathlib import Path
 
+import logging
+logger = logging.getLogger()
+
 class AdminBot(TeleBot):
     def __init__(self,
             api_key,
@@ -85,7 +88,7 @@ class AdminBot(TeleBot):
 
     def admin_command(self,update,context,keywords,command=''):
         """Admin command handler, actual one in Orc4bikesBot"""
-        print("Run Orc4bikesBot for admin commands!!")
+        logger.info("Run Orc4bikesBot for admin commands!!")
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Run Orc4bikesBot for admin commands!!"
@@ -112,18 +115,15 @@ class AdminBot(TeleBot):
         return False
 
     def admin_command(self,update,context):
-        try:
-            commands = context.args
-            if self.admin_check(update,context):
-                if commands:
-                    self.handle_admin(update,context,commands)
-                else:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=self.admin_text,
-                        parse_mode="MarkdownV2")
-        except Exception as e:
-            self.log_exception(e,"Error with admin_command")
+        commands = context.args
+        if self.admin_check(update,context):
+            if commands:
+                self.handle_admin(update,context,commands)
+            else:
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=self.admin_text,
+                    parse_mode="MarkdownV2")
 
     def deduct_command(self,update,context):
         try:
@@ -227,7 +227,7 @@ class AdminBot(TeleBot):
             else:
                 exec(code)
         except Exception as e:
-            self.log_exception(e,"Error with py_command")
+            logger.exception(e)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f"Sorry, this command is not valid. Error is {e}"
@@ -545,31 +545,24 @@ class AdminBot(TeleBot):
 
 
         except IndexError as e:
-            self.log_exception(e,"Error with handle_admin")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f"Sorry, too little info provided.\nPlease send more info after /{command}"
                 )
         except ValueError as e:
-            self.log_exception(e,"Error with handle_admin")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'Number entered, {number}, is not valid!')
         except KeyError as e:
-            self.log_exception(e,"Error with handle_admin")
+            logger.exception(e)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=f'Could not find key {e} in dictionary! Please check database again')
         except FileNotFoundError as e:
-            self.log_exception(e,"Error with handle_admin")
+            logger.exception(e)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text='Hmm, file not found... Please raise a ticket with @fluffballz, along with what you sent.')
-        except Exception as e:
-            self.log_exception(e,"Error with handle_admin")
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f'Failed, error is {e}\nPlease raise a ticket with @fluffballz, along with what you sent')
 
     def initialize(self):
         """Initialze all admin commands"""
@@ -590,6 +583,6 @@ class AdminBot(TeleBot):
         super().main()
 
 if __name__=="__main__":
-    print('Running the AdminBot!')
+    logger.info('Running the AdminBot!')
     newbot = AdminBot(DEV_API_KEY)
     newbot.main()

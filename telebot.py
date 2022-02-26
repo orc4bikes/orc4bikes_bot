@@ -21,6 +21,12 @@ import database.controller as db
 
 LOGGING_URL = os.environ.get('LOGGING_URL')
 
+import logging
+logger = logging.getLogger()
+logger.warn("botty")
+
+
+
 from telegram import (
     InlineKeyboardMarkup, 
     InlineKeyboardButton,
@@ -41,6 +47,10 @@ from telegram.ext import (
     CallbackQueryHandler,
     TypeHandler,
 )
+
+from warnings import filterwarnings
+# See https://tinyurl.com/yuh2jzp3
+filterwarnings(action="ignore", message=r".*CallbackQueryHandler")
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -72,10 +82,10 @@ class TeleBot:
             gmt = self.GMT
         return datetime.datetime.utcnow() + datetime.timedelta(hours=gmt)
 
-    def log_exception(self, e, text=""):
-        if text: 
-            print(text)
-        print(f'Error occured at {self.now()}. Error is \n{e}')
+    # def log_exception(self, e, text=""):
+    #     if text: 
+    #         print(text)
+    #     print(f'Error occured at {self.now()}. Error is \n{e}')
 
     def calc_deduct(self,time_diff):
         """
@@ -109,11 +119,8 @@ class TeleBot:
                 return None
         else:
             chat_id = update.effective_chat.id
-        try:
             user_data = db.get_user_data(chat_id)
-        except Exception: # User doesn't exist!
-            user_data = None
-        return user_data
+            return user_data
 
     def update_user(self, user_data):
         chat_id = user_data.get('chat_id', None)
@@ -122,22 +129,16 @@ class TeleBot:
         try:
             db.set_user_data(chat_id, user_data)
         except Exception as e:
-            print(e)
+            logger.exception(e)
     
     def get_user_id(self, username='') -> int:
         # table_data = dict()
         if not username:
             return None
-        try:
-            return db.get_username(username)
-        except Exception:
-            pass
+        return db.get_username(username)
     
     def update_user_id(self, username, chat_id):
-        try:
-            db.set_username(username, chat_id)
-        except:
-            pass
+        db.set_username(username, chat_id)
 
     def get_bikes(self) -> dict:
         return db.get_all_bikes()
@@ -183,12 +184,22 @@ class TeleBot:
     def addmsg(self, filters, methodname):
         handler = MessageHandler(filters, methodname)
         self.addnew(handler)
+        
+
+    def err(self, update, context):
+        """Error handler callback for dispatcher"""
+        error = context.error
+        logger.exception(error)
+        if update is not None and update.effective_user is not None:
+            context.bot.send_message(update.effective_user.id,
+                "I'm sorry, an error has occurred. The devs have been alerted!"
+            )
 
     def initialize(self):
-        pass
+        self.updater.dispatcher.add_error_handler(self.err)
 
     def main(self):
-        print('Initializing bot...')
+        logger.info('Initializing bot...')
         self.initialize()
         self.updater.start_polling()
         self.updater.idle()
@@ -196,7 +207,7 @@ class TeleBot:
 
 
 if __name__=="__main__":
-    print('Running the TeleBot!')
+    logger.info('Running the TeleBot!')
     newbot = TeleBot(DEV_API_KEY)
     newbot.main()
     
