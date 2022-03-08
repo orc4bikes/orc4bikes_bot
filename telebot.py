@@ -119,8 +119,8 @@ class TeleBot:
                 return None
         else:
             chat_id = update.effective_chat.id
-            user_data = db.get_user_data(chat_id)
-            return user_data
+        user_data = db.get_user_data(chat_id)
+        return user_data
 
     def update_user(self, user_data):
         chat_id = user_data.get('chat_id', None)
