@@ -52,6 +52,8 @@ from telegram.ext import (
     TypeHandler,
 )
 
+import logging
+logger = logging.getLogger()
 
 class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
     DEDUCT_RATE = 20 # deduct 1 credit every 20 seconds or part thereof
@@ -66,7 +68,7 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
             terms_text=TERMS_TEXT,
             promo = False,
             ):
-        print('running Orc4bikesBot at', super().now())
+        logger.info('running Orc4bikesBot now')
         super().__init__(api_key)
         self.help_text = help_text
         self.admin_group_id = admin_group_id
@@ -110,7 +112,7 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
             text+= '\n\nSorry, this button has expired. Please send the previous command again'
             query.edit_message_text(text)
         except Exception as e:
-            self.log_exception(e,"Error with unrecognized_buttons")
+            logger.exception(e)
 
     def reminder(self,context):
         """Reminder for return, every hour"""
@@ -139,31 +141,6 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
                     text="Please remember to /return your bike! Check your bike status with /status"
                 )
 
-    def scheduler(self):
-        """Scheduler for reminder to be run"""
-        j = self.updater.job_queue
-        print('getting daily queue')
-        for hour in range(24):
-            j.run_daily(
-                self.reminder,
-                days=(0, 1, 2, 3, 4, 5, 6),
-                time=datetime.time(hour=hour, minute=0, second=0))
-            if hour%12==2:
-                j.run_daily( #Update admin group
-                    lambda context: context.bot.send_message(
-                        chat_id=self.admin_group_id,
-                        text=f'Bot is working at {self.now().strftime("%H:%M:%S")}'
-                    ),
-                    days=(0, 1, 2, 3, 4, 5, 6),
-                    time=datetime.time(hour=hour, minute=0, second=2))
-            j.run_daily( #Update Jin Ming
-                lambda context: context.bot.send_message(
-                    chat_id=253089925,
-                    text=f'Bot is working at {self.now().strftime("%H:%M:%S")}'
-                ),
-                days=(0, 1, 2, 3, 4, 5, 6),
-                time=datetime.time(hour=hour, minute=0, second=2))
-
     def initialize(self):
         """Initializes all CommandHandlers, MessageHandlers, and job_queues that are required in the bot."""
         # Initialize parent classes first
@@ -180,9 +157,6 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
         # Lastly, Filters all unknown commands, and remove unrecognized queries
         self.addmsg(Filters.command, self.unrecognized_command)
         self.addnew(CallbackQueryHandler(self.unrecognized_buttons))
-
-        # For scheduling messages
-        self.scheduler()
 
     def main(self):
         """Main bot function to run"""

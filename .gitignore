@@ -1,11 +1,4 @@
-# ignore all users
-database/users/
-
-# rental and response logs
-database/logs/
-logs/
-
-#ignore all pycache
+# ignore all pycache
 __pycache__/
 
 # ignore all admin and API token

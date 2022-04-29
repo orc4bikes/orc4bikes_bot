@@ -47,6 +47,11 @@ from telegram.ext import (
     TypeHandler,
 )
 
+import logging
+logger = logging.getLogger()
+
+LOGGING_URL = os.environ.get('LOGGING_URL')
+
 class ConvoBot(TeleBot):
     def __init__(self,
             api_key,
@@ -109,8 +114,8 @@ class ConvoBot(TeleBot):
                     chat_id=update.effective_chat.id,
                     text=text
                 )
-        except Exception as e:
-            self.log_exception(e,"Error with routes_button")
+        except Exception as e:  # TODO: Find out what possible exception lies here
+            logger.exception(e)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Server timeout... Here are some routes for your consideration\n"
@@ -180,7 +185,7 @@ class ConvoBot(TeleBot):
                 )
                 return 72
         except Exception as e:
-            self.log_exception(e,"Error with payment_button")
+            logger.exception(e)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Sorry, topup is currently unavailable... Please try to /topup again, or contact a orc4bikes comm member to assist you!"
@@ -275,7 +280,7 @@ class ConvoBot(TeleBot):
                 )
                 return None
         except Exception as e:
-            self.log_exception(e,"Error with payment_done")
+            logger.exception(e)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Sorry, an error occurred... Please retry to make a /payemnt!"
@@ -373,7 +378,7 @@ class ConvoBot(TeleBot):
                 )
                 return 12
         except Exception as e:
-            self.log_exception(e,"Error with rent_button")
+            logger.exception(e)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Sorry, the server seemed to have disconencted... Please try again!"
@@ -385,24 +390,22 @@ class ConvoBot(TeleBot):
         query = update.callback_query
         query.answer()
         answer = query.data
-        try:
-            if answer=='TERMS_YES':
-                query.edit_message_text(text=f"{self.terms_text}\n\nYou have accepted the terms.")
-                text = 'Please send a picture of the bike you will be renting! Photo must include the BIKE and LOCK.'
-                text+= '\n\nTo cancel, send /cancel'
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=text)
-                return 13
-            else:
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text="Terms of use has not been accepted. Cancelling rental now."
-                )
-                query.edit_message_text(text=f"{self.terms_text}\n\nTo rent, please accept the terms above.")
-                return -1
-        except Exception as e:
-            self.log_exception(e,"Error with terms_button")
+
+        if answer=='TERMS_YES':
+            query.edit_message_text(text=f"{self.terms_text}\n\nYou have accepted the terms.")
+            text = 'Please send a picture of the bike you will be renting! Photo must include the BIKE and LOCK.'
+            text+= '\n\nTo cancel, send /cancel'
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=text)
+            return 13
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Terms of use has not been accepted. Cancelling rental now."
+            )
+            query.edit_message_text(text=f"{self.terms_text}\n\nTo rent, please accept the terms above.")
+            return -1
 
     def rent_pic(self,update,context):
         """After photo is sent, save the photo and ask if would like to retake"""
@@ -469,7 +472,7 @@ class ConvoBot(TeleBot):
                 )
                 return None
         except Exception as e:
-            self.log_exception(e,"Error with rent_done")
+            logger.exception(e)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Sorry, an error occurred... Please retry to /rent the bike!"
@@ -682,22 +685,8 @@ class ConvoBot(TeleBot):
 
 
     def save_feedback(self, feedback_data, filename=None):
-        if not os.path.exists('logs'):
-            os.mkdir('logs')
-            print('making dir')
-        filename = 'logs/feedbacks.csv'
+        requests.post(f"{LOGGING_URL}?file=feedback", json=list(feedback_data.values()))
 
-        if not os.path.exists(filename):
-            print('feedback doesnt exist')
-            with open(filename, 'w', newline='') as f:
-                writer = csv.DictWriter(
-                    f, fieldnames=list(feedback_data.keys()))
-                writer.writeheader()
-
-        with open(filename, 'a', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=list(feedback_data.keys()))
-            writer.writerow(feedback_data)
-            print('write success')
 
     def whichevent(self, update, context):
         questiontext = "A penny for your thoughts! You get one credit for doing this feedback :)\n"

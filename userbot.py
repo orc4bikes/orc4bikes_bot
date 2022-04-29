@@ -46,6 +46,9 @@ from telegram.ext import (
     TypeHandler,
 )
 
+import logging
+logger = logging.getLogger()
+
 class UserBot(TeleBot):
     def __init__(self,
             api_key,
@@ -121,7 +124,7 @@ class UserBot(TeleBot):
                 photo = GUIDE_PIC,
             )
         except Exception as e:
-            self.log_exception(e,"Error with guide_command")
+            logger.exception(e)
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Sorry, /guide currently not available... please try again!",
@@ -178,31 +181,29 @@ class UserBot(TeleBot):
         if not self.check_user(update,context):
             return -1
         user_data = super().get_user(update,context)
-        try:
-            status = user_data.get('status',None)
-            if status is not None:
-                status = datetime.datetime.fromisoformat(status)
-                curr = self.now()
-                diff = curr - status
-                if diff.days:
-                    strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
-                else:
-                    strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
-                status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}. '
-                deduction = self.calc_deduct(diff)
-                status_text += f'\n\nCREDITS:\nCurrent:  {user_data.get("credits")} \nThis trip:  {deduction}\nProjected final:  {user_data.get("credits") - deduction}'
+
+        status = user_data.get('status',None)
+        if status is not None:
+            status = datetime.datetime.fromisoformat(status)
+            curr = self.now()
+            diff = curr - status
+            if diff.days:
+                strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
             else:
-                creds = user_data.get("credits", 0)
-                status_text = f'You are not renting... \n\nYou have {creds} credits left. Would you like to /topup? '
-                if creds < 100:
-                    status_text+='Please top up soon!'
-            status_text+= "\n\nFor more details, send /history"
-            status_text+= "\nTo start your journey, send /rent"
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=status_text)
-        except Exception as e:
-            self.log_exception(e,"Error with status_command")
+                strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
+            status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}. '
+            deduction = self.calc_deduct(diff)
+            status_text += f'\n\nCREDITS:\nCurrent:  {user_data.get("credits")} \nThis trip:  {deduction}\nProjected final:  {user_data.get("credits") - deduction}'
+        else:
+            creds = user_data.get("credits", 0)
+            status_text = f'You are not renting... \n\nYou have {creds} credits left. Would you like to /topup? '
+            if creds < 100:
+                status_text+='Please top up soon!'
+        status_text+= "\n\nFor more details, send /history"
+        status_text+= "\nTo start your journey, send /rent"
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=status_text)
 
     def getpin_command(self,update,context):
         """Gets pin of current renting bike.

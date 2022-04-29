@@ -4,6 +4,7 @@ import csv
 import datetime
 from decimal import Decimal
 
+import os
 from os import (path, mkdir)
 
 import requests
@@ -17,6 +18,14 @@ from bot_text import (
 from admin import DEV_API_KEY
 
 import database.controller as db
+
+LOGGING_URL = os.environ.get('LOGGING_URL')
+
+import logging
+logger = logging.getLogger()
+logger.warn("botty")
+
+
 
 from telegram import (
     InlineKeyboardMarkup, 
@@ -39,6 +48,22 @@ from telegram.ext import (
     TypeHandler,
 )
 
+from warnings import filterwarnings
+# See https://tinyurl.com/yuh2jzp3
+filterwarnings(action="ignore", message=r".*CallbackQueryHandler")
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        super().default(obj)  # Let the json module throw the error
+
+def float_to_decimal(obj):
+    """DynamoDB require Decimal in place of float"""
+    return json.loads(json.dumps(obj, cls=DecimalEncoder), parse_float=Decimal)
+
+def decimal_to_float(obj):
+    return json.loads(json.dumps(obj, cls=DecimalEncoder))
 
 class TeleBot:
     """
@@ -57,10 +82,10 @@ class TeleBot:
             gmt = self.GMT
         return datetime.datetime.utcnow() + datetime.timedelta(hours=gmt)
 
-    def log_exception(self, e, text=""):
-        if text: 
-            print(text)
-        print(f'Error occured at {self.now()}. Error is \n{e}')
+    # def log_exception(self, e, text=""):
+    #     if text: 
+    #         print(text)
+    #     print(f'Error occured at {self.now()}. Error is \n{e}')
 
     def calc_deduct(self,time_diff):
         """
@@ -94,10 +119,7 @@ class TeleBot:
                 return None
         else:
             chat_id = update.effective_chat.id
-        try:
-            user_data = db.get_user_data(chat_id)
-        except Exception: # User doesn't exist!
-            user_data = None
+        user_data = db.get_user_data(chat_id)
         return user_data
 
     def update_user(self, user_data):
@@ -107,22 +129,16 @@ class TeleBot:
         try:
             db.set_user_data(chat_id, user_data)
         except Exception as e:
-            print(e)
+            logger.exception(e)
     
     def get_user_id(self, username='') -> int:
         # table_data = dict()
         if not username:
             return None
-        try:
-            return db.get_username(username)
-        except Exception:
-            pass
+        return db.get_username(username)
     
     def update_user_id(self, username, chat_id):
-        try:
-            db.set_username(username, chat_id)
-        except:
-            pass
+        db.set_username(username, chat_id)
 
     def get_bikes(self) -> dict:
         return db.get_all_bikes()
@@ -142,47 +158,21 @@ class TeleBot:
     def update_rental_log(self, update_list):
         """Updates rental logs with headers:
            bike,username,start_time,end_time"""
-        if not path.exists('database/logs'):
-            mkdir('database/logs')
-        if path.exists('database/logs/rental.csv'):
-            with open('database/logs/rental.csv','a',newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(update_list)
-        else:
-            with open('database/logs/rental.csv', 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(['bike','username','start_time','end_time','credits'])
-                writer.writerow(update_list)
+
+        data = decimal_to_float(update_list)
+        requests.post(f"{LOGGING_URL}?file=rental", json=data)
 
     def update_report_log(self, update_list):
         """Updates report logs with headers:
            username,time,report"""
-        if not path.exists('database/logs'):
-            mkdir('database/logs')
-        if path.exists('database/logs/report.csv'):
-            with open('database/logs/report.csv','a',newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(update_list)
-        else:
-            with open('database/logs/report.csv', 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(['username','time','report'])
-                writer.writerow(update_list)
+        data = decimal_to_float(update_list)
+        requests.post(f"{LOGGING_URL}?file=report", json=data)
 
     def update_finance_log(self, update_list):
         """Updates finance logs with headers:
            username,time,initial_amt,change_amt,final_amt"""
-        if not path.exists('database/logs'):
-            mkdir('database/logs')
-        if path.exists('database/logs/finance.csv'):
-            with open('database/logs/finance.csv', 'a', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(update_list)
-        else:
-            with open('database/logs/finance.csv', 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(['username','time','initial_amt','change_amt','final_amt','action_by'])
-                writer.writerow(update_list)
+        data = decimal_to_float(update_list)
+        requests.post(f"{LOGGING_URL}?file=finance", json=data)
 
     def addnew(self,handler):
         self.dispatcher.add_handler(handler)
@@ -194,12 +184,22 @@ class TeleBot:
     def addmsg(self, filters, methodname):
         handler = MessageHandler(filters, methodname)
         self.addnew(handler)
+        
+
+    def err(self, update, context):
+        """Error handler callback for dispatcher"""
+        error = context.error
+        logger.exception(error)
+        if update is not None and update.effective_user is not None:
+            context.bot.send_message(update.effective_user.id,
+                "I'm sorry, an error has occurred. The devs have been alerted!"
+            )
 
     def initialize(self):
-        pass
+        self.updater.dispatcher.add_error_handler(self.err)
 
     def main(self):
-        print('Initializing bot...')
+        logger.info('Initializing bot...')
         self.initialize()
         self.updater.start_polling()
         self.updater.idle()
@@ -207,7 +207,7 @@ class TeleBot:
 
 
 if __name__=="__main__":
-    print('Running the TeleBot!')
+    logger.info('Running the TeleBot!')
     newbot = TeleBot(DEV_API_KEY)
     newbot.main()
     
