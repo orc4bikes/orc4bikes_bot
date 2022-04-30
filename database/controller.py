@@ -9,17 +9,17 @@ import datetime
 import logging
 logger = logging.getLogger()
 
-ACCESS_KEY = os.environ.get('ACCESS_KEY')
-SECRET_KEY = os.environ.get('SECRET_KEY')
-REGION_NAME = os.environ.get('REGION_NAME')
+DB_ACCESS_KEY = os.environ.get('DB_ACCESS_KEY')
+DB_SECRET_KEY = os.environ.get('DB_SECRET_KEY')
+DB_REGION_NAME = os.environ.get('DB_REGION_NAME')
 
 def create_users_table(dynamodb=None):
     """Creates users table if it doesn't exist"""
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME,
         )
     try:
         table = dynamodb.create_table(
@@ -55,9 +55,9 @@ def get_user_data(chat_id=None, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME,
         )
     table = dynamodb.Table('users')
     response = None
@@ -80,9 +80,9 @@ def set_user_data(chat_id=None, user_data={}, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME,
         )
     table = dynamodb.Table('users')
     response=None
@@ -136,9 +136,9 @@ def create_bikes_table(dynamodb=None):
     """Creates bikes table if it doesn't exist"""
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME,
         )
     try:
         table = dynamodb.create_table(
@@ -174,9 +174,9 @@ def get_bike_data(bike_name=None, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME,
         )
     table = dynamodb.Table('bikes')
     response = None
@@ -195,9 +195,9 @@ def get_all_bikes(dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME,
         )
     table = dynamodb.Table('bikes')
     data = None
@@ -222,9 +222,9 @@ def set_bike_data(bike_name=None, bike_data={}, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME,
         )
     table = dynamodb.Table('bikes')
     response=None
@@ -264,9 +264,9 @@ def create_usernames_table(dynamodb=None):
     """Creates usernames table if it doesn't exist"""
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME,
         )
     try:
         table = dynamodb.create_table(
@@ -301,9 +301,9 @@ def get_username(username="", dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME,
         )
     table = dynamodb.Table('usernames')
     response = None
@@ -326,9 +326,9 @@ def set_username(username="", chat_id=0, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME,
         )
     table = dynamodb.Table('usernames')
     response=None

@@ -1,7 +1,7 @@
 from admin import (
     DEV_ADMIN_GROUP_ID,
     ADMIN_LIST,
-    DEV_API_KEY,
+    TELE_API_TOKEN,
 )
 
 from bot_text import (
@@ -163,5 +163,5 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
         TeleBot.main(self)
 
 if __name__=="__main__":
-    newbot = Orc4bikesBot(DEV_API_KEY, admin_group_id=DEV_ADMIN_GROUP_ID)
+    newbot = Orc4bikesBot(TELE_API_TOKEN, admin_group_id=DEV_ADMIN_GROUP_ID)
     newbot.main()

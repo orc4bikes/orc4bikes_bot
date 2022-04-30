@@ -15,15 +15,16 @@ from bot_text import (
     BAN_MESSAGE,
 )
 
-from admin import DEV_API_KEY
+from admin import TELE_API_TOKEN
+
 
 import database.controller as db
 
 LOGGING_URL = os.environ.get('LOGGING_URL')
+BOT_ENV = os.environ.get('BOT_ENV')
 
 import logging
 logger = logging.getLogger()
-logger.warn("botty")
 
 
 
@@ -158,21 +159,24 @@ class TeleBot:
     def update_rental_log(self, update_list):
         """Updates rental logs with headers:
            bike,username,start_time,end_time"""
+        file = "rental" if BOT_ENV != "development" else "testing"
 
         data = decimal_to_float(update_list)
-        requests.post(f"{LOGGING_URL}?file=rental", json=data)
+        requests.post(f"{LOGGING_URL}?file={file}", json=data)
 
     def update_report_log(self, update_list):
         """Updates report logs with headers:
            username,time,report"""
+        file = "report" if BOT_ENV != "development" else "testing"
         data = decimal_to_float(update_list)
-        requests.post(f"{LOGGING_URL}?file=report", json=data)
+        requests.post(f"{LOGGING_URL}?file={file}", json=data)
 
     def update_finance_log(self, update_list):
         """Updates finance logs with headers:
            username,time,initial_amt,change_amt,final_amt"""
+        file = "finance" if BOT_ENV != "development" else "testing"
         data = decimal_to_float(update_list)
-        requests.post(f"{LOGGING_URL}?file=finance", json=data)
+        requests.post(f"{LOGGING_URL}?file={file}", json=data)
 
     def addnew(self,handler):
         self.dispatcher.add_handler(handler)
@@ -208,6 +212,6 @@ class TeleBot:
 
 if __name__=="__main__":
     logger.info('Running the TeleBot!')
-    newbot = TeleBot(DEV_API_KEY)
+    newbot = TeleBot(TELE_API_TOKEN)
     newbot.main()
     

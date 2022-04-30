@@ -2,10 +2,12 @@
 __pycache__/
 
 # ignore all admin and API token
+.env
 admin.py
+
+# ignore user preferences
+.vscode
+
+# others
 test.py
 
-# old code prior to optimizing...
-old_code.py
-
-.env
