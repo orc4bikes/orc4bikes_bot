@@ -1,7 +1,6 @@
 from admin import (
     DEV_ADMIN_GROUP_ID,
     ADMIN_LIST,
-    DEV_API_KEY,
 )
 
 from bot_text import (

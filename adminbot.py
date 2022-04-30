@@ -1,7 +1,7 @@
 from admin import (
     DEV_ADMIN_GROUP_ID,
     ADMIN_LIST,
-    DEV_API_KEY,
+    TELE_API_TOKEN,
 )
 
 from bot_text import (
@@ -584,5 +584,5 @@ class AdminBot(TeleBot):
 
 if __name__=="__main__":
     logger.info('Running the AdminBot!')
-    newbot = AdminBot(DEV_API_KEY)
+    newbot = AdminBot(TELE_API_TOKEN)
     newbot.main()

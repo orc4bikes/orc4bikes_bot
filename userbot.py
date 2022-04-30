@@ -1,7 +1,6 @@
 from admin import (
     DEV_ADMIN_GROUP_ID,
     ADMIN_LIST,
-    DEV_API_KEY,
 )
 
 from bot_text import (
@@ -21,6 +20,7 @@ import random
 import json
 import csv
 import datetime
+import os
 
 import requests
 import re
@@ -49,6 +49,8 @@ from telegram.ext import (
 import logging
 logger = logging.getLogger()
 
+BOT_ENV = os.environ.get('BOT_ENV')
+
 class UserBot(TeleBot):
     def __init__(self,
             api_key,
@@ -69,11 +71,16 @@ class UserBot(TeleBot):
         If the user is not created, a new entry is created
         in the database with primary key as chat_id
         """
+        chat_id = update.effective_chat.id
+
+        if BOT_ENV == "development" and chat_id not in self.admin_list:
+            update.message.reply_text(f"Hi {update.message.from_user.first_name}, please head over to @orc4bikes_bot!")
+            return
+
         user_data = super().get_user(update,context)
         if user_data is not None:
             text = f'Welcome back, {update.message.from_user.first_name}! '
         else:
-            chat_id = update.effective_chat.id
             if chat_id>0:
                 user_data = {'chat_id': chat_id,
                             'first_name': update.message.from_user.first_name,
