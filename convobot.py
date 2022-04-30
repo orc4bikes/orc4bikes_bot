@@ -549,11 +549,6 @@ class ConvoBot(TeleBot):
             #update user data
             log = user_data.get('log',[])
             log.append(d)
-            user_data["status"] = None
-            user_data["log"] = log
-            user_data['bike_name'] = ''
-            user_data['credits'] -= deduction
-            user_data['finance'] = user_data.get('finance',[])
             f_log = {
                 'type':'rental',
                 'time':self.now().strftime("%Y/%m/%d, %H:%M:%S"),
@@ -561,6 +556,11 @@ class ConvoBot(TeleBot):
                 'spent': deduction,
                 'remaining': user_data.get('credits') - deduction
             }
+            user_data["status"] = None
+            user_data["log"] = log
+            user_data['bike_name'] = ''
+            user_data['credits'] -= deduction
+            user_data['finance'] = user_data.get('finance',[])
             user_data['finance'].append(f_log)
             super().update_user(user_data)
 
