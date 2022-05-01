@@ -169,7 +169,7 @@ class ConvoBot(TeleBot):
                 '\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits", '
                 "your credits has NOT been topped up."
             )
-            
+
             update.message.reply_photo(
                 photo=context.user_data['photo'],
                 caption=text)
@@ -204,11 +204,11 @@ class ConvoBot(TeleBot):
         photo = context.user_data['photo']
         amount = context.user_data['amount']
         amount = int(float(amount))
-            
+
         user_data = self.get_user(update, context)
         initial_amount = user_data['credits']
         user_data['credits'] += amount
-            
+
         # Notify user
         update.message.reply_text(
             f"Transaction complete! You now have {user_data['credits']} credits."
@@ -447,7 +447,7 @@ class ConvoBot(TeleBot):
             update.message.reply_text(
                 "Please send a photo for proof of return!\nTo continue rental, send /cancel")
             return 91
-            
+
         photo = update.message.photo[-1].file_id
         context.user_data['photo'] = photo
         text = (
