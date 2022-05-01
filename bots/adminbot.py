@@ -37,17 +37,14 @@ class AdminBot(TeleBot):
     def zip_command(self, update, context):
         """Zips all files and send to user"""
         with ZipFile('all.zip', 'w') as zipf:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Zipping your files...")
+            update.message.reply_text("Zipping your files...")
             zipf.write('logs/rental.csv')
             zipf.write('logs/finance.csv')
             zipf.write('logs/report.csv')
             zipf.write('users/table.json')
 
         # with ZipFile('all.zip', 'r') as zipf:
-        context.bot.send_document(
-            chat_id=update.effective_chat.id,
+        update.message.reply_document(
             document=Path('all.zip'),
             filename="all.zip",
             caption="All files are zipped here")
@@ -55,20 +52,15 @@ class AdminBot(TeleBot):
     def admin_command(self, update, context, keywords, command=''):
         """Admin command handler, actual one in Orc4bikesBot"""
         logger.info("Run Orc4bikesBot for admin commands!!")
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Run Orc4bikesBot for admin commands!!")
+        update.message.reply_text("Run Orc4bikesBot for admin commands!!")
 
     def admin_log(self, update, context, message, photo=None):
         if photo:
-            context.bot.send_photo(
-                chat_id=self.admin_group_id,
+            update.message.reply_photo(
                 photo=photo,
                 caption=message)
         else:
-            context.bot.send_message(
-                chat_id=self.admin_group_id,
-                text=message)
+            update.message.reply_photo(message)
 
     def admin_check(self, update, context):
         """Checks whether the user is an admin"""
@@ -84,9 +76,8 @@ class AdminBot(TeleBot):
             if commands:
                 self.handle_admin(update, context, commands)
             else:
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=self.admin_text,
+                update.message.reply_text(
+                    self.admin_text,
                     parse_mode="MarkdownV2")
 
     def deduct_command(self, update, context):
@@ -166,9 +157,7 @@ class AdminBot(TeleBot):
             return
         def reply(item):
             item = str(item)
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=item)
+            update.message.reply_text(item)
         def accounts(username=""):
             from os import listdir
             from os.path import isfile, join
@@ -181,18 +170,16 @@ class AdminBot(TeleBot):
         code = update.message.text[4:].strip()
         try:
             if code == '':
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text='You can run python with this command.\
-                        \nUse reply(item) to ask bot to send a message with reply as "item".\
-                        \nUse accounts() to access all accounts as a list.')
+                update.message.reply_text(
+                    "You can run python with this command."
+                    '\nUse reply(item) to ask bot to send a message with reply as "item".'
+                    "\nUse accounts() to access all accounts as a list.")
             else:
                 exec(code)
         except Exception as e:
             logger.exception(e)
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f"Sorry, this command is not valid. Error is {e}")
+            update.message.reply_text(
+                f"Sorry, this command is not valid. Error is {e}")
             print(e)
 
     def handle_admin(self, update, context, keywords, command=''):
@@ -205,18 +192,16 @@ class AdminBot(TeleBot):
                 bike_name  = keywords.pop(0)  # set the bike_name as name
                 bike = self.get_bike(bike_name)
                 if bike is None:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f"No such bike, {bike}, exists. Please try again with current /bikes")
+                    update.message.reply_text(
+                        f'No such bike, {bike}, exists. Please try again with current /bikes')
                     return
 
             elif command in ['topup', 'deduct', 'setcredit', 'user', 'ban', 'unban']:  # user commands
                 username = keywords.pop(0)  # set the username as name
                 user_data = self.get_user(username=username)
                 if user_data is None:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f"Specified user is not found! Please ask @{username} to create an account first.")
+                    update.message.reply_text(
+                        f'Specified user is not found! Please ask @{username} to create an account first.')
                     return
             else:  # stats and logs commands
                 pass
@@ -248,9 +233,8 @@ class AdminBot(TeleBot):
                     update.message.from_user.username
                 ]
                 self.update_finance_log(finance_log)
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=f"Top-up successful! @{username} now has {user_data["credits"]} credits.")
+                update.message.reply_text(
+                    f'Top-up successful! @{username} now has {user_data["credits"]} credits.')
 
             elif command == "deduct":
                 """Deduct specific amount from user credits"""
@@ -279,9 +263,8 @@ class AdminBot(TeleBot):
                     update.message.from_user.username
                 ]
                 self.update_finance_log(finance_log)
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=f"Deducted successfully! @{username} now has {user_data['credits']} credits.")
+                update.message.reply_text(
+                    f'Deducted successfully! @{username} now has {user_data["credits"]} credits.')
 
             elif command == "setcredit":
                 """Set user credits to specified amount."""
@@ -310,9 +293,8 @@ class AdminBot(TeleBot):
                     update.message.from_user.username
                 ]
                 self.update_finance_log(finance_log)
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=f"Setting was successful! @{username} now has {user_data['credits']} credits.")
+                update.message.reply_text(
+                    f'Setting was successful! @{username} now has {user_data["credits"]} credits.')
 
             elif command == "user":
                 text = f"@{user_data['username']} has {user_data.get('credits', 0)} credits left.\n"
@@ -321,9 +303,7 @@ class AdminBot(TeleBot):
                     text += f"User has been renting {user_data['bike_name']} since {time}"
                 else:
                     text += "User is not renting currently."
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text = text)
+                    update.message.reply_text(text)
 
             elif command == "ban":
                 """Ban a user"""
@@ -331,44 +311,35 @@ class AdminBot(TeleBot):
                 if not is_ban:
                     user_data['is_ban'] = True
                     self.update_user(user_data)
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f"@{username} is now BANNED.")
+                    update.message.reply_text(f'@{username} is now BANNED.')
                 else:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f"@{username} was already banned.")
+                    update.message.reply_text(f'@{username} was already banned.')
 
             elif command == "unban":
                 """Unban a user"""
                 is_ban = user_data['is_ban']
                 if not is_ban:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f'@{username} was not banned')
+                    update.message.reply_text(f'@{username} was not banned')
                     return
 
                 user_data['is_ban'] = None
                 self.update_user(user_data)
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=f'@{username} is now UNBANNED.')
+                update.message.reply_text(f'@{username} is now UNBANNED.')
 
             elif command == 'forcereturn':
                 username = bike.get('username', "")
                 if not username:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text="Bike not on rent! Please try again")
+                    update.message.reply_text(
+                        "Bike not on rent! Please try again")
                     return
 
                 user_data = self.get_user(username=username)
                 status = user_data['status']
                 if not status:
-                    return context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=(f"Something seems wrong... The bike {bike_name} tagged to "
-                              f"user @{username}, but user is not renting???"))
+                    update.message.reply_text(
+                        f"Something seems wrong... The bike {bike_name} tagged to "
+                        f"user @{username}, but user is not renting???")
+                    return
                 diff = self.now() - datetime.fromisoformat(status)
                 readable_diff = to_readable_td(diff)
                 d = {
@@ -430,17 +401,15 @@ class AdminBot(TeleBot):
             elif command == 'setpin':
                 number = keywords.pop(0)
                 if bike['pin'] == number:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f'Old pin is the same as {number}!')
+                    update.message.reply_text(
+                        f'Old pin is the same as {number}!')
                     return
 
                 bike['oldpin'] = bike['pin']
                 bike['pin'] = number
                 self.update_bike(bike)
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=f"Pin for {bike_name} updated to {number}!")
+                update.message.reply_text(
+                    f"Pin for {bike_name} updated to {number}!")
 
             elif command == "setstatus":
                 if not keywords:
@@ -452,28 +421,23 @@ class AdminBot(TeleBot):
                         status = int(status)
                     bike['status'] = status
                     self.update_bike(bike)
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f"Status for {bike_name} updated to {status}!")
+                    update.message.reply_text(
+                        f"Status for {bike_name} updated to {status}!")
                 else:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f"Bike is rented by {rented}!")
+                    update.message.reply_text(
+                        f'Bike is rented by {rented}!')
 
 
             elif "bike" in command:
                 bikes_data = self.get_bikes()
                 text = '\n'.join(f"{bike['name']} -- {bike['username'] or bike['status'] or EMOJI['tick']} (Pin: {bike['pin']})"
                     for bike in bikes_data)
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=text)
+                update.message.reply_text(text)
 
-            elif command == 'logs':
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=("This feature is temporarily unavailable. "
-                          "Please visit the orc4bikes Google Drive for updated logs! -@heyzec"))
+            elif command == "logs":
+                update.message.reply_text(
+                    "This feature is temporarily unavailable. "
+                    "Please visit the orc4bikes Google Drive for updated logs! -@heyzec")
 
                 # context.bot.send_document(
                 #     chat_id=update.effective_chat.id,
@@ -495,29 +459,24 @@ class AdminBot(TeleBot):
                 # )
 
             else:  # unrecognized command...
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text='Unrecognized command. Try again. For more info, enter /admin')
+                update.message.reply_text(
+                    'Unrecognized command. Try again. For more info, enter /admin')
 
 
         except IndexError as e:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f"Sorry, too little info provided.\nPlease send more info after /{command}")
+            update.message.reply_text(
+                f"Sorry, too little info provided.\nPlease send more info after /{command}")
         except ValueError as e:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f"Number entered, {number}, is not valid!")
+            update.message.reply_text(
+                f'Number entered, {number}, is not valid!')
         except KeyError as e:
             logger.exception(e)
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f"Could not find key {e} in dictionary! Please check database again")
+            update.message.reply_text(
+                f'Could not find key {e} in dictionary! Please check database again')
         except FileNotFoundError as e:
             logger.exception(e)
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Hmm, file not found... Please raise a ticket with @fluffballz, along with what you sent.")
+            update.message.reply_text(
+                'Hmm, file not found... Please raise a ticket with @fluffballz, along with what you sent.')
 
     def initialize(self):
         """Initialze all admin commands"""

@@ -51,9 +51,8 @@ class UserBot(TeleBot):
             return
 
         if chat_id < 0:  # Telegram groups have negative chat ids
-            context.bot.send_message(
-                chat_id=chat_id,
-                text=f"Hi @{update.message.from_user.username}, please start the bot privately, and not in groups!!")
+            update.message.reply_text(
+                f"Hi @{update.message.from_user.username}, please start the bot privately, and not in groups!!")
             return
         user_data = super().get_user(update, context)
         if user_data is not None:
@@ -80,9 +79,7 @@ class UserBot(TeleBot):
             "\nTo use our bikes, /topup now!"
         )
 
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=text)
+        update.message.reply_text(text)
 
         if update.effective_chat.id > 0:
             username = update.message.from_user.username
@@ -91,17 +88,15 @@ class UserBot(TeleBot):
 
     def help_command(self, update, context):
         """Show a list of possible commands"""
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=self.help_text,
+        update.message.reply_text(
+            self.help_text,
             parse_mode=ParseMode.MARKDOWN)
 
     def guide_command(self, update, context):
         """Shows you guide to renting bike"""
-        context.bot.send_photo(
-            chat_id=update.effective_chat.id,
-            caption="Here's the guide! Do you want to /rent?",
-            photo=GUIDE_PIC)
+        update.message.reply_photo(
+            photo=GUIDE_PIC,
+            caption="Here's the guide! Do you want to /rent?")
 
     def history_command(self, update, context):
         """Shows past 10 transaction history"""
@@ -110,9 +105,8 @@ class UserBot(TeleBot):
         user_data = super().get_user(update, context)
         data = user_data.get('finance', [])[-10:]  # get the last 10 transactions
         if not data:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="You haven't cycled with us before :( Send /rent to start renting now!")
+            update.message.reply_text(
+                "You haven't cycled with us before :( Send /rent to start renting now!")
             return
 
         text = f"Your past {len(data)} transaction history are as follows:\n"
@@ -133,9 +127,7 @@ class UserBot(TeleBot):
                     f"--: You rented a bike on {line['time']}, and spent {line['spent']} credits."
                     f" You now have {line['remaining']} credits."
                 )
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=text)
+        update.message.reply_text(text)
 
     def bikes_command(self, update, context):
         """Show all available bikes. Used in /rent"""
@@ -153,9 +145,7 @@ class UserBot(TeleBot):
         text += '\n\n' if avail else ''
         text += f'{not_avail}'
         text += "\n\nTo start your journey, send /rent"
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=text)
+        update.message.reply_text(text)
 
     def status_command(self, update, context):
         """Check the user rental status and current credits"""
@@ -184,9 +174,7 @@ class UserBot(TeleBot):
                 status_text += " Please top up soon!"
         status_text += "\n\nFor more details, send /history."
         status_text += "\nTo start your journey, send /rent."
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=status_text)
+        update.message.reply_text(status_text)
 
     def getpin_command(self, update, context):
         """Gets pin of current renting bike.
@@ -197,16 +185,14 @@ class UserBot(TeleBot):
         user_data = super().get_user(update, context)
         bike_name = user_data.get('bike_name', None)
         if not bike_name:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="You are not renting... Start /rent to get the pin for a bike!")
+            update.message.reply_text(
+                "You are not renting... Start /rent to get the pin for a bike!")
             return
 
         bike_data = self.get_bike(bike_name)
         pin = bike_data['pin']
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=f"Your bike pin is {pin}! Please do not share this pin... Can't unlock? Please contact one of the admins!")
+        update.message.reply_text(
+            f"Your bike pin is {pin}! Please do not share this pin... Can't unlock? Please contact one of the admins!")
 
     def initialize(self):
         """Initializes all user commands"""

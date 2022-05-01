@@ -18,9 +18,7 @@ class FunBot(TeleBot):
 
     def fun_command(self, update, context):
         """Show user list of fun commands."""
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text = FUN_TEXT)
+        update.message.reply_text(FUN_TEXT)
 
     def animal_command(
             self, update, context,
@@ -32,35 +30,30 @@ class FunBot(TeleBot):
         try:
             assert pic_url
             url = requests.get(pic_url).json()[key]
-            context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                caption = random.choice(CHEER_LIST),
-                photo = url)
+            update.message.reply_photo(
+                photo=url,
+                caption=random.choice(CHEER_LIST))
 
         except AssertionError:
             # empty url given
             animals = update.message.text.split(' ')[0][1:] + 's'
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f"Hmm, I can't seem to find any {animals}... Maybe they're all asleep?")
+            update.message.reply_text(
+                f"Hmm, I can't seem to find any {animals}... Maybe they're all asleep?")
         except:
             # first url does not work
             try:
                 # try secondary url
                 assert secondary_url
                 url = requests.get(secondary_url).json()[secondary_key]
-                context.bot.send_photo(
-                    chat_id=update.effective_chat.id,
-                    caption = random.choice(CHEER_LIST),
-                    photo = url)
+                update.message.reply_photo(
+                    photo=url,
+                    caption=random.choice(CHEER_LIST))
             except:
                 # both urls do not work
                 if error_text is None:
                     animals = update.message.text.split(' ')[0][1:] + 's'
                     error_text = f"Sorry, all the {animals} are out cycling! Please try again when they come home :)"
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=error_text)
+                update.message.reply_text(error_text)
 
     def doggo_command(self, update, context):
         """Shows user a few cute dogs!"""
@@ -152,22 +145,18 @@ class FunBot(TeleBot):
             url = requests.get('https://type.fit/api/quotes').json()
         except RequestException as e:
             logger.exception(e)
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=random.choice(CHEER_LIST))
+            update.message.reply_text(random.choice(CHEER_LIST))
         else:
             url = random.choice(url)
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=f'"{url["text"]}" - {url["author"]}')
+            update.message.reply_text(
+                f'"{url["text"]}" - {url["author"]}')
 
     def pika_command(self, update, context):
         """Sends a pikachu sticker"""
 
         if random.random() < 0.01:
-            return context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Pika... boo? 🙂")
+            update.message.reply_text("Pika... boo? 🙂")
+            return
         pika_list = [
             'pikachu',
             'pikachu2',
@@ -181,9 +170,7 @@ class FunBot(TeleBot):
             pikas.extend(context.bot.get_sticker_set(pika).stickers)
         pikas.extend(context.bot.get_sticker_set('uwumon').stickers[:20])
         pika = random.choice(pikas)
-        context.bot.send_sticker(
-            chat_id=update.effective_chat.id,
-            sticker=pika)
+        update.message.reply_sticker(sticker=pika)
         # except Exception as e:
         #     logger.exception(e)
         #     context.bot.send_message(
@@ -196,18 +183,14 @@ class FunBot(TeleBot):
 
         brawls = context.bot.get_sticker_set('BrawlStarsbyHerolias')
         brawl = random.choice(brawls.stickers)
-        context.bot.send_sticker(
-            chat_id=update.effective_chat.id,
-            sticker=brawl)
+        update.message.reply_sticker(sticker=brawl)
 
     def bangday_command(self, update, context):
         """Sends a bang don sticker"""
 
         bangdongs = context.bot.get_sticker_set('happybangday')
         bangdong = random.choice(bangdongs.stickers)
-        context.bot.send_sticker(
-            chat_id=update.effective_chat.id,
-            sticker=bangdong)
+        update.message.reply_sticker(sticker=bangdong)
 
     def ohno_command(self, update, context):
         """Sends a version of "Oh no"..."""
@@ -239,9 +222,7 @@ class FunBot(TeleBot):
             "This is truly a disaster",
             "...",
         ])
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=text)
+        update.message.reply_text(text)
         raise ZeroDivisionError  # This function is now for testing
 
     def initialize(self):

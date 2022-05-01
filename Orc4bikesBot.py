@@ -63,9 +63,7 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
 
     def convo_outside_command(self, update, context):
         """Inform user when update occurs outside of a ConversationHandler."""
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="This command was a little out of place...")
+        update.message.reply_text("This command was a little out of place...")
         context.user_data.clear()
         return -1
 
