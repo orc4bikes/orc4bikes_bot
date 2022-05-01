@@ -340,16 +340,17 @@ class AdminBot(TeleBot):
             elif command == "unban":
                 """Unban a user"""
                 is_ban = user_data['is_ban']
-                if is_ban:
-                    user_data['is_ban'] = None
-                    self.update_user(user_data)
+                if not is_ban:
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
-                        text=f"@{username} is now UNBANNED.")
-                else:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f"@{username} was not banned")
+                        text=f'@{username} was not banned')
+                    return
+
+                user_data['is_ban'] = None
+                self.update_user(user_data)
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f'@{username} is now UNBANNED.')
 
             elif command == 'forcereturn':
                 username = bike.get('username', "")
@@ -429,18 +430,20 @@ class AdminBot(TeleBot):
 
             elif command == 'setpin':
                 number = keywords.pop(0)
-                if bike['pin'] != number:
-                    bike['oldpin'] = bike['pin']
-                    bike['pin'] = number
-                    self.update_bike(bike)
+                if bike['pin'] == number:
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
-                        text=f"Pin for {bike_name} updated to {number}!")
-                else:
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=f"Old pin is the same as {number}!")
-            elif command == 'setstatus':
+                        text=f'Old pin is the same as {number}!')
+                    return
+
+                bike['oldpin'] = bike['pin']
+                bike['pin'] = number
+                self.update_bike(bike)
+                context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=f"Pin for {bike_name} updated to {number}!")
+
+            elif command == "setstatus":
                 if not keywords:
                     status = 0
                 status = ' '.join(keywords)

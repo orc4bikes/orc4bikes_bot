@@ -78,32 +78,26 @@ class ConvoBot(TeleBot):
         query = update.callback_query
         query.answer()
         colour = query.data
-        try:
-            if colour == 'all':
-                for colour, url in ROUTES_PICS.items():
-                    context.bot.send_photo(
-                        chat_id=update.effective_chat.id,
-                        photo=url,
-                        caption=ROUTES_LIST[colour])
-            else:
+        query.edit_message_text(text=f"Selected option: {query.data}")
+
+        if colour == 'all':
+            for colour, url in ROUTES_PICS.items():
                 context.bot.send_photo(
                     chat_id=update.effective_chat.id,
-                    photo=ROUTES_PICS[colour],
+                    photo=url,
                     caption=ROUTES_LIST[colour])
-                text = (
-                    "To see more routes, send /routes"
-                    "\nTo start your journey, send /rent"
-                )
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=text)
-        except Exception as e:  # TODO: Find out what possible exception lies here
-            logger.exception(e)
+        else:
+            context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                photo=ROUTES_PICS[colour],
+                caption=ROUTES_LIST[colour])
+            text = (
+                "To see more routes, send /routes"
+                "\nTo start your journey, send /rent"
+            )
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Server timeout... Here are some routes for your consideration\n"
-                       + '\n'.join(ROUTES_LIST.values()))
-        query.edit_message_text(text=f"Selected option: {query.data}")
+                text=text)
         return -1
 
     def payment_command(self, update, context):
@@ -111,7 +105,6 @@ class ConvoBot(TeleBot):
         if not self.check_user(update, context):
             return -1
         context.user_data.clear()
-        user_data = super().get_user(update, context)
         keyboard = [
             [InlineKeyboardButton("$2.00", callback_data='200')],
             [InlineKeyboardButton("$5.00", callback_data='500')],
@@ -133,47 +126,40 @@ class ConvoBot(TeleBot):
         query = update.callback_query
         query.answer()
         amount = query.data
-        try:
-            if amount == 'CANCEL_PAYMENT':
-                query.edit_message_text('Please choose at top-up amount!')
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text="Payment cancelled!")
-                return -1
-            else:
-                amount = int(amount)
-                context.user_data['amount'] = amount
-                query.edit_message_text(f'Selected amount: ${amount//100:.2f}')
 
-                text1 = (
-                    "[1] PayLah/PayNow to Lim Yu Jie, at 90817788."
-                    #, or shorturl.at/dBLW6'  ## TODO: shorturl not working!!
-                    "\n[2] Once done, send a screenshot to @orc4bikes_bot!!"
-                    '\n[3] You will receive "Transaction complete! You now have XXXX credits" for comfirmation'
-                )
-
-                text2 = (
-                    "If I don't respond after you send your screenshot, please try to /topup again."
-                    "\n\nTo stop, send /cancel"
-                )
-
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=text1,
-                    reply_markup = InlineKeyboardMarkup([
-                        [InlineKeyboardButton("Go to PayLah", callback_data='redirect_paylah', url=PAYMENT_URL)]
-                    ]))
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=text2)
-                return 72
-        except Exception as e:
-            logger.exception(e)
+        if amount == 'CANCEL_PAYMENT':
+            query.edit_message_text("Please choose at top-up amount!")
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Sorry, topup is currently unavailable... "
-                     "Please try to /topup again, or contact a orc4bikes comm member to assist you!")
+                text="Payment cancelled!")
             return -1
+
+        amount = int(amount)
+        context.user_data['amount'] = amount
+        query.edit_message_text(f'Selected amount: ${amount//100:.2f}')
+
+        text1 = (
+            "[1] PayLah/PayNow to Lim Yu Jie, at 90817788."
+            #, or shorturl.at/dBLW6'  ## TODO: shorturl not working!!
+            "\n[2] Once done, send a screenshot to @orc4bikes_bot!!"
+            '\n[3] You will receive "Transaction complete! You now have XXXX credits" for comfirmation'
+        )
+
+        text2 = (
+            "If I don't respond after you send your screenshot, please try to /topup again."
+            "\n\nTo stop, send /cancel"
+        )
+
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text1,
+            reply_markup = InlineKeyboardMarkup([
+                [InlineKeyboardButton("Go to PayLah", callback_data='redirect_paylah', url=PAYMENT_URL)]
+            ]))
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text2)
+        return 72
 
     def payment_pic(self, update, context):
         """After photo is sent, save the photo and ask if would like to retake."""
@@ -211,60 +197,10 @@ class ConvoBot(TeleBot):
         return 72
 
     def payment_done(self, update, context):
-        try:
-            if context.user_data['photo'] and context.user_data['amount']:  # Completed with photo
-                photo = context.user_data['photo']
-                amount = context.user_data['amount']
-                amount = int(float(amount))
-
-                user_data = self.get_user(update, context)
-                initial_amount = user_data['credits']
-                user_data['credits'] += amount
-
-                # Notify user
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=(f"Transaction complete! You now have {user_data['credits']} credits."
-                           "\nTo start your journey, /rent now!"))
-
-                if self.promo:  # Promotion period, credits are doubled
-                    user_data['credits'] += amount
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text=(f"Promotion applied! An additional {amount} credits was added to your account."
-                              f"You now have {user_data['credits']} credits."
-                              "\nHappy cycling!"))
-
-                user_data['finance'] = user_data.get('finance', [])
-                f_log = {
-                    'type': 'payment',
-                    'time': self.now().strftime("%Y/%m/%d, %H:%M:%S"),
-                    'initial': initial_amount,
-                    'change': user_data['credits'] - initial_amount,
-                    'final': user_data['credits'],
-                }
-                user_data['finance'].append(f_log)
-                super().update_user(user_data)
-
-                # Notify Admin group
-                message = (
-                    f"[FINANCE - PAYMENT]\n@{user_data['username']} paid ${amount/100:.2f} at "
-                    f"{self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
-                )
-                self.admin_log(update, context, message, photo)
-
-                # Update finance log
-                finance_log = [
-                    user_data['username'],
-                    self.now().strftime("%Y/%m/%d, %H:%M:%S"),
-                    initial_amount, user_data['credits']-initial_amount, user_data['credits'],
-                    'orc4bikes_bot'
-                ]
-                self.update_finance_log(finance_log)
-
-                return -1
-
-            elif context.user_data.get('amount', None) is None:  # Unable to get amount, restart payment process
+        if not context.user_data['photo'] or not context.user_data['amount']:
+            # Not completed with photo
+            if context.user_data.get('amount', None) is None:
+                # Unable to get amount, restart payment process
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=("Sorry, your operation timed out, as we are unable to get your amount currently. "
@@ -276,12 +212,59 @@ class ConvoBot(TeleBot):
                     text=("Sorry, you have not completed the payment process!"
                           "\nTo continue, follow the instructions above. To stop, send /cancel"))
                 return None
-        except Exception as e:
-            logger.exception(e)
+
+
+        photo = context.user_data['photo']
+        amount = context.user_data['amount']
+        amount = int(float(amount))
+
+        user_data = self.get_user(update, context)
+        initial_amount = user_data['credits']
+        user_data['credits'] += amount
+
+        # Notify user
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=(f"Transaction complete! You now have {user_data['credits']} credits."
+                  "\nTo start your journey, /rent now!"))
+
+        if self.promo:  # Promotion period, credits are doubled
+            user_data['credits'] += amount
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Sorry, an error occurred... Please retry to make a /payment!")
-            return -1
+                text=(f"Promotion applied! An additional {amount} credits was added to your account."
+                       f"You now have {user_data['credits']} credits."
+                       "\nHappy cycling!"))
+
+        user_data['finance'] = user_data.get('finance', [])
+        f_log = {
+            'type': 'payment',
+            'time': self.now().strftime("%Y/%m/%d, %H:%M:%S"),
+            'initial': initial_amount,
+            'change': user_data['credits'] - initial_amount,
+            'final': user_data['credits'],
+        }
+        user_data['finance'].append(f_log)
+        super().update_user(user_data)
+
+        # Notify Admin group
+        message = (
+            f"[FINANCE - PAYMENT]\n@{user_data['username']} paid ${amount/100:.2f} at "
+            f"{self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
+        )
+        self.admin_log(update, context, message, photo)
+
+        # Update finance log
+        finance_log = [
+            user_data['username'],
+            self.now().strftime("%Y/%m/%d, %H:%M:%S"),
+            initial_amount, user_data['credits']-initial_amount, user_data['credits'],
+            'orc4bikes_bot'
+        ]
+        self.update_finance_log(finance_log)
+
+        return -1
+
 
     def rent_command(self, update, context):
         """Start to rent a bike.
@@ -300,7 +283,7 @@ class ConvoBot(TeleBot):
                 chat_id=update.effective_chat.id,
                 text="You are already renting! Please /return your current bike first")
             return -1
-        elif user_data.get('credits', 0) < 1:  # Insufficient credits
+        if user_data.get('credits', 0) < 1:  # Insufficient credits
             text = (
                 f"You cannot rent, as you don't have enough credits! Current credits: {user_data['credits']}"
                 "\nUse /history to check your previous transactions, or /topup to top up now!"
@@ -321,7 +304,7 @@ class ConvoBot(TeleBot):
 
         avail = '\n'.join(f"{b['name']} {EMOJI['tick']}" for b in avail)
         not_avail = '\n'.join(f"{b['name']} {EMOJI['cross']} -- {'on rent' if b['username'] else b['status']}" for b in not_avail)
-        text = f"Bicycles:\n{avail}"
+        text = f'Bicycles:\n{avail}'
         text += '\n\n' if avail else ''
         text += f'{not_avail}'
         text += "\n\nClick below to start renting now!" if avail else "\n\nSorry, no bikes are available..."
@@ -339,45 +322,41 @@ class ConvoBot(TeleBot):
         query = update.callback_query
         query.answer()
         bike_name = query.data
-        try:
-            if bike_name == 'stoprent':
-                query.edit_message_text(text="Rental has been cancelled! Send /rent to refresh the available bikes.")
-                return -1
-            bike_data = self.get_bike(bike_name)
-            if bike_data is None:  # Bike doesn't exist
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=f"No such bike {bike_name} found. Please indicate which bike you would like to rent.")
-                return -1
-            # Bike exists
-            if bike_data['status'] != 0:  # Bike is not available
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=f"Sorry, {bike_name} is not available. Please indicate which bike you would like to rent.")
-                return -1
-            else:  # Bike is available
-                if bike_name == 'fold_blue':
-                    context.bot.send_message(
-                        chat_id=update.effective_chat.id,
-                        text="Dear user, we are aware that the Blue Foldable has a dent. No report is needed to be made, thank you!")
-                query.edit_message_text(text=f"Selected bike: {bike_name}")
-                context.user_data['bike_name'] = bike_name
-                text = self.terms_text
-                keyboard = [
-                    [InlineKeyboardButton("Accept", callback_data='TERMS_YES')],
-                    [InlineKeyboardButton("Decline", callback_data='TERMS_NO')]
-                ]
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=text,
-                    reply_markup=InlineKeyboardMarkup(keyboard))
-                return 12
-        except Exception as e:
-            logger.exception(e)
+
+        if bike_name == 'stoprent':
+            query.edit_message_text(text="Rental has been cancelled! Send /rent to refresh the available bikes.")
+            return -1
+
+        bike_data = self.get_bike(bike_name)
+        if bike_data is None:  # Bike doesn't exist
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="Sorry, the server seemed to have disconencted... Please try again!")
+                text=f"No such bike {bike_name} found. Please indicate which bike you would like to rent.")
             return -1
+
+        # Bike exists
+        if bike_data['status'] != 0:  # Bike is not available
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"Sorry, {bike_name} is not available. Please indicate which bike you would like to rent.")
+            return -1
+
+        if bike_name == 'fold_blue':
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Dear user, we are aware that the Blue Foldable has a dent. No report is needed to be made, thank you!")
+        query.edit_message_text(text=f"Selected bike: {bike_name}")
+        context.user_data['bike_name'] = bike_name
+        text = self.terms_text
+        keyboard = [
+            [InlineKeyboardButton("Accept", callback_data='TERMS_YES')],
+            [InlineKeyboardButton("Decline", callback_data='TERMS_NO')]
+        ]
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text,
+            reply_markup=InlineKeyboardMarkup(keyboard))
+        return 12
 
     def terms_button(self, update, context):
         """After accepting terms, ask for photo."""
@@ -385,36 +364,27 @@ class ConvoBot(TeleBot):
         query.answer()
         answer = query.data
 
-        if answer == 'TERMS_YES':
-            query.edit_message_text(text=f"{self.terms_text}\n\nYou have accepted the terms.")
-            text = (
-                "Please send a picture of the bike you will be renting! Photo must include the BIKE and LOCK."
-                "\n"
-                "\nTo cancel, send /cancel"
-            )
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=text)
-            return 13
-        else:
+        if answer != 'TERMS_YES':
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Terms of use has not been accepted. Cancelling rental now.")
             query.edit_message_text(text=f"{self.terms_text}\n\nTo rent, please accept the terms above.")
             return -1
 
+        query.edit_message_text(text=f"{self.terms_text}\n\nYou have accepted the terms.")
+        text = (
+            "Please send a picture of the bike you will be renting! Photo must include the BIKE and LOCK."
+            "\n"
+            "\nTo cancel, send /cancel"
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=text)
+        return 13
+
     def rent_pic(self, update, context):
         """After photo is sent, save the photo and ask if would like to retake"""
-        if update.message.photo:
-            photo = update.message.photo[-1].file_id
-            context.user_data['photo'] = photo
-            text = ("^ This is your image. If you are unsatisfied with your image, please send another one."
-                    "\nTo CONFIRM RENTAL, send /done. To cancel, send /cancel")
-            context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                photo=context.user_data['photo'],
-                caption=text)
-        else:
+        if not update.message.photo:
             text = (
                 "Please send a picture of the bike you will be renting! Photo must include the BIKE and LOCK."
                 # , As shown in the sample photo.'
@@ -431,40 +401,20 @@ class ConvoBot(TeleBot):
                 text="Sample photo not available at the moment... Please still send a photo though!!"
             )
             """
-        return 13
+            return
+
+        photo = update.message.photo[-1].file_id
+        context.user_data['photo'] = photo
+        text = ("^ This is your image. If you are unsatisfied with your image, please send another one."
+                "\nTo CONFIRM RENTAL, send /done. To cancel, send /cancel")
+        context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=photo,
+            caption=text)
 
     def rent_done(self, update, context):
-        try:
-            if context.user_data['photo'] and context.user_data['bike_name']:
-                # Completed with photo
-                bike_name = context.user_data['bike_name']
-
-                user_data = self.get_user(update, context)
-                curr_time = self.now().isoformat()
-                user_data['status'] = curr_time
-                user_data['bike_name'] = bike_name
-                super().update_user(user_data)
-
-                bike = self.get_bike(bike_name)
-                bike['username'] = user_data['username']
-                bike['status'] = curr_time
-                self.update_bike(bike)
-
-                # Notify user
-                context.bot.send_message(
-                    chat_id=update.effective_chat.id,
-                    text=(f"Rental started! Time of rental, {self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
-                           "\nUse /getpin to unlock bike."))
-
-                # Notify Admin group
-                message = (
-                    f"[RENTAL - RENT]"
-                    f"\n@{user_data['username']} rented {bike_name} at {self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
-                )
-                self.admin_log(update, context, message, context.user_data['photo'])
-                return -1
-
-            elif context.user_data.get('bike_name', None) is None:  # Unable to get bike_name, restart rental process
+        if not context.user_data['photo'] or not context.user_data['bike_name']:
+            if context.user_data.get('bike_name', None) is None:  # Unable to get bike_name, restart rental process
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=("Sorry, your operation timed out, as we are unable to get your bike name currently. "
@@ -476,12 +426,35 @@ class ConvoBot(TeleBot):
                     text=("Sorry, you have not completed the rental process!"
                           "\nTo continue, follow the instructions above. To stop, send /cancel"))
                 return None
-        except Exception as e:
-            logger.exception(e)
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text="Sorry, an error occurred... Please retry to /rent the bike!")
-            return -1
+
+        # Completed with photo
+        bike_name = context.user_data['bike_name']
+
+        user_data = self.get_user(update, context)
+        curr_time = self.now().isoformat()
+        user_data['status'] = curr_time
+        user_data['bike_name'] = bike_name
+        super().update_user(user_data)
+
+        bike = self.get_bike(bike_name)
+        bike['username'] = user_data['username']
+        bike['status'] = curr_time
+        self.update_bike(bike)
+
+        # Notify user
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=(f"Rental started! Time of rental, {self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
+                   "\nUse /getpin to unlock bike."))
+
+        # Notify Admin group
+        message = (
+            f"[RENTAL - RENT]"
+            f"\n@{user_data['username']} rented {bike_name} at {self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
+        )
+        self.admin_log(update, context, message, context.user_data['photo'])
+        return -1
+
 
     def return_command(self, update, context):
         """Return the current bike"""
@@ -496,31 +469,31 @@ class ConvoBot(TeleBot):
                 chat_id=update.effective_chat.id,
                 text="You are not renting...")
             return -1
-        else:
-            context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=("Please send a photo for proof of return! Photo must include the BIKE and LOCK."
-                      "\nPicture must be a photo, not a file...\nTo continue rental, send /cancel"))
-            return 91
+
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=("Please send a photo for proof of return! Photo must include the BIKE and LOCK."
+                  "\nPicture must be a photo, not a file...\nTo continue rental, send /cancel"))
+        return 91
 
     def return_pic(self, update, context):
         """After photo is sent, save the photo and ask for others"""
-        if update.message.photo:
-            photo = update.message.photo[-1].file_id
-            context.user_data['photo'] = photo
-            text = (
-                "^ This is your image. If you are unsatisfied with your image, please send another one."
-                "\nTo return the bike, send /done. To continue rental, send /cancel"
-            )
-            context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                photo=context.user_data['photo'],
-                caption=text)
-        else:
+        if not update.message.photo:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="Please send a photo for proof of return!\nTo continue rental, send /cancel")
-        return 91
+            return 91
+
+        photo = update.message.photo[-1].file_id
+        context.user_data['photo'] = photo
+        text = (
+            "^ This is your image. If you are unsatisfied with your image, please send another one."
+            "\nTo return the bike, send /done. To continue rental, send /cancel"
+        )
+        context.bot.send_photo(
+            chat_id=update.effective_chat.id,
+            photo=photo,
+            caption=text)
 
     def return_done(self, update, context):
         user_data = super().get_user(update, context)

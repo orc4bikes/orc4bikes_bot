@@ -1,4 +1,12 @@
 import os
+import sys
+
+if os.environ.get('BOT_ENV') is None:
+    import dotenv
+    dotenv.load_dotenv()
+    if os.environ.get('BOT_ENV') is None:
+        # logger.critical("No environment variables found. Exiting.")
+        sys.exit()
 
 ADMIN_LIST = [
     # Your admins' chat_id here

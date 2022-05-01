@@ -87,31 +87,33 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
         bikes_data = self.get_bikes()
         for bike_data in bikes_data:
             username = bike_data['username']
-            if username:
-                chat_id = self.get_user_id(username)
-                user_data = self.get_user(username=username)
-                status = user_data['status']
-                start = datetime.fromisoformat(status)
-                curr = self.now()
-                diff = curr - start
-                if diff.days:
-                    strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds."
-                else:
-                    strdiff = f"{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds."
-                status_text = f"You have been renting {user_data['bike_name']} for {strdiff}."
-                deduction = self.calc_deduct(diff)
-                status_text += (
-                    f"\n\nCREDITS:"
-                    f"\nCurrent: {user_data['credits']}"
-                    f"\nThis trip: {deduction}"
-                    f"\nProjected final: {user_data['credits'] - deduction}"
-                )
-                context.bot.send_message(
-                    chat_id=chat_id,
-                    text=status_text)
-                context.bot.send_message(
-                    chat_id=chat_id,
-                    text="Please remember to /return your bike! Check your bike status with /status.")
+            if not username:
+                continue
+
+            chat_id = self.get_user_id(username)
+            user_data = self.get_user(username=username)
+            status = user_data['status']
+            start = datetime.fromisoformat(status)
+            curr = self.now()
+            diff = curr - start
+            if diff.days:
+                strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds."
+            else:
+                strdiff = f"{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds."
+            status_text = f"You have been renting {user_data['bike_name']} for {strdiff}."
+            deduction = self.calc_deduct(diff)
+            status_text += (
+                f"\n\nCREDITS:"
+                f"\nCurrent: {user_data['credits']}"
+                f"\nThis trip: {deduction}"
+                f"\nProjected final: {user_data['credits'] - deduction}"
+            )
+            context.bot.send_message(
+                chat_id=chat_id,
+                text=status_text)
+            context.bot.send_message(
+                chat_id=chat_id,
+                text="Please remember to /return your bike! Check your bike status with /status.")
 
     def scheduler(self):
         """Scheduler for reminder to be run"""
