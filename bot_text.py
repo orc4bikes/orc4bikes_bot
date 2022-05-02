@@ -3,22 +3,23 @@ ROUTES_LIST = {
     "pink":   "Pink: From Fine Foods to Octobox (SRC L1)",
     "blue":   "Blue: From RC4 B1 to Fine Foods (Wet Weather route)",
     "green":  "Green: From RC4 B1 to Fine Foods",
-    }
+}
 
 ROUTES_PICS = {
     "orange": 'https://www.dropbox.com/s/jsjfhld1ob6owrv/orange.jpg',
     "pink":   'https://www.dropbox.com/s/fpulbka6kqovo3o/pink.jpg',
     'blue':   'https://www.dropbox.com/s/m559ohyre39njok/blue.jpg',
-    'green': 'https://www.dropbox.com/s/ugbpo904vmzgtfa/green.jpg?dl=0'
-    }
+    'green':  'https://www.dropbox.com/s/ugbpo904vmzgtfa/green.jpg?dl=0',
+}
 
-CHEER_LIST = ["",
+CHEER_LIST = [
+    "",
     "Cheer up!",
     "Ganbatte!",
     "Hwaiting!",
     "Jiayou!",
     "You got this!",
-    ]
+]
 
 GUIDE_PIC = "https://www.dropbox.com/s/couqqkedvunq3ee/guide.png"
 
@@ -82,12 +83,12 @@ Other commands:
 
 START_MESSAGE = "Please /start me privately to access this service!"
 
-BAN_MESSAGE = '''You are on Santa's naughty list... What have you done?!
-If you believe this is a mistake, contact the current admins at @yonx30'''
+BAN_MESSAGE = """You are on Santa's naughty list... What have you done?!
+If you believe this is a mistake, contact the current admins at @yonx30"""
 
 TERMS_TEXT = """Bicycle Rental -- Terms of Use:
-1. You are not to HOG the bike
-2. You must take GOOD CARE of the bike during the duration of rental
+1. You are not to HOG the bike.
+2. You must take GOOD CARE of the bike during the duration of rental.
 3. If you spot any DEFECTS, /report before your rental. Any defects found after your rental will be your responsibility.
 4. You will be FINANCIALLY held liable for any DAMAGES to the bike, and/or LOSS of equipment on the bike.
 5. orc4bikes reserve the right to amend the 'Terms of Use' at their discretion.
@@ -101,8 +102,8 @@ If you agree, and ONLY if you agree, to the terms stated above, click "Accept".
 """
 
 EMOJI = {
-        "tick" : "✅",
-        "cross": "❌"
-        }
+    "tick" : "✅",
+    "cross": "❌",
+}
 
 PAYMENT_URL = "https://www.dbs.com.sg/personal/mobile/paylink/index.html?tranRef=XtY0BEgubm"

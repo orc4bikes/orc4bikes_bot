@@ -1,12 +1,13 @@
 import json
 from os import listdir
 from os.path import isfile, join
+
 from admin import ADMIN_LIST
 
 def update_all_users(field='credits', value=0):
     """Update all user in database"""
     files = [f for f in listdir('database/users/') if isfile(join('database/users/', f))]
-    for file in files: # Get all
+    for file in files:  # Get all
         if 'table.json' in file.name:
             continue
         with open(f'database/users/{file}', 'r') as f:
@@ -17,7 +18,7 @@ def update_all_users(field='credits', value=0):
             json.dump(user_data, f, sort_keys=True, indent=4)
 
 def update_all_credits(credits=0):
-    update_all_users('credits',credits)
+    update_all_users('credits', credits)
 
 if __name__ == '__main__':
     while True:
