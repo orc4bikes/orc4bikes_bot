@@ -83,6 +83,20 @@ EMOJI = {
     "cross": "❌",
 }
 
+BOT_COMMANDS = """
+/help      Get all available commands
+/guide     Guide on bike rental
+/topup     Starts your top-up process!
+/status    View your current credits and rental status!
+/bikes     See available bikes
+/rent      Rent a bike!
+/getpin    Get the pin for the bike you rented
+/return    Return the current bicycle
+/history   Show your past transaction history
+/report    Report bikes damages or anything sus...
+/routes    Get orc4bikes-curated routes
+/feedback  A penny for your thoughts, for all our past events!
+"""
 
 
 FUN_TEXT = """
