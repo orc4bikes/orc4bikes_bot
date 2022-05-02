@@ -153,7 +153,6 @@ class FunBot(TeleBot):
             pikas.extend(context.bot.get_sticker_set(pika).stickers)
         pikas.extend(context.bot.get_sticker_set('uwumon').stickers[:20])
         pika = random.choice(pikas)
-        update.message.reply_sticker(sticker=pika)
 
     def quote_command(self, update, context):
         """Sends an inspirational quote"""

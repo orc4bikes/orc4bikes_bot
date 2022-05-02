@@ -339,9 +339,8 @@ class ConvoBot(TeleBot):
             f"{query.message.text_html}\n\n<i>Selected bike: {bike_name}</i>",
             parse_mode='HTML')
 
-        if bike_name == 'fold_blue':
-            query.message.reply_text(
-                "Dear user, we are aware that the Blue Foldable has a dent. No report is needed to be made, thank you!")
+        if bike_data['message']:
+            query.message.reply_text(bike_data['message'])
 
         context.user_data['bike_name'] = bike_name
         text = self.terms_text

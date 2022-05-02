@@ -83,6 +83,7 @@ If you agree, and ONLY if you agree, to the terms stated above, click "Accept".
 EMOJI = {
     'tick' : "✅",
     'cross': "❌",
+    'msg':   "💬",
 }
 
 BOT_COMMANDS = """
