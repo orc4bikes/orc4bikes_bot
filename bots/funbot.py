@@ -8,6 +8,8 @@ from bots.telebot import TeleBot
 from bot_text import (
     CHEER_LIST,
     FUN_TEXT,
+    OHNO_LIST,
+    FUN_URLS,
 )
 
 logger = logging.getLogger()
@@ -20,124 +22,117 @@ class FunBot(TeleBot):
         """Show user list of fun commands."""
         update.message.reply_text(FUN_TEXT)
 
-    def animal_command(
-            self, update, context,
-            pic_url='', key=0,
-            error_text=None,
-            secondary_url='',
-            secondary_key=''):
-        """Basic command for animals!"""
-        try:
-            assert pic_url
-            url = requests.get(pic_url).json()[key]
-            update.message.reply_photo(
-                photo=url,
-                caption=random.choice(CHEER_LIST))
-
-        except AssertionError:
-            # empty url given
-            animals = update.message.text.split(' ')[0][1:] + 's'
-            update.message.reply_text(
-                f"Hmm, I can't seem to find any {animals}... Maybe they're all asleep?")
-        except:
-            # first url does not work
+    def get_pic_url(self, l):
+        """Repeated tries a list of URLs"""
+        while len(l) != 0:
+            url, key = l.pop(0)
             try:
-                # try secondary url
-                assert secondary_url
-                url = requests.get(secondary_url).json()[secondary_key]
-                update.message.reply_photo(
-                    photo=url,
-                    caption=random.choice(CHEER_LIST))
-            except:
-                # both urls do not work
-                if error_text is None:
-                    animals = update.message.text.split(' ')[0][1:] + 's'
-                    error_text = f"Sorry, all the {animals} are out cycling! Please try again when they come home :)"
-                update.message.reply_text(error_text)
+                img_url = requests.get(url).json()[key]
+                return img_url
+            except RequestException as e:
+                logger.exception(e)
+        return None
+
+    def send_user(
+            self, update, context, *,
+            pic_url,
+            caption,
+            error_text):
+        """Replies user with either a photo or an error message"""
+
+        if not pic_url:
+            update.message.reply_text(error_text)
+            return
+
+        update.message.reply_photo(
+            photo=pic_url,
+            caption=caption)
 
     def doggo_command(self, update, context):
-        """Shows user a few cute dogs!"""
-        url = 'https://random.dog/woof.json'
-        key = 'url'
-        url2 = 'http://shibe.online/api/shibes'
-        key2 = 0
-        error_text = "Sorry, all the dogs are out playing... Please try again later!"
-
-        self.animal_command(
+        """Shows you a few cute dogs!"""
+        pic_url = self.get_pic_url(FUN_URLS['dog'])
+        self.send_user(
             update, context,
-            pic_url=url, key=key,
-            error_text=error_text,
-            secondary_url=url2, secondary_key=key2)
-
-    def neko_command(self, update, context):
-        """Shows you a few cute cats!"""
-        url = 'https://aws.random.cat/meow'
-        key = 'file'
-        url2 = 'https://shibe.online/api/cats'
-        key2 = 0
-        error_text = "Sorry, all the cats are asleep... Please try again later!"
-
-        self.animal_command(
-            update, context,
-            pic_url=url, key=key,
-            error_text=error_text,
-            secondary_url=url2, secondary_key=key2)
-
-    def foxy_command(self, update, context):
-        """Shows you a few cute foxes!"""
-        url = 'https://randomfox.ca/floof/'
-        key = 'image'
-        error_text = "Sorry, all the foxes are asleep... Please try again later!"
-
-        self.animal_command(
-            update, context,
-            pic_url=url, key=key,
-            error_text=error_text)
+            pic_url=pic_url,
+            caption=random.choice(CHEER_LIST),
+            error_text="Sorry, all the dogs are out playing... Please try again later!")
 
     def shibe_command(self, update, context):
         """Shows you a few cute shibe!"""
-        url = 'http://shibe.online/api/shibes'
-        key = 0
-        error_text = "Sorry, doge is doge... Please try again later!"
-
-        self.animal_command(
+        pic_url = self.get_pic_url(FUN_URLS['shibe'])
+        self.send_user(
             update, context,
-            pic_url=url, key=key,
-            error_text=error_text)
+            pic_url=pic_url,
+            caption=random.choice(CHEER_LIST),
+            error_text="Sorry, doge is doge... Please try again later!")
 
-    def birb_command(self, update, context):
-        """Shows you a few cute birbs!"""
-        url = 'http://shibe.online/api/birds'
-        key = 0
-        error_text = "Sorry, the birbs flew away... Please try again later!"
-
-        self.animal_command(
+    def neko_command(self, update, context):
+        """Shows you a few cute cats!"""
+        pic_url = self.get_pic_url(FUN_URLS['neko'])
+        self.send_user(
             update, context,
-            pic_url=url, key=key,
-            error_text=error_text)
+            pic_url=pic_url,
+            caption=random.choice(CHEER_LIST),
+            error_text="Sorry, all the cats are asleep... Please try again later!")
 
     def kitty_command(self, update, context):
         """Shows you a few cute kittens!"""
-        url = 'http://shibe.online/api/cats'
-        key = 0
-        error_text = "Sorry, all the cats are asleep... Please try again later!"
-
-        self.animal_command(
+        pic_url = self.get_pic_url(FUN_URLS['cat'])
+        self.send_user(
             update, context,
-            pic_url=url, key=key,
-            error_text=error_text)
+            pic_url=pic_url,
+            caption=random.choice(CHEER_LIST),
+            error_text="Sorry, all the cats are asleep... Please try again later!")
+
+    def foxy_command(self, update, context):
+        """Shows you a few cute foxes!"""
+        pic_url = self.get_pic_url(FUN_URLS['fox'])
+        self.send_user(
+            update, context,
+            pic_url=pic_url,
+            caption=random.choice(CHEER_LIST),
+            error_text="Sorry, all the foxes are asleep... Please try again later!")
+
+    def birb_command(self, update, context):
+        """Shows you a few cute birbs!"""
+        pic_url = self.get_pic_url(FUN_URLS['bird'])
+        self.send_user(
+            update, context,
+            pic_url=pic_url,
+            caption=random.choice(CHEER_LIST),
+            error_text="Sorry, the birbs flew away... Please try again later!")
+
+    def get_random_pic(self):
+        return self.get_pic_url(random.choice(list(FUN_URLS.values())))
 
     def random_command(self, update, context):
         """Sends a random animal!"""
-        command_list = [
-            self.doggo_command,
-            self.neko_command,
-            self.kitty_command,
-            self.foxy_command,
-            self.birb_command,
-            self.shibe_command,
+        pic_url = self.get_random_pic()
+        self.send_user(
+            update, context,
+            pic_url=pic_url,
+            caption=random.choice(CHEER_LIST),
+            error_text="Hmm, I can't seem to find any animals... Maybe they're all asleep?")
+
+    def pika_command(self, update, context):
+        """Sends a pikachu sticker"""
+        if random.random() < 0.1:
+            update.message.reply_text("Pika... boo? 🙂")
+            return
+        PIKA_LIST = [
+            'pikachu',
+            'pikachu2',
+            'PikachuDetective',
+            'pikachu6',
+            'pikach',
+            'pikach_memes',
         ]
-        random.choice(command_list)(update, context)
+        pikas = []
+        for pika in PIKA_LIST:
+            pikas.extend(context.bot.get_sticker_set(pika).stickers)
+        pikas.extend(context.bot.get_sticker_set('uwumon').stickers[:20])
+        pika = random.choice(pikas)
+        update.message.reply_sticker(sticker=pika)
 
     def quote_command(self, update, context):
         """Sends an inspirational quote"""
@@ -151,77 +146,21 @@ class FunBot(TeleBot):
             update.message.reply_text(
                 f'"{url["text"]}" - {url["author"]}')
 
-    def pika_command(self, update, context):
-        """Sends a pikachu sticker"""
-
-        if random.random() < 0.01:
-            update.message.reply_text("Pika... boo? 🙂")
-            return
-        pika_list = [
-            'pikachu',
-            'pikachu2',
-            'PikachuDetective',
-            'pikachu6',
-            'pikach',
-            'pikach_memes',
-        ]
-        pikas = []
-        for pika in pika_list:
-            pikas.extend(context.bot.get_sticker_set(pika).stickers)
-        pikas.extend(context.bot.get_sticker_set('uwumon').stickers[:20])
-        pika = random.choice(pikas)
-        update.message.reply_sticker(sticker=pika)
-        # except Exception as e:
-        #     logger.exception(e)
-        #     context.bot.send_message(
-        #         chat_id=update.effective_chat.id,
-        #         text="Pika... boo? 🙂"
-        #     )
-
     def brawl_command(self, update, context):
         """Sends a brawl stars sticker"""
-
         brawls = context.bot.get_sticker_set('BrawlStarsbyHerolias')
         brawl = random.choice(brawls.stickers)
         update.message.reply_sticker(sticker=brawl)
 
     def bangday_command(self, update, context):
         """Sends a bang don sticker"""
-
         bangdongs = context.bot.get_sticker_set('happybangday')
         bangdong = random.choice(bangdongs.stickers)
         update.message.reply_sticker(sticker=bangdong)
 
     def ohno_command(self, update, context):
         """Sends a version of "Oh no"..."""
-        text = random.choice([
-            "OH NO!",
-            "Oh no indeed...",
-            "Oh no",
-            "Ah, that is not ideal",
-            "This is a pleasant surprise without the pleasant",
-            "Goodness gracious me!",
-            "Oh noes",
-            "Das not good",
-            "Aaaaaaaaaaaaaaaaaaaaaaaaaaaaah",
-            "How could this happen?!",
-            "This calls for an 'Oh no'.",
-            "F in the chat",
-            "What did you do!?",
-            "Seriously...",
-            "ono",
-            "FSKSJFLKSDJFH",
-            "My condolences",
-            "Rest in peace good sir",
-            "ohhh myyy gawwwd",
-            "OMG!",
-            "oh no",
-            "oh no...?",
-            "Bless you",
-            "Are you sure you didn't mean 'Oh yes'?",
-            "This is truly a disaster",
-            "...",
-        ])
+        text = random.choice(OHNO_LIST)
         update.message.reply_text(text)
         raise ZeroDivisionError  # This function is now for testing
 
@@ -234,8 +173,6 @@ class FunBot(TeleBot):
         self.addcmd('shibe', self.shibe_command)
         self.addcmd('foxy', self.foxy_command)
         self.addcmd('random', self.random_command)
-
-        self.addcmd('animal', self.animal_command)
 
         self.addcmd('pika', self.pika_command)             # pika sticker
         self.addcmd('brawl', self.brawl_command)           # brawl sticker

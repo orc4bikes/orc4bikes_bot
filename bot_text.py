@@ -12,14 +12,7 @@ ROUTES_PICS = {
     'green':  'https://www.dropbox.com/s/ugbpo904vmzgtfa/green.jpg?dl=0',
 }
 
-CHEER_LIST = [
-    "",
-    "Cheer up!",
-    "Ganbatte!",
-    "Hwaiting!",
-    "Jiayou!",
-    "You got this!",
-]
+PAYMENT_URL = "https://www.dbs.com.sg/personal/mobile/paylink/index.html?tranRef=XtY0BEgubm"
 
 GUIDE_PIC = "https://www.dropbox.com/s/couqqkedvunq3ee/guide.png"
 
@@ -42,19 +35,6 @@ Rental rates:
 
 Top-up:
 $1 = 100 credits
-"""
-
-FUN_TEXT = """
-Feel free to click any of the below, or just send /random...
-🐶 /doggo - Get a random dog!
-🐕 /shibe - Get a random shiba!
-🐈 /neko - Get a random cat!
-🐱 /kitty - Get a random kitten!
-🦊 /foxy - Get a random fox!
-🐥 /birb - Get a random bird!
-🐹 /pika - A wild pikachu appeared!
-
-Look out for more easter eggs 🥚... :)
 """
 
 ADMIN_TEXT = r"""List of admin commands:
@@ -103,4 +83,65 @@ EMOJI = {
     "cross": "❌",
 }
 
-PAYMENT_URL = "https://www.dbs.com.sg/personal/mobile/paylink/index.html?tranRef=XtY0BEgubm"
+
+
+FUN_TEXT = """
+Feel free to click any of the below, or just send /random...
+🐶 /doggo - Get a random dog!
+🐕 /shibe - Get a random shiba!
+🐈 /neko - Get a random cat!
+🐱 /kitty - Get a random kitten!
+🦊 /foxy - Get a random fox!
+🐥 /birb - Get a random bird!
+🐹 /pika - A wild pikachu appeared!
+
+Look out for more easter eggs 🥚... :)
+"""
+
+FUN_URLS = {
+    'dog':   [('https://random.dog/woof.json', 'url'), ('http://shibe.online/api/shibes', 0)],
+    'shibe': [('http://shibe.online/api/shibes', 0)],
+    'neko':  [('https://aws.random.cat/meow', 'file'), ('https://shibe.online/api/cats', 0)],
+    'cat':   [('http://shibe.online/api/cats', 0)],
+    'fox':   [('https://randomfox.ca/floof/', 'image'), ('http://shibe.online/api/shibes', 0)],
+    'bird':  [('http://shibe.online/api/birds', 0)],
+}
+
+CHEER_LIST = [
+    "",
+    "Cheer up!",
+    "Ganbatte!",
+    "Hwaiting!",
+    "Jiayou!",
+    "You got this!",
+]
+
+OHNO_LIST = [
+    "OH NO!",
+    "Oh no indeed...",
+    "Oh no",
+    "Ah, that is not ideal",
+    "This is a pleasant surprise without the pleasant",
+    "Goodness gracious me!",
+    "Oh noes",
+    "Das not good",
+    "Aaaaaaaaaaaaaaaaaaaaaaaaaaaaah",
+    "How could this happen?!",
+    "This calls for an 'Oh no'.",
+    "F in the chat",
+    "What did you do!?",
+    "Seriously...",
+    "ono",
+    "FSKSJFLKSDJFH",
+    "My condolences",
+    "Rest in peace good sir",
+    "ohhh myyy gawwwd",
+    "OMG!",
+    "oh no",
+    "oh no...?",
+    "Bless you",
+    "Are you sure you didn't mean 'Oh yes'?",
+    "This is truly a disaster",
+    "...",
+]
+
