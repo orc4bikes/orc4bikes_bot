@@ -79,9 +79,10 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FeedbackBot, FunBot, TeleBot):
         """Edit query so the user knows button is not accepted."""
         query = update.callback_query
         query.answer()
-        text = query.message.text
-        text += "\n\nSorry, this button has expired. Please send the previous command again."
-        query.edit_message_text(text)
+        query.edit_message_text(
+            f"{query.message.text_html}"
+            "\n\n<i>Sorry, this button has expired. Please send the previous command again.</i>",
+            parse_mode='HTML')
 
     def reminder(self, context):
         """Callback Reminder for return, every hour"""
