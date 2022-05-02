@@ -12,6 +12,7 @@ from bots.funbot import FunBot
 from bots.adminbot import AdminBot
 from bots.userbot import UserBot
 from bots.convobot import ConvoBot
+from bots.feedbackbot import FeedbackBot
 
 from admin import (
     DEV_ADMIN_GROUP_ID,
@@ -29,7 +30,7 @@ from functions import to_readable_td
 
 logger = logging.getLogger()
 
-class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
+class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FeedbackBot, FunBot, TeleBot):
     DEDUCT_RATE = 20  # deduct 1 credit every 20 seconds or part thereof
 
     def __init__(
@@ -126,11 +127,12 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
         and job_queues that are required in the bot.
         """
         # Initialize parent classes first
-        TeleBot.initialize(self)   # Base Telegram Bot
-        UserBot.initialize(self)   # All user commands
-        ConvoBot.initialize(self)  # All conversation handlers
-        AdminBot.initialize(self)  # All admin commands
-        FunBot.initialize(self)    # Fun commands
+        TeleBot.initialize(self)      # Base Telegram Bot
+        UserBot.initialize(self)      # All user commands
+        ConvoBot.initialize(self)     # All conversation handlers
+        AdminBot.initialize(self)     # All admin commands
+        FunBot.initialize(self)       # Fun commands
+        FeedbackBot.initialize(self)  # Feedback commands
 
         # Check if user sends converation commands outside of ConversationHandler (ConvoBot)
         self.addcmd('cancel', self.convo_outside_command)
