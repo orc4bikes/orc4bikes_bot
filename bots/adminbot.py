@@ -231,18 +231,54 @@ class AdminBot(TeleBot):
 
     @admin_only
     def orcabikes_command(self, update, context):
+        update.message.reply_chat_action(ChatAction.TYPING)
         if len(context.args) == 0:
             bikes_data = self.get_bikes()
-
-            text = ""
-            text += '\n'.join(
+            text = '\n'.join(
                 (
                     f"{bike['name']} -- {bike['username'] or bike['status'] or EMOJI['tick']}"
+                    f"{EMOJI['msg'] if bike['message'] else ''}"
                 )
                 for bike in bikes_data)
+            text += (
+                f"\n\nBikes with {EMOJI['msg']} indicates a custom message is shown to user when they begin rental."
+                "\nUse /orcabikes <code>BIKENAME</code> show the message and for more info."
+            )
             update.message.reply_html(text)
             return
 
+        bike_name = context.args[0]
+        bike = self.get_and_check_bike(bike_name)
+
+        if len(context.args) == 1:
+            if not bike['message']:
+                text = f"{bike_name} has no message."
+            else:
+                text = (
+                    f"{bike_name}'s message:"
+                    f"\n{bike['message']}"
+                )
+
+            text += "\n\nSend /orcabikes <code>BIKENAME</code> <code>MESSAGE</code> to update the bike's message!"
+            if bike['message']:
+                text += "\nSend /orcabikes <code>BIKENAME</code> remove to remove the bike's message."
+
+            update.message.reply_html(text)
+            return
+            
+        userinput = ' '.join(context.args[1:])
+        if userinput == 'remove':
+            bike['message'] = None
+            self.update_bike(bike)
+            update.message.reply_text(
+                f"Alrights, no message will be shown when users rent {bike_name}.")
+            return
+
+        bike['message'] = userinput
+        self.update_bike(bike)
+        update.message.reply_text(
+            f"{bike_name}'s message successfully updated! Users will now see this message:"
+            f"\n{userinput}")
 
 
     @admin_only
