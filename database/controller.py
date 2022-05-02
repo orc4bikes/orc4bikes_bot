@@ -295,7 +295,7 @@ def get_username(username="", dynamodb=None):
     chat_id = None
     try:
         response = table.get_item(Key={'username': username})['Item']
-        chat_id = int(response.get('chat_id'))
+        chat_id = int(response['chat_id'])
     except ClientError as e:
         logger.exception(e.response['Error']['Message'])
     except KeyError as e:

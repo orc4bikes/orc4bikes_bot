@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 import json
 import logging
@@ -27,7 +27,7 @@ BOT_ENV = os.environ.get('BOT_ENV')
 logger = logging.getLogger()
 
 # See https://tinyurl.com/yuh2jzp3
-filterwarnings(action="ignore", message=r".*CallbackQueryHandler")
+filterwarnings(action='ignore', message=r'.*CallbackQueryHandler')
 
 class DecimalEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -55,7 +55,7 @@ class TeleBot:
     def now(self, gmt=None):
         if gmt is None:
             gmt = self.GMT
-        return datetime.datetime.utcnow() + datetime.timedelta(hours=gmt)
+        return datetime.utcnow() + timedelta(hours=gmt)
 
     # def log_exception(self, e, text=""):
     #     if text:
@@ -76,7 +76,7 @@ class TeleBot:
                 chat_id=update.effective_chat.id,
                 text=START_MESSAGE)
             return False
-        if user_data.get('is_ban'):
+        if user_data['is_ban']:
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=BAN_MESSAGE)
@@ -119,7 +119,7 @@ class TeleBot:
         raise FileNotFoundError
 
     def update_bike(self, bike_data) -> None:
-        bike_name = bike_data.get('name')
+        bike_name = bike_data['name']
         if not bike_name:
             return
         db.set_bike_data(bike_name, bike_data)
@@ -128,7 +128,7 @@ class TeleBot:
         """Updates rental logs with headers:
            bike,username,start_time,end_time
         """
-        file = "rental" if BOT_ENV != "development" else "testing"
+        file = 'rental' if BOT_ENV != 'development' else 'testing'
 
         data = decimal_to_float(update_list)
         requests.post(f"{LOGGING_URL}?file={file}", json=data)
@@ -137,7 +137,7 @@ class TeleBot:
         """Updates report logs with headers:
            username,time,report
         """
-        file = "report" if BOT_ENV != "development" else "testing"
+        file = 'report' if BOT_ENV != 'development' else 'testing'
         data = decimal_to_float(update_list)
         requests.post(f"{LOGGING_URL}?file={file}", json=data)
 
@@ -145,7 +145,7 @@ class TeleBot:
         """Updates finance logs with headers:
            username,time,initial_amt,change_amt,final_amt
         """
-        file = "finance" if BOT_ENV != "development" else "testing"
+        file = 'finance' if BOT_ENV != 'development' else 'testing'
         data = decimal_to_float(update_list)
         requests.post(f"{LOGGING_URL}?file={file}", json=data)
 
@@ -173,14 +173,14 @@ class TeleBot:
         self.updater.dispatcher.add_error_handler(self.err)
 
     def main(self):
-        logger.info('Initializing bot...')
+        logger.info("Initializing bot...")
         self.initialize()
         self.updater.start_polling()
         self.updater.idle()
 
 
 
-if __name__ == "__main__":
-    logger.info('Running the TeleBot!')
+if __name__ == '__main__':
+    logger.info("Running the TeleBot!")
     newbot = TeleBot(TELE_API_TOKEN)
     newbot.main()

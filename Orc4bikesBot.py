@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 import logging
 
@@ -40,7 +40,7 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
             deduct_rate=DEDUCT_RATE,
             terms_text=TERMS_TEXT,
             promo=False):
-        logger.info('running Orc4bikesBot now')
+        logger.info("running Orc4bikesBot now")
         super().__init__(api_key)
         self.help_text = help_text
         self.admin_group_id = admin_group_id
@@ -68,50 +68,50 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
         return -1
 
     def dummy_command(self, update, context):
-        update.message.reply_text('This feature will be added soon! Where art thou, bikes...?')
+        update.message.reply_text("This feature will be added soon! Where art thou, bikes...?")
 
     def unrecognized_command(self, update, context):
         """Inform user when command is unrecognized."""
-        update.message.reply_text('Unrecognized command. Send /help for available commands.')
+        update.message.reply_text("Unrecognized command. Send /help for available commands.")
 
     def unrecognized_buttons(self, update, context):
         """Edit query so the user knows button is not accepted."""
         query = update.callback_query
         query.answer()
         text = query.message.text
-        text += '\n\nSorry, this button has expired. Please send the previous command again'
+        text += "\n\nSorry, this button has expired. Please send the previous command again."
         query.edit_message_text(text)
 
     def reminder(self, context):
         """Callback Reminder for return, every hour"""
         bikes_data = self.get_bikes()
         for bike_data in bikes_data:
-            username = bike_data.get('username')
+            username = bike_data['username']
             if username:
                 chat_id = self.get_user_id(username)
                 user_data = self.get_user(username=username)
-                status = user_data.get('status')
-                start = datetime.datetime.fromisoformat(status)
+                status = user_data['status']
+                start = datetime.fromisoformat(status)
                 curr = self.now()
                 diff = curr - start
                 if diff.days:
-                    strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
+                    strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds."
                 else:
-                    strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
-                status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}.'
+                    strdiff = f"{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds."
+                status_text = f"You have been renting {user_data['bike_name']} for {strdiff}."
                 deduction = self.calc_deduct(diff)
                 status_text += (
                     f"\n\nCREDITS:"
-                    f"\nCurrent: {user_data.get('credits')}"
+                    f"\nCurrent: {user_data['credits']}"
                     f"\nThis trip: {deduction}"
-                    f"\nProjected final:  {user_data.get('credits') - deduction}"
+                    f"\nProjected final: {user_data['credits'] - deduction}"
                 )
                 context.bot.send_message(
                     chat_id=chat_id,
                     text=status_text)
                 context.bot.send_message(
                     chat_id=chat_id,
-                    text="Please remember to /return your bike! Check your bike status with /status")
+                    text="Please remember to /return your bike! Check your bike status with /status.")
 
     def scheduler(self):
         """Scheduler for reminder to be run"""
@@ -120,7 +120,7 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
 
         job_queue.run_repeating(
             callback=self.reminder,
-            interval=datetime.timedelta(hours=1))
+            interval=timedelta(hours=1))
 
     def initialize(self):
         """Initializes all CommandHandlers, MessageHandlers,
@@ -148,6 +148,6 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
         """Main bot function to run"""
         TeleBot.main(self)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     newbot = Orc4bikesBot(TELE_API_TOKEN, admin_group_id=DEV_ADMIN_GROUP_ID)
     newbot.main()

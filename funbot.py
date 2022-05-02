@@ -57,7 +57,7 @@ class FunBot(TeleBot):
                 # both urls do not work
                 if error_text is None:
                     animals = update.message.text.split(' ')[0][1:] + 's'
-                    error_text = f'Sorry, all the {animals} are out cycling! Please try again when they come home :)'
+                    error_text = f"Sorry, all the {animals} are out cycling! Please try again when they come home :)"
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=error_text)

@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import logging
 import os
 import requests
@@ -62,7 +62,11 @@ class ConvoBot(TeleBot):
             ]
         ]
 
-        text = "Here are some available routes for ya!\n\n" + '\n'.join(ROUTES_LIST.values())
+        text = (
+            "Here are some available routes for ya!"
+            "\n\n"
+            '\n'.join(ROUTES_LIST.values())
+        )
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=text,
@@ -85,10 +89,11 @@ class ConvoBot(TeleBot):
                 context.bot.send_photo(
                     chat_id=update.effective_chat.id,
                     photo=ROUTES_PICS[colour],
-                    caption=ROUTES_LIST[colour],
+                    caption=ROUTES_LIST[colour])
+                text = (
+                    "To see more routes, send /routes"
+                    "\nTo start your journey, send /rent"
                 )
-                text = "To see more routes, send /routes"
-                text+= "\nTo start your journey, send /rent"
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=text)
@@ -189,7 +194,7 @@ class ConvoBot(TeleBot):
             )
             context.bot.send_photo(
                 chat_id=update.effective_chat.id,
-                photo=context.user_data["photo"],
+                photo=context.user_data['photo'],
                 caption=text)
         else:
 
@@ -207,19 +212,19 @@ class ConvoBot(TeleBot):
 
     def payment_done(self, update, context):
         try:
-            if context.user_data.get('photo') and context.user_data.get('amount'):  # Completed with photo
-                photo = context.user_data.get('photo')
-                amount = context.user_data.get('amount')
+            if context.user_data['photo'] and context.user_data['amount']:  # Completed with photo
+                photo = context.user_data['photo']
+                amount = context.user_data['amount']
                 amount = int(float(amount))
 
                 user_data = self.get_user(update, context)
-                initial_amount = user_data.get('credits')
+                initial_amount = user_data['credits']
                 user_data['credits'] += amount
 
                 # Notify user
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=(f"Transaction complete! You now have {user_data.get('credits')} credits."
+                    text=(f"Transaction complete! You now have {user_data['credits']} credits."
                            "\nTo start your journey, /rent now!"))
 
                 if self.promo:  # Promotion period, credits are doubled
@@ -227,7 +232,7 @@ class ConvoBot(TeleBot):
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         text=(f"Promotion applied! An additional {amount} credits was added to your account."
-                              f"You now have {user_data.get('credits')} credits."
+                              f"You now have {user_data['credits']} credits."
                               "\nHappy cycling!"))
 
                 user_data['finance'] = user_data.get('finance', [])
@@ -235,8 +240,8 @@ class ConvoBot(TeleBot):
                     'type': 'payment',
                     'time': self.now().strftime("%Y/%m/%d, %H:%M:%S"),
                     'initial': initial_amount,
-                    'change': user_data.get('credits') - initial_amount,
-                    'final': user_data.get('credits'),
+                    'change': user_data['credits'] - initial_amount,
+                    'final': user_data['credits'],
                 }
                 user_data['finance'].append(f_log)
                 super().update_user(user_data)
@@ -250,9 +255,9 @@ class ConvoBot(TeleBot):
 
                 # Update finance log
                 finance_log = [
-                    user_data.get('username'),
+                    user_data['username'],
                     self.now().strftime("%Y/%m/%d, %H:%M:%S"),
-                    initial_amount, user_data.get('credits')-initial_amount, user_data.get('credits'),
+                    initial_amount, user_data['credits']-initial_amount, user_data['credits'],
                     'orc4bikes_bot'
                 ]
                 self.update_finance_log(finance_log)
@@ -297,7 +302,7 @@ class ConvoBot(TeleBot):
             return -1
         elif user_data.get('credits', 0) < 1:  # Insufficient credits
             text = (
-                f"You cannot rent, as you don't have enough credits! Current credits: {user_data.get('credits')}"
+                f"You cannot rent, as you don't have enough credits! Current credits: {user_data['credits']}"
                 "\nUse /history to check your previous transactions, or /topup to top up now!"
             )
             context.bot.send_message(
@@ -309,20 +314,20 @@ class ConvoBot(TeleBot):
         bikes_data = self.get_bikes()
         avail, not_avail = list(), list()
         for bike in bikes_data:
-            if not bike.get('status'):
+            if not bike['status']:
                 avail.append(bike)
             else:
                 not_avail.append(bike)
 
         avail = '\n'.join(f"{b['name']} {EMOJI['tick']}" for b in avail)
-        not_avail = '\n'.join(f'{b["name"]} {EMOJI["cross"]} -- {"on rent" if b.get("username") else b["status"]}' for b in not_avail)
-        text = f'Bicycles:\n{avail}'
+        not_avail = '\n'.join(f"{b['name']} {EMOJI['cross']} -- {'on rent' if b['username'] else b['status']}" for b in not_avail)
+        text = f"Bicycles:\n{avail}"
         text += '\n\n' if avail else ''
         text += f'{not_avail}'
-        text += '\n\nClick below to start renting now!' if avail else '\n\nSorry, no bikes are not unavaialble...'
-        avail_bikes = [bike["name"] for bike in bikes_data if not bike.get('status')]
-        keyboard = list([[InlineKeyboardButton('Rent ' + bike, callback_data=bike)] for bike in avail_bikes])
-        keyboard.append([InlineKeyboardButton('Cancel', callback_data='stoprent')])
+        text += "\n\nClick below to start renting now!" if avail else "\n\nSorry, no bikes are available..."
+        avail_bikes = [bike['name'] for bike in bikes_data if not bike['status']]
+        keyboard = [[InlineKeyboardButton(f"Rent {bike}", callback_data=bike)] for bike in avail_bikes]
+        keyboard.append([InlineKeyboardButton("Cancel", callback_data='stoprent')])
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=text,
@@ -342,22 +347,26 @@ class ConvoBot(TeleBot):
             if bike_data is None:  # Bike doesn't exist
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=f'No such bike {bike_name} found. Please indicate which bike you would like to rent.')
+                    text=f"No such bike {bike_name} found. Please indicate which bike you would like to rent.")
                 return -1
             # Bike exists
-            if bike_data["status"] != 0:  # Bike is not available
+            if bike_data['status'] != 0:  # Bike is not available
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
-                    text=f'Sorry, {bike_name} is not available. Please indicate which bike you would like to rent.')
+                    text=f"Sorry, {bike_name} is not available. Please indicate which bike you would like to rent.")
                 return -1
             else:  # Bike is available
-                if bike_name == "fold_blue":
+                if bike_name == 'fold_blue':
                     context.bot.send_message(
                         chat_id=update.effective_chat.id,
                         text="Dear user, we are aware that the Blue Foldable has a dent. No report is needed to be made, thank you!")
-                query.edit_message_text(text=f'Selected bike: {bike_name}')
+                query.edit_message_text(text=f"Selected bike: {bike_name}")
                 context.user_data['bike_name'] = bike_name
                 text = self.terms_text
+                keyboard = [
+                    [InlineKeyboardButton("Accept", callback_data='TERMS_YES')],
+                    [InlineKeyboardButton("Decline", callback_data='TERMS_NO')]
+                ]
                 context.bot.send_message(
                     chat_id=update.effective_chat.id,
                     text=text,
@@ -403,7 +412,7 @@ class ConvoBot(TeleBot):
                     "\nTo CONFIRM RENTAL, send /done. To cancel, send /cancel")
             context.bot.send_photo(
                 chat_id=update.effective_chat.id,
-                photo=context.user_data["photo"],
+                photo=context.user_data['photo'],
                 caption=text)
         else:
             text = (
@@ -426,9 +435,9 @@ class ConvoBot(TeleBot):
 
     def rent_done(self, update, context):
         try:
-            if context.user_data.get('photo') and context.user_data.get('bike_name'):
+            if context.user_data['photo'] and context.user_data['bike_name']:
                 # Completed with photo
-                bike_name = context.user_data.get('bike_name')
+                bike_name = context.user_data['bike_name']
 
                 user_data = self.get_user(update, context)
                 curr_time = self.now().isoformat()
@@ -437,7 +446,7 @@ class ConvoBot(TeleBot):
                 super().update_user(user_data)
 
                 bike = self.get_bike(bike_name)
-                bike['username'] = user_data.get('username')
+                bike['username'] = user_data['username']
                 bike['status'] = curr_time
                 self.update_bike(bike)
 
@@ -481,6 +490,7 @@ class ConvoBot(TeleBot):
         context.user_data.clear()
         user_data = super().get_user(update, context)
         status = user_data.get('status', None)
+
         if status is None:  # Rental in progress
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -504,7 +514,7 @@ class ConvoBot(TeleBot):
             )
             context.bot.send_photo(
                 chat_id=update.effective_chat.id,
-                photo=context.user_data["photo"],
+                photo=context.user_data['photo'],
                 caption=text)
         else:
             context.bot.send_message(
@@ -515,8 +525,8 @@ class ConvoBot(TeleBot):
     def return_done(self, update, context):
         user_data = super().get_user(update, context)
         status = user_data.get('status', None)
-        if context.user_data.get('photo'):
-            diff = self.now() - datetime.datetime.fromisoformat(status)
+        if context.user_data['photo']:
+            diff = self.now() - datetime.fromisoformat(status)
             if diff.days:
                 strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
             else:
@@ -530,10 +540,10 @@ class ConvoBot(TeleBot):
             deduction = self.calc_deduct(diff)
 
             # Update return logs
-            username = user_data.get('username')
+            username = user_data['username']
             bike_name = user_data['bike_name']
             bike_data = self.get_bike(bike_name)
-            start_time = datetime.datetime.fromisoformat(bike_data['status']).strftime('%Y/%m/%d, %H:%M:%S')
+            start_time = datetime.fromisoformat(bike_data['status']).strftime('%Y/%m/%d, %H:%M:%S')
             end_time = self.now().strftime('%Y/%m/%d, %H:%M:%S')
             self.update_rental_log([bike_name, username, start_time, end_time, deduction])
 
@@ -548,12 +558,12 @@ class ConvoBot(TeleBot):
             f_log = {
                 'type': 'rental',
                 'time': self.now().strftime("%Y/%m/%d, %H:%M:%S"),
-                'credits': user_data.get('credits'),
+                'credits': user_data['credits'],
                 'spent': deduction,
-                'remaining': user_data.get('credits') - deduction
+                'remaining': user_data['credits'] - deduction
             }
-            user_data["status"] = None
-            user_data["log"] = log
+            user_data['status'] = None
+            user_data['log'] = log
             user_data['bike_name'] = ''
             user_data['credits'] -= deduction
             user_data['finance'] = user_data.get('finance', [])
@@ -607,8 +617,7 @@ class ConvoBot(TeleBot):
 
     def report_desc(self, update, context):
         """After description is sent, save the description and ask for pics"""
-        desc = update.message.text
-        context.user_data['desc'] = desc
+        context.user_data['desc'] = update.message.text  # Update desc
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=(
@@ -630,7 +639,7 @@ class ConvoBot(TeleBot):
         )
         context.bot.send_photo(
             chat_id=update.effective_chat.id,
-            photo=context.user_data["photo"],
+            photo=photo,
             caption=text)
         return 83
 
@@ -653,12 +662,12 @@ class ConvoBot(TeleBot):
 
         context.bot.send_photo(
             chat_id=update.effective_chat.id,
-            photo=context.user_data.get("photo"),
+            photo=context.user_data['photo'],
             caption=text)
         return 83
 
     def report_done(self, update, context):
-        if context.user_data.get('photo') and context.user_data.get('desc'):
+        if context.user_data['photo'] and context.user_data['desc']:
             text = (
                 "You have successfully sent a report! A comm member will respond in typically 3-5 working days..."
                 "\n"
@@ -670,12 +679,12 @@ class ConvoBot(TeleBot):
                 text=text)
             # Update admin group
             admin_username = update.message.from_user.username
-            admin_text = f'[REPORT]\n@{admin_username} sent the following report:\n{context.user_data["desc"]}'
+            admin_text = f"[REPORT]\n@{admin_username} sent the following report:\n{context.user_data['desc']}"
             self.admin_log(update, context, admin_text, context.user_data['photo'])
 
             # Update report logs
             curr_time = self.now().strftime('%Y/%m/%d, %H:%M:%S')
-            self.update_report_log([admin_username, curr_time, context.user_data["desc"]])
+            self.update_report_log([admin_username, curr_time, context.user_data['desc']])
             context.user_data.clear()
             return -1
         else:
@@ -876,8 +885,6 @@ class ConvoBot(TeleBot):
         update.message.reply_text(
             "Feedback captured. Thank you for your time!")
 
-        # print(context.user_data['feedback_data'])
-
         context.user_data['feedback_data']['user'] = update.message.from_user.username
         context.user_data['feedback_data']['time'] = self.now().strftime(
             "%Y.%m.%d,%H.%M.%S")
@@ -965,22 +972,14 @@ class ConvoBot(TeleBot):
                     CommandHandler('done', callback=self.return_done)
                 ],
 
-                101: [
-                    CallbackQueryHandler(self.whichevent_button),
-                ],
-                102: [
-                    MessageHandler(filters=Filters.text,
-                                   callback=self.eventrank)
-                ],
+                101: [CallbackQueryHandler(self.whichevent_button)],
+                102: [MessageHandler(filters=Filters.text, callback=self.eventrank)],
                 103: [CallbackQueryHandler(self.eventlength_button)],
                 104: [CallbackQueryHandler(self.eventdifficulty_button)],
                 105: [CallbackQueryHandler(self.eventpace_button)],
-                106: [MessageHandler(filters=Filters.text,
-                                    callback=self.bikeservice)],
-                107: [MessageHandler(filters=Filters.text,
-                                    callback=self.placetogo)],
-                108: [MessageHandler(filters=Filters.text,
-                                    callback=self.other)],
+                106: [MessageHandler(filters=Filters.text, callback=self.bikeservice)],
+                107: [MessageHandler(filters=Filters.text, callback=self.placetogo)],
+                108: [MessageHandler(filters=Filters.text, callback=self.other)],
             },
             fallbacks = [
                 CommandHandler('cancel', self.cancel_command),
@@ -992,7 +991,7 @@ class ConvoBot(TeleBot):
                 CommandHandler('return', self.return_command),
                 CommandHandler('report', self.report_command),
                 CommandHandler('feedback', self.whichevent),
-                ],
+            ],
         )
         return my_handler
 

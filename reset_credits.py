@@ -12,7 +12,7 @@ def update_all_users(field='credits', value=0):
             continue
         with open(f'database/users/{file}', 'r') as f:
             user_data = json.load(f)
-        if user_data.get('chat_id') not in ADMIN_LIST:
+        if user_data['chat_id'] not in ADMIN_LIST:
             user_data[field] = value
         with open(f'database/users/{file}', 'w') as f:
             json.dump(user_data, f, sort_keys=True, indent=4)

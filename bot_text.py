@@ -34,7 +34,7 @@ Rental rates:
 3 credits per minute
 
 🚲 /bikes - See available bikes
-🚴 ️/rent - Start your rental trip here!
+🚴 /rent - Start your rental trip here!
 🔓 /getpin - Get the PIN for the bike you rented
 ↩️ /return - End your rental trip here!
 📢 /report - Report damages or anything sus
@@ -57,28 +57,28 @@ Feel free to click any of the below, or just send /random...
 Look out for more easter eggs 🥚... :)
 """
 
-ADMIN_TEXT = """List of admin commands:
+ADMIN_TEXT = r"""List of admin commands:
 Please do NOT add @ before a username
 Usernames are case sensitive
 User commands:
-/user `username` \\- View the user's current status
-/admin `topup` `username` AMOUNT \\- Top up the user's credit by an integer amount
-\\*\\*\\*NOTE that topup has been used as a user function, to access admin topup, please send /admin topup\\*\\*\\*
+/user `username` \- View the user's current status
+/admin `topup` `username` AMOUNT \- Top up the user's credit by an integer amount
+\*\*\*NOTE that topup has been used as a user function, to access admin topup, please send /admin topup\*\*\*
 
-/deduct `username` AMOUNT \\- Deduct the user's credit by an integer amount
-/setcredit `username` AMOUNT \\- Set the user's credit to an integer amount
-/ban `username` \\- Ban a selected user
-/unban `username` \\- Unban a selected user
+/deduct `username` AMOUNT \- Deduct the user's credit by an integer amount
+/setcredit `username` AMOUNT \- Set the user's credit to an integer amount
+/ban `username` \- Ban a selected user
+/unban `username` \- Unban a selected user
 
 
 Bikes commands:
-/admin `bikes` \\- Get all bikes and their current status
-/setpin `BIKENAME` NEWPIN \\- Change the bike's pin in the server to a new pin
-/setstatus `BIKENAME` NEWSTATUS \\- Change the bike's status in the server to a new status
-/forcereturn  `BIKENAME` \\- Forcefully return a selected bike
+/admin `bikes` \- Get all bikes and their current status
+/setpin `BIKENAME` NEWPIN \- Change the bike's pin in the server to a new pin
+/setstatus `BIKENAME` NEWSTATUS \- Change the bike's status in the server to a new status
+/forcereturn `BIKENAME` \- Forcefully return a selected bike
 
 Other commands:
-/logs \\- Get rental and report logs as a csv file
+/logs \- Get rental and report logs as a csv file
 """
 
 START_MESSAGE = "Please /start me privately to access this service!"

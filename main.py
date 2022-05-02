@@ -3,17 +3,17 @@ import os
 import sys
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     logger = logging.getLogger()
     formatter = logging.Formatter('%(asctime)s %(filename)s: [%(levelname)s] %(message)s')
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
 
-    if os.environ.get("BOT_ENV") is None:
+    if os.environ.get('BOT_ENV') is None:
         import dotenv
         dotenv.load_dotenv()
-        if os.environ.get("BOT_ENV") is None:
+        if os.environ.get('BOT_ENV') is None:
             logger.critical("No environment variables found. Exiting.")
             sys.exit()
 

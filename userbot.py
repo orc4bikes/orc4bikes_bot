@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import logging
 import os
 
@@ -44,13 +44,13 @@ class UserBot(TeleBot):
         """
         chat_id = update.effective_chat.id
 
-        if BOT_ENV == "development" and chat_id not in self.admin_list:
+        if BOT_ENV == 'development' and chat_id not in self.admin_list:
             update.message.reply_text(f"Hi {update.message.from_user.first_name}, please head over to @orc4bikes_bot!")
             return
 
         user_data = super().get_user(update, context)
         if user_data is not None:
-            text = f'Welcome back, {update.message.from_user.first_name}! '
+            text = f"Welcome back, {update.message.from_user.first_name}! "
         else:
             if chat_id > 0:
                 user_data = {
@@ -68,14 +68,17 @@ class UserBot(TeleBot):
             else:
                 context.bot.send_message(
                     chat_id=chat_id,
-                    text=f'Hi @{update.message.from_user.username}, please start the bot privately, and not in groups!!')
+                    text=f"Hi @{update.message.from_user.username}, please start the bot privately, and not in groups!!")
                 return
 
             text = f'Hello, {update.message.from_user.first_name}! '
-        text +='This is your orc4bikes friendly neighbourhood bot :)'
-        text += "\n"
-        text += "\nFor available commands, send /help"
-        text += "\nTo use our bikes, /topup now!"
+
+        text += (
+            "This is your orc4bikes friendly neighbourhood bot :)"
+            "\n"
+            "\nFor available commands, send /help"
+            "\nTo use our bikes, /topup now!"
+        )
 
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -144,13 +147,13 @@ class UserBot(TeleBot):
         bikes_data = self.get_bikes()
         avail, not_avail = list(), list()
         for bike in bikes_data:
-            if not bike.get('status'):
+            if not bike['status']:
                 avail.append(bike)
             else:
                 not_avail.append(bike)
 
         avail = '\n'.join(f"{b['name']} {EMOJI['tick']}" for b in avail)
-        not_avail = '\n'.join(f"{b['name']} {EMOJI['cross']} -- {'on rent' if b.get('username') else b['status']}" for b in not_avail)
+        not_avail = '\n'.join(f"{b['name']} {EMOJI['cross']} -- {'on rent' if b['username'] else b['status']}" for b in not_avail)
         text = f'Bicycles:\n{avail}'
         text += '\n\n' if avail else ''
         text += f'{not_avail}'
@@ -167,26 +170,26 @@ class UserBot(TeleBot):
 
         status = user_data.get('status', None)
         if status is not None:
-            status = datetime.datetime.fromisoformat(status)
+            status = datetime.fromisoformat(status)
             curr = self.now()
             diff = curr - status
             if diff.days:
                 strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
             else:
-                strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
-            status_text = f'You have been renting {user_data["bike_name"]} for {strdiff}. '
+                strdiff = f"{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
+            status_text = f"You have been renting {user_data['bike_name']} for {strdiff}. "
             deduction = self.calc_deduct(diff)
             status_text += (
                 f"\n\nCREDITS:"
-                f"\nCurrent: {user_data.get('credits')}"
+                f"\nCurrent: {user_data['credits']}"
                 f"\nThis trip: {deduction}"
-                f"\nProjected final:  {user_data.get('credits') - deduction}"
+                f"\nProjected final: {user_data['credits'] - deduction}"
             )
         else:
-            creds = user_data.get("credits", 0)
-            status_text = f'You are not renting...\n\nYou have {creds} credits left. Would you like to /topup?'
+            creds = user_data.get('credits', 0)
+            status_text = f"You are not renting...\n\nYou have {creds} credits left. Would you like to /topup?"
             if creds < 100:
-                status_text += ' Please top up soon!'
+                status_text += " Please top up soon!"
         status_text += "\n\nFor more details, send /history."
         status_text += "\nTo start your journey, send /rent."
         context.bot.send_message(
