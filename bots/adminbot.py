@@ -1,6 +1,10 @@
 from datetime import datetime
 import logging
 
+from telegram import (
+    ChatAction,
+)
+
 from bots.telebot import TeleBot
 
 from admin import (
@@ -118,12 +122,9 @@ class AdminBot(TeleBot):
 
     @admin_only
     def admin_command(self, update, context):
-        update.message.reply_text(
-            self.admin_text,
-            parse_mode='MarkdownV2')
+        update.message.reply_text(self.admin_text)
 
     def change_credits(self, username, user_data, change, admin_name):
-
         initial_amt = user_data['credits']
         user_data['credits'] += change
         final_amt = initial_amt + change
@@ -152,6 +153,7 @@ class AdminBot(TeleBot):
     def deduct_command(self, update, context):
         """Deduct specific amount from user credits"""
         keywords_check(context.args, 2)
+        update.message.reply_chat_action(ChatAction.TYPING)
         username, number = context.args
         user_data = self.get_and_check_user(username)
         number = to_int(number)
@@ -165,6 +167,7 @@ class AdminBot(TeleBot):
     def addcredit_command(self, update, context):
         """Topup specific amount to user credits"""
         keywords_check(context.args, 2)
+        update.message.reply_chat_action(ChatAction.TYPING)
         username, number = context.args
         user_data = self.get_and_check_user(username)
         number = to_int(number)
@@ -180,6 +183,7 @@ class AdminBot(TeleBot):
     def setcredit_command(self, update, context):
         """Set user credits to specified amount."""
         keywords_check(context.args, 2)
+        update.message.reply_chat_action(ChatAction.TYPING)
         username, number = context.args
         user_data = self.get_and_check_user(username)
         initial_amt = user_data['credits']
@@ -195,6 +199,7 @@ class AdminBot(TeleBot):
     @admin_only
     def user_command(self, update, context):
         keywords_check(context.args, 1)
+        update.message.reply_chat_action(ChatAction.TYPING)
         username = context.args[0]
         user_data = self.get_and_check_user(username)
 
@@ -209,6 +214,7 @@ class AdminBot(TeleBot):
     @admin_only
     def setpin_command(self, update, context):
         keywords_check(context.args, 2)
+        update.message.reply_chat_action(ChatAction.TYPING)
         bike_name, number = context.args
         bike = self.get_and_check_bike(bike_name)
 
@@ -234,9 +240,7 @@ class AdminBot(TeleBot):
                     f"{bike['name']} -- {bike['username'] or bike['status'] or EMOJI['tick']}"
                 )
                 for bike in bikes_data)
-            update.message.reply_text(
-                text,
-                parse_mode='HTML')
+            update.message.reply_html(text)
             return
 
 
@@ -244,6 +248,7 @@ class AdminBot(TeleBot):
     @admin_only
     def setstatus_command(self, update, context):
         keywords_check(context.args, 1)
+        update.message.reply_chat_action(ChatAction.TYPING)
         bike_name, *status = context.args
         bike = self.get_and_check_bike(bike_name)
         status = ' '.join(status) if status != [] else 0
@@ -289,6 +294,7 @@ class AdminBot(TeleBot):
     @admin_only
     def forcereturn_command(self, update, context):
         keywords_check(context.args, 1)
+        update.message.reply_chat_action(ChatAction.TYPING)
         bike_name = context.args[0]
         bike = self.get_and_check_bike(bike_name)
 
@@ -364,6 +370,7 @@ class AdminBot(TeleBot):
     def ban_command(self, update, context):
         """Ban a user"""
         keywords_check(context.args, 1)
+        update.message.reply_chat_action(ChatAction.TYPING)
         username = context.args[0]
         user_data = self.get_and_check_user(username)
 
@@ -380,6 +387,7 @@ class AdminBot(TeleBot):
     def unban_command(self, update, context):
         """Unban a user"""
         keywords_check(context.args, 1)
+        update.message.reply_chat_action(ChatAction.TYPING)
         username = context.args[0]
         user_data = self.get_and_check_user(username)
 

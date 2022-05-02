@@ -4,6 +4,10 @@ import requests
 from requests.exceptions import RequestException
 from simplejson.errors import JSONDecodeError
 
+from telegram import (
+    ChatAction,
+)
+
 from bots.telebot import TeleBot
 
 from bot_text import (
@@ -34,13 +38,21 @@ class FunBot(TeleBot):
                 logger.exception(e)
         return None
 
+    def chat_action(action):
+        def decorator(func):
+            def new_func(self, update, context, *args, **kwargs):
+                update.message.reply_chat_action(action)
+                return func(self, update, context, *args, **kwargs)
+            return new_func
+        return decorator
+
+
     def send_user(
             self, update, context, *,
             pic_url,
             caption,
             error_text):
         """Replies user with either a photo or an error message"""
-
         if not pic_url:
             update.message.reply_text(error_text)
             return
@@ -49,6 +61,7 @@ class FunBot(TeleBot):
             photo=pic_url,
             caption=caption)
 
+    @chat_action(ChatAction.TYPING)
     def doggo_command(self, update, context):
         """Shows you a few cute dogs!"""
         pic_url = self.get_pic_url(FUN_URLS['dog'])
@@ -58,6 +71,7 @@ class FunBot(TeleBot):
             caption=random.choice(CHEER_LIST),
             error_text="Sorry, all the dogs are out playing... Please try again later!")
 
+    @chat_action(ChatAction.TYPING)
     def shibe_command(self, update, context):
         """Shows you a few cute shibe!"""
         pic_url = self.get_pic_url(FUN_URLS['shibe'])
@@ -67,6 +81,7 @@ class FunBot(TeleBot):
             caption=random.choice(CHEER_LIST),
             error_text="Sorry, doge is doge... Please try again later!")
 
+    @chat_action(ChatAction.TYPING)
     def neko_command(self, update, context):
         """Shows you a few cute cats!"""
         pic_url = self.get_pic_url(FUN_URLS['neko'])
@@ -76,6 +91,7 @@ class FunBot(TeleBot):
             caption=random.choice(CHEER_LIST),
             error_text="Sorry, all the cats are asleep... Please try again later!")
 
+    @chat_action(ChatAction.TYPING)
     def kitty_command(self, update, context):
         """Shows you a few cute kittens!"""
         pic_url = self.get_pic_url(FUN_URLS['cat'])
@@ -85,6 +101,7 @@ class FunBot(TeleBot):
             caption=random.choice(CHEER_LIST),
             error_text="Sorry, all the cats are asleep... Please try again later!")
 
+    @chat_action(ChatAction.TYPING)
     def foxy_command(self, update, context):
         """Shows you a few cute foxes!"""
         pic_url = self.get_pic_url(FUN_URLS['fox'])
@@ -94,6 +111,7 @@ class FunBot(TeleBot):
             caption=random.choice(CHEER_LIST),
             error_text="Sorry, all the foxes are asleep... Please try again later!")
 
+    @chat_action(ChatAction.TYPING)
     def birb_command(self, update, context):
         """Shows you a few cute birbs!"""
         pic_url = self.get_pic_url(FUN_URLS['bird'])
@@ -106,6 +124,7 @@ class FunBot(TeleBot):
     def get_random_pic(self):
         return self.get_pic_url(random.choice(list(FUN_URLS.values())))
 
+    @chat_action(ChatAction.TYPING)
     def random_command(self, update, context):
         """Sends a random animal!"""
         pic_url = self.get_random_pic()
@@ -115,6 +134,7 @@ class FunBot(TeleBot):
             caption=random.choice(CHEER_LIST),
             error_text="Hmm, I can't seem to find any animals... Maybe they're all asleep?")
 
+    @chat_action(ChatAction.CHOOSE_STICKER)
     def pika_command(self, update, context):
         """Sends a pikachu sticker"""
         if random.random() < 0.1:
@@ -147,12 +167,14 @@ class FunBot(TeleBot):
             update.message.reply_text(
                 f'"{url["text"]}" - {url["author"]}')
 
+    @chat_action(ChatAction.CHOOSE_STICKER)
     def brawl_command(self, update, context):
         """Sends a brawl stars sticker"""
         brawls = context.bot.get_sticker_set('BrawlStarsbyHerolias')
         brawl = random.choice(brawls.stickers)
         update.message.reply_sticker(sticker=brawl)
 
+    @chat_action(ChatAction.CHOOSE_STICKER)
     def bangday_command(self, update, context):
         """Sends a bang don sticker"""
         bangdongs = context.bot.get_sticker_set('happybangday')

@@ -1,13 +1,13 @@
 ROUTES_LIST = {
-    "orange": "Orange: From RC4 Level 1 to Fine Foods",
-    "pink":   "Pink: From Fine Foods to Octobox (SRC L1)",
-    "blue":   "Blue: From RC4 B1 to Fine Foods (Wet Weather route)",
-    "green":  "Green: From RC4 B1 to Fine Foods",
+    'orange': "Orange: From RC4 Level 1 to Fine Foods",
+    'pink':   "Pink: From Fine Foods to Octobox (SRC L1)",
+    'blue':   "Blue: From RC4 B1 to Fine Foods (Wet Weather route)",
+    'green':  "Green: From RC4 B1 to Fine Foods",
 }
 
 ROUTES_PICS = {
-    "orange": 'https://www.dropbox.com/s/jsjfhld1ob6owrv/orange.jpg',
-    "pink":   'https://www.dropbox.com/s/fpulbka6kqovo3o/pink.jpg',
+    'orange': 'https://www.dropbox.com/s/jsjfhld1ob6owrv/orange.jpg',
+    'pink':   'https://www.dropbox.com/s/fpulbka6kqovo3o/pink.jpg',
     'blue':   'https://www.dropbox.com/s/m559ohyre39njok/blue.jpg',
     'green':  'https://www.dropbox.com/s/ugbpo904vmzgtfa/green.jpg?dl=0',
 }
@@ -37,8 +37,9 @@ Top-up:
 $1 = 100 credits
 """
 
-ADMIN_TEXT = r"""List of admin commands:
-User commands:
+# Telegram MarkdownV2
+ADMIN_TEXT = r"""*Admin menu*
+__User commands__
 /user `USERNAME` \- View the user's current status
 /addcredit `USERNAME` `AMOUNT` \- Top up the user's credit by an integer amount
 /deduct `USERNAME` `AMOUNT` \- Deduct the user's credit by an integer amount
@@ -46,16 +47,16 @@ User commands:
 /ban `USERNAME` \- Ban a selected user
 /unban `USERNAME` \- Unban a selected user
 
-Bikes commands:
+__Bikes commands__
 /orcabikes \- Get all bikes and their current status
 /setpin `BIKENAME` `NEWPIN` \- Change the bike's pin in the server to a new pin
 /setstatus `BIKENAME` `NEWSTATUS` \- Change the bike's status in the server to a new status
 /forcereturn `BIKENAME` \- Forcefully return a selected bike
 
-Other commands:
+__Other commands__
 /logs \- Get rental and report logs as a csv file
 
-Quicktip: Press and hold command to get it pretyped on your keyboard\!
+_Quicktip: Press and hold command to get it pretyped on your keyboard\!_
 """
 
 START_MESSAGE = "Please /start me privately to access this service!"
@@ -63,7 +64,8 @@ START_MESSAGE = "Please /start me privately to access this service!"
 BAN_MESSAGE = """You are on Santa's naughty list... What have you done?!
 If you believe this is a mistake, contact the current admins at @yonx30"""
 
-TERMS_TEXT = """Bicycle Rental -- Terms of Use:
+# HTML
+TERMS_TEXT = """<b>Bicycle Rental -- Terms of Use</b>
 1. You are not to HOG the bike.
 2. You must take GOOD CARE of the bike during the duration of rental.
 3. If you spot any DEFECTS, /report before your rental. Any defects found after your rental will be your responsibility.
@@ -72,15 +74,15 @@ TERMS_TEXT = """Bicycle Rental -- Terms of Use:
 6. You agree to take good care of YOURSELF and follow proper safety procedures.
 
 In case of emergencies, call ambulance 995, and inform either
- - Wu Yong Xin at 83538111 @yonx30 - ORC4BIKES Head, or
- - Samuel Yow at 83957445 @samyky23 - ORC4BIKES Safety
+ - Wu Yong Xin at <code>83538111</code> @yonx30 - ORC4BIKES Head, or
+ - Samuel Yow at <code>83957445</code> @samyky23 - ORC4BIKES Safety
 
 If you agree, and ONLY if you agree, to the terms stated above, click "Accept".
 """
 
 EMOJI = {
-    "tick" : "✅",
-    "cross": "❌",
+    'tick' : "✅",
+    'cross': "❌",
 }
 
 BOT_COMMANDS = """
@@ -158,4 +160,3 @@ OHNO_LIST = [
     "This is truly a disaster",
     "...",
 ]
-
