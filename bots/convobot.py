@@ -16,7 +16,7 @@ from telegram.ext import (
     MessageHandler,
 )
 
-from telebot import TeleBot
+from bots.telebot import TeleBot
 
 from admin import (
     DEV_ADMIN_GROUP_ID,
@@ -30,6 +30,8 @@ from bot_text import (
     EMOJI,
     PAYMENT_URL,
 )
+
+from functions import to_readable_td
 
 LOGGING_URL = os.environ.get('LOGGING_URL')
 
@@ -500,14 +502,11 @@ class ConvoBot(TeleBot):
         status = user_data.get('status', None)
         if context.user_data['photo']:
             diff = self.now() - datetime.fromisoformat(status)
-            if diff.days:
-                strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
-            else:
-                strdiff = f'{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds'
+            readable_diff = to_readable_td(diff)
             d = {
                 'start': status,
                 'end': self.now().isoformat(),
-                'time': strdiff
+                'time': readable_diff
             }
 
             deduction = self.calc_deduct(diff)
@@ -547,7 +546,7 @@ class ConvoBot(TeleBot):
 
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=f"Successfully returned! Your total rental time is {strdiff}.")
+                text=f"Successfully returned! Your total rental time is {readable_diff}.")
 
             deduction_text = f"{deduction} credits was deducted. Remaining credits: {user_data['credits']}"
             user_text = deduction_text + "\n\nTo top-up your credits, send /topup"

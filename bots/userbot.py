@@ -6,7 +6,7 @@ from telegram import (
     ParseMode,
 )
 
-from telebot import TeleBot
+from bots.telebot import TeleBot
 
 from admin import (
     DEV_ADMIN_GROUP_ID,
@@ -18,6 +18,8 @@ from bot_text import (
     EMOJI,
     GUIDE_PIC,
 )
+
+from functions import to_readable_td
 
 BOT_ENV = os.environ.get('BOT_ENV')
 
@@ -166,11 +168,8 @@ class UserBot(TeleBot):
             status = datetime.fromisoformat(status)
             curr = self.now()
             diff = curr - status
-            if diff.days:
-                strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
-            else:
-                strdiff = f"{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
-            status_text = f"You have been renting {user_data['bike_name']} for {strdiff}. "
+            readable_diff = to_readable_td(diff)
+            status_text = f"You have been renting {user_data['bike_name']} for {readable_diff}. "
             deduction = self.calc_deduct(diff)
             status_text += (
                 f"\n\nCREDITS:"

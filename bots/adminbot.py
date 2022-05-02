@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 from zipfile import ZipFile
 
-from telebot import TeleBot
+from bots.telebot import TeleBot
 
 from admin import (
     DEV_ADMIN_GROUP_ID,
@@ -17,6 +17,8 @@ from bot_text import (
     ADMIN_TEXT,
     EMOJI,
 )
+
+from functions import to_readable_td
 
 logger = logging.getLogger()
 
@@ -368,14 +370,11 @@ class AdminBot(TeleBot):
                         text=(f"Something seems wrong... The bike {bike_name} tagged to "
                               f"user @{username}, but user is not renting???"))
                 diff = self.now() - datetime.fromisoformat(status)
-                if diff.days:
-                    strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
-                else:
-                    strdiff = f"{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds"
+                readable_diff = to_readable_td(diff)
                 d = {
                     'start': status,
                     'end': self.now().isoformat(),
-                    'time': strdiff,
+                    'time': readable_diff,
                 }
                 deduction = self.calc_deduct(diff)
 
@@ -411,7 +410,7 @@ class AdminBot(TeleBot):
                 admin_username = update.message.from_user.username
                 context.bot.send_message(
                     chat_id=int(user_data['chat_id']),
-                    text=f"An admin, @{admin_username} has returned your bike for you! Your total rental time is {strdiff}.")
+                    text=f"An admin, @{admin_username} has returned your bike for you! Your total rental time is {readable_diff}.")
                 deduction_text = f"{deduction} credits was deducted. Remaining credits: {user_data['credits']}"
                 user_text = deduction_text + "\nIf you have any queries, please ask a comm member for help."
                 context.bot.send_message(

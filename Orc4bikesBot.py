@@ -7,11 +7,11 @@ from telegram.ext import (
     Filters,
 )
 
-from telebot import TeleBot
-from funbot import FunBot
-from adminbot import AdminBot
-from userbot import UserBot
-from convobot import ConvoBot
+from bots.telebot import TeleBot
+from bots.funbot import FunBot
+from bots.adminbot import AdminBot
+from bots.userbot import UserBot
+from bots.convobot import ConvoBot
 
 from admin import (
     DEV_ADMIN_GROUP_ID,
@@ -24,6 +24,8 @@ from bot_text import (
     ADMIN_TEXT,
     TERMS_TEXT,
 )
+
+from functions import to_readable_td
 
 logger = logging.getLogger()
 
@@ -96,11 +98,8 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
             start = datetime.fromisoformat(status)
             curr = self.now()
             diff = curr - start
-            if diff.days:
-                strdiff = f"{diff.days} days, {diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds."
-            else:
-                strdiff = f"{diff.seconds//3600} hours, {(diff.seconds%3600)//60} minutes, and {diff.seconds%3600%60} seconds."
-            status_text = f"You have been renting {user_data['bike_name']} for {strdiff}."
+            readable_diff = to_readable_td(diff)
+            status_text = f"You have been renting {user_data['bike_name']} for {readable_diff}."
             deduction = self.calc_deduct(diff)
             status_text += (
                 f"\n\nCREDITS:"

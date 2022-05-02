@@ -3,7 +3,7 @@ import random
 import requests
 from requests.exceptions import RequestException
 
-from telebot import TeleBot
+from bots.telebot import TeleBot
 
 from bot_text import (
     CHEER_LIST,
