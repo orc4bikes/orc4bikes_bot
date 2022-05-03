@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+import os
 
 from telegram import (
     InlineKeyboardButton,
@@ -22,6 +23,7 @@ from admin import (
 )
 
 from bot_text import (
+    FUN_URLS,
     ROUTES_LIST,
     ROUTES_PICS,
     ADMIN_TEXT,
@@ -30,6 +32,7 @@ from bot_text import (
 )
 
 from functions import to_readable_td
+BOT_ENV = os.environ.get('BOT_ENV')
 
 logger = logging.getLogger()
 
@@ -131,6 +134,8 @@ class ConvoBot(TeleBot):
             "\n[2] Once done, send a screenshot to @orc4bikes_bot!!"
             '\n[3] You will receive "Transaction complete! You now have XXXX credits" for comfirmation'
         )
+        if BOT_ENV == 'development':
+            text1 += "\nDevelopment environment - Send /skip to skip uploading picture!"
 
         text2 = (
             "If I don't respond after you send your screenshot, please try to /topup again."
@@ -151,32 +156,42 @@ class ConvoBot(TeleBot):
         if query:
             query.answer()
             return 72
-        if update.message.photo:
-            photo = update.message.photo[-1].file_id
-            context.user_data['photo'] = photo
-            text = (
-                "^ This is your PayLah/PayNow confirmation to Lim Yu Jie, at 9081 7788."
-                "\nIf you are unsatisfied with your image, please send another one."
-                "\nTo CONFIRM PAYMENT, send /done. To cancel, send /cancel"
-                "\n"
-                '\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits", '
-                "your credits has NOT been topped up."
-            )
 
-            update.message.reply_photo(
-                photo=context.user_data['photo'],
-                caption=text)
-        else:
+        devskip = False
+        if BOT_ENV == 'development':
+            devskip = update.message.text == '/skip'
 
+        if not update.message.photo and not devskip:
             text = (
                 "Upon completion of payment (to 9081 7788), please send a screenshot to me @orc4bikes_bot!!"
                 "\nTo CONFIRM PAYMENT, send /done. To cancel, send /cancel"
                 "\n"
-                '\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits", '
-                "your credits has NOT been topped up."
+                '\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits",'
+                " your credits has NOT been topped up."
             )
 
             update.message.reply_text(text)
+            return
+
+        if not update.message.photo:
+            photo = self.get_random_pic()
+        else:
+            photo = update.message.photo[-1].file_id
+
+        context.user_data['photo'] = photo
+        text = (
+            "^ This is your PayLah/PayNow confirmation to Lim Yu Jie, at 9081 7788."
+            "\nIf you are unsatisfied with your image, please send another one."
+            "\nTo CONFIRM PAYMENT, send /done. To cancel, send /cancel"
+            "\n"
+            '\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits",'
+            " your credits has NOT been topped up."
+        )
+
+        update.message.reply_photo(
+            photo=photo,
+            caption=text)
+
         return 72
 
     def payment_done(self, update, context):
@@ -346,12 +361,19 @@ class ConvoBot(TeleBot):
             "\n"
             "\nTo cancel, send /cancel"
         )
+        if BOT_ENV == 'development':
+            text += "\nDevelopment environment - Send /skip to skip uploading picture!"
+
         query.message.reply_text(text)
         return 13
 
     def rent_pic(self, update, context):
         """After photo is sent, save the photo and ask if would like to retake"""
-        if not update.message.photo:
+        devskip = False
+        if BOT_ENV == 'development':
+            devskip = update.message.text == '/skip'
+
+        if not update.message.photo and not devskip:
             text = (
                 "Please send a picture of the bike you will be renting! Photo must include the BIKE and LOCK."
                 # , As shown in the sample photo.'
@@ -368,7 +390,11 @@ class ConvoBot(TeleBot):
             """
             return
 
-        photo = update.message.photo[-1].file_id
+        if not update.message.photo:
+            photo = self.get_random_pic()
+        else:
+            photo = update.message.photo[-1].file_id
+
         context.user_data['photo'] = photo
         text = ("^ This is your image. If you are unsatisfied with your image, please send another one."
                 "\nTo CONFIRM RENTAL, send /done. To cancel, send /cancel")
@@ -429,19 +455,33 @@ class ConvoBot(TeleBot):
             update.message.reply_text("You are not renting...")
             return -1
 
-        update.message.reply_text(
+        text = (
             "Please send a photo for proof of return! Photo must include the BIKE and LOCK."
-            "\nPicture must be a photo, not a file... \nTo continue rental, send /cancel")
+            "\nPicture must be a photo, not a file..."
+            "\nTo continue rental, send /cancel"
+        )
+        if BOT_ENV == 'development':
+            text += "\nDevelopment environment - Send /skip to skip uploading picture!"
+
+        update.message.reply_text(text)
         return 91
 
     def return_pic(self, update, context):
         """After photo is sent, save the photo and ask for others"""
-        if not update.message.photo:
+        devskip = False
+        if BOT_ENV == 'development':
+            devskip = update.message.text == '/skip'
+
+        if not update.message.photo and not devskip:
             update.message.reply_text(
                 "Please send a photo for proof of return!\nTo continue rental, send /cancel")
             return 91
 
-        photo = update.message.photo[-1].file_id
+        if not update.message.photo:
+            photo = self.get_random_pic()
+        else:
+            photo = update.message.photo[-1].file_id
+
         context.user_data['photo'] = photo
         text = (
             "^ This is your image. If you are unsatisfied with your image, please send another one."
@@ -536,15 +576,31 @@ class ConvoBot(TeleBot):
     def report_desc(self, update, context):
         """After description is sent, save the description and ask for pics"""
         context.user_data['desc'] = update.message.text  # Update desc
-        update.message.reply_text(
+        text = (
             "Please attach a picture as well!"
             "\nPicture must be a photo, not a file..."
-            "\nTo stop, send /cancel")
+            "\nTo stop, send /cancel"
+        )
+        if BOT_ENV == 'development':
+            text += "\nDevelopment environment - Send /skip to skip uploading picture!"
+        update.message.reply_text(text)
         return 82
 
     def report_pic(self, update, context):
         """After photo is sent, save the photo and ask for others"""
-        photo = update.message.photo[-1].file_id
+        devskip = False
+        if BOT_ENV == 'development':
+            devskip = update.message.text == '/skip'
+
+        if not update.message.photo and not devskip:
+            update.message.reply_text("Please send a picture!")
+            return
+
+        if not update.message.photo:
+            photo = self.get_random_pic()
+        else:
+            photo = update.message.photo[-1].file_id
+
         context.user_data['photo'] = photo
         text = (
             "Your report is:"
@@ -638,6 +694,7 @@ class ConvoBot(TeleBot):
                 ],
                 13: [
                     MessageHandler(filters=~Filters.command, callback=self.rent_pic),
+                    CommandHandler('skip', self.rent_pic),
                     CommandHandler('done', callback=self.rent_done),
                 ],
 
@@ -655,6 +712,7 @@ class ConvoBot(TeleBot):
                 72: [
                     CallbackQueryHandler(self.payment_pic),
                     MessageHandler(filters=Filters.photo & ~Filters.command, callback=self.payment_pic),
+                    CommandHandler('skip', self.payment_pic),
                     CommandHandler('done', callback=self.payment_done),
                 ],
 
@@ -665,6 +723,7 @@ class ConvoBot(TeleBot):
                 ],
                 82: [
                     MessageHandler(filters=Filters.photo & ~Filters.command, callback=self.report_pic),
+                    CommandHandler('skip', self.report_pic),
                     CommandHandler('done', callback=self.report_done),
                 ],
                 83: [
@@ -675,6 +734,7 @@ class ConvoBot(TeleBot):
                 # 9-X: Returns
                 91: [
                     MessageHandler(~Filters.command, callback=self.return_pic),
+                    CommandHandler('skip', self.return_pic),
                     CommandHandler('done', callback=self.return_done)
                 ],
 
