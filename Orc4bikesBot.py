@@ -141,6 +141,15 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
                     text="Please remember to /return your bike! Check your bike status with /status"
                 )
 
+    def scheduler(self):
+        """Scheduler for reminder to be run"""
+        job_queue = self.updater.job_queue
+        logger.debug('getting daily queue')
+
+        job_queue.run_repeating(
+            callback=self.reminder,
+            interval=datetime.timedelta(hours=1))
+
     def initialize(self):
         """Initializes all CommandHandlers, MessageHandlers, and job_queues that are required in the bot."""
         # Initialize parent classes first
@@ -157,6 +166,9 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FunBot, TeleBot):
         # Lastly, Filters all unknown commands, and remove unrecognized queries
         self.addmsg(Filters.command, self.unrecognized_command)
         self.addnew(CallbackQueryHandler(self.unrecognized_buttons))
+
+        # For scheduling messages
+        self.scheduler()
 
     def main(self):
         """Main bot function to run"""
