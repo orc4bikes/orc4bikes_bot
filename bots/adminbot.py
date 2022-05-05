@@ -113,7 +113,7 @@ class AdminBot(TeleBot):
 
     @admin_only
     def admin_command(self, update, context):
-        update.message.reply_text(ADMIN_TEXT)
+        update.message.reply_markdown_v2(ADMIN_TEXT)
 
     def change_credits(self, username, user_data, change, admin_name):
         initial_amt = user_data['credits']
@@ -228,7 +228,8 @@ class AdminBot(TeleBot):
             text = '\n'.join(
                 (
                     f"{bike['name']} -- {bike['username'] or bike['status'] or EMOJI['tick']}"
-                    f"{EMOJI['msg'] if bike['message'] else ''}"
+                    f" (Pin: {bike['pin']})"
+                    f" {EMOJI['msg'] if bike['message'] else ''}"
                 )
                 for bike in bikes_data)
             text += (
