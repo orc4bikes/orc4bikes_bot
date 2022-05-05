@@ -1,23 +1,23 @@
+import logging
 import os
-import json
-from decimal import Decimal
+
 import boto3
 from botocore.exceptions import ClientError
 
-import datetime
+DB_ACCESS_KEY = os.environ.get('DB_ACCESS_KEY')
+DB_SECRET_KEY = os.environ.get('DB_SECRET_KEY')
+DB_REGION_NAME = os.environ.get('DB_REGION_NAME')
 
-ACCESS_KEY = os.environ.get('ACCESS_KEY')
-SECRET_KEY = os.environ.get('SECRET_KEY')
-REGION_NAME = os.environ.get('REGION_NAME')
+logger = logging.getLogger()
 
 def create_users_table(dynamodb=None):
     """Creates users table if it doesn't exist"""
     if not dynamodb:
-        dynamodb = boto3.resource('dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
-        )
+        dynamodb = boto3.resource(
+            'dynamodb',
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME)
     try:
         table = dynamodb.create_table(
             TableName='users',
@@ -30,7 +30,7 @@ def create_users_table(dynamodb=None):
             KeySchema=[
                 {
                     'AttributeName': 'chat_id',
-                    'KeyType': 'HASH'  
+                    'KeyType': 'HASH'
                 },
             ],
             ProvisionedThroughput={
@@ -52,19 +52,17 @@ def get_user_data(chat_id=None, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
-        )
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME)
     table = dynamodb.Table('users')
     response = None
     try:
         response = table.get_item(Key={'chat_id': chat_id})['Item']
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        print('Key Error! Item not found')
-        print(e)
+        logger.warning('Key Error! Item not found')
     finally:
         return response
 
@@ -78,41 +76,41 @@ def set_user_data(chat_id=None, user_data={}, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
-        )
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME)
     table = dynamodb.Table('users')
-    response=None
+    response = None
 
     def keywords(k, a=""):
-        if k=="status":
-            k= a+"s"
-        if k=="username":
-            k= a+"u"
-        if k=="bike_name":
-            k= a+"bn"
-        if k=="first_name":
-            k= a+"fn"
-        if k=="last_name":
-            k= a+"ln"
-        if k=="log":
-            k= a+"l"
+        if k == "status":
+            k = a + "s"
+        elif k == "username":
+            k = a + "u"
+        elif k == "bike_name":
+            k = a + "bn"
+        elif k == "first_name":
+            k = a + "fn"
+        elif k == "last_name":
+            k = a + "ln"
+        elif k == "log":
+            k = a + "l"
         return k
 
-    exp_attr_val = {f':{keywords(k)}':v for k,v in user_data.items() if k!="chat_id"}
-    update_exp = 'set ' + ', '.join([f'{keywords(k,"#")}=:{keywords(k)}' for k in user_data.keys() if k!="chat_id"])
+    exp_attr_val = {f':{keywords(k)}': v for k, v in user_data.items() if k != "chat_id"}
+    update_exp = 'set ' + ', '.join(
+        [f'{keywords(k, "#")}=:{keywords(k)}' for k in user_data.keys() if k != "chat_id"])
     exp_attr_name = {
-        '#s':'status',
-        '#u':'username',
-        '#fn':'first_name',
-        '#ln':'last_name',
+        '#s': 'status',
+        '#u': 'username',
+        '#fn': 'first_name',
+        '#ln': 'last_name',
     }
     if 'bike_name' in user_data.keys():
-        exp_attr_name['#bn']='bike_name'
+        exp_attr_name['#bn'] = 'bike_name'
     if 'log' in user_data.keys():
-        exp_attr_name['#l']='log'
-    
+        exp_attr_name['#l'] = 'log'
+
     try:
         response = table.update_item(
             Key={
@@ -121,26 +119,21 @@ def set_user_data(chat_id=None, user_data={}, dynamodb=None):
             UpdateExpression=update_exp,
             ExpressionAttributeValues=exp_attr_val,
             ExpressionAttributeNames=exp_attr_name,
-            ReturnValues="UPDATED_NEW"
-        )
+            ReturnValues="UPDATED_NEW")
     except ClientError as e:
-        print('error', e.response['Error']['Message'])
-    except KeyError as e:   
-        print('Key Error! Item not found')
-        print(e)
-    except Exception as e:
-        print('error,', e)
-    finally:
-        return response
+        logger.exception(e.response['Error']['Message'])
+    except KeyError as e:
+        logger.warning('Key Error! Item not found')
+    return response
 
 def create_bikes_table(dynamodb=None):
     """Creates bikes table if it doesn't exist"""
     if not dynamodb:
-        dynamodb = boto3.resource('dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
-        )
+        dynamodb = boto3.resource(
+            'dynamodb',
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME)
     try:
         table = dynamodb.create_table(
             TableName='bikes',
@@ -153,7 +146,7 @@ def create_bikes_table(dynamodb=None):
             KeySchema=[
                 {
                     'AttributeName': 'name',
-                    'KeyType': 'HASH'  
+                    'KeyType': 'HASH'
                 },
             ],
             ProvisionedThroughput={
@@ -164,8 +157,7 @@ def create_bikes_table(dynamodb=None):
         return table
     except ClientError:
         return None
-    finally:
-        return None
+    return None
 
 def get_bike_data(bike_name=None, dynamodb=None):
     """Getting bikes data as a dictionary"""
@@ -175,21 +167,18 @@ def get_bike_data(bike_name=None, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
-        )
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME)
     table = dynamodb.Table('bikes')
     response = None
     try:
         response = table.get_item(Key={'name': bike_name})['Item']
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        print('Key Error! Item not found')
-        print(e)
-    finally:
-        return response
+        logger.warning('Key Error! Item not found')
+    return response
 
 def get_all_bikes(dynamodb=None):
     """Getting all bikes data to show"""
@@ -197,10 +186,9 @@ def get_all_bikes(dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
-        )
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME)
     table = dynamodb.Table('bikes')
     data = None
     try:
@@ -210,12 +198,10 @@ def get_all_bikes(dynamodb=None):
             response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
             data.extend(response['Items'])
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        print('Key Error! Item not found')
-        print(e)
-    finally:
-        return data
+        logger.warning('Key Error! Item not found')
+    return data
 
 def set_bike_data(bike_name=None, bike_data={}, dynamodb=None):
     """Updating single bike's data"""
@@ -225,23 +211,23 @@ def set_bike_data(bike_name=None, bike_data={}, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
-        )
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME)
     table = dynamodb.Table('bikes')
-    response=None
-    
+    response = None
+
     def keywords(k, a=""):
-        if k=="status":
-            k= a+"s"
-        if k=="username":
-            k= a+"u"
-        if k=="type":
-            k= a+"t"
+        if k == "status":
+            k = a + "s"
+        elif k == "username":
+            k = a + "u"
+        elif k == "type":
+            k = a + "t"
         return k
-    exp_attr_val = {f':{keywords(k)}':v for k,v in bike_data.items() if k!='name'}
-    update_exp = 'set ' + ', '.join([f'{keywords(k,"#")}=:{keywords(k)}' for k in bike_data.keys() if k!='name'])
+    exp_attr_val = {f':{keywords(k)}':v for k, v in bike_data.items() if k != 'name'}
+    update_exp = 'set ' + ', '.join(
+        [f'{keywords(k, "#")}=:{keywords(k)}' for k in bike_data.keys() if k != 'name'])
     try:
         response = table.update_item(
             Key={
@@ -250,28 +236,25 @@ def set_bike_data(bike_name=None, bike_data={}, dynamodb=None):
             UpdateExpression=update_exp,
             ExpressionAttributeValues=exp_attr_val,
             ExpressionAttributeNames={
-                '#s':'status',
-                '#u':'username',
-                '#t':'type',
+                '#s': 'status',
+                '#u': 'username',
+                '#t': 'type',
             },
             ReturnValues="UPDATED_NEW"
         )
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        print('Key Error! Item not found')
-        print(e)
-    finally:
-        return response
+        logger.warning('Key Error! Item not found')
+    return response
 
 def create_usernames_table(dynamodb=None):
     """Creates usernames table if it doesn't exist"""
     if not dynamodb:
         dynamodb = boto3.resource('dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
-        )
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME)
     try:
         table = dynamodb.create_table(
             TableName='usernames',
@@ -284,7 +267,7 @@ def create_usernames_table(dynamodb=None):
             KeySchema=[
                 {
                     'AttributeName': 'username',
-                    'KeyType': 'HASH'  
+                    'KeyType': 'HASH'
                 },
             ],
             ProvisionedThroughput={
@@ -295,8 +278,7 @@ def create_usernames_table(dynamodb=None):
         return table
     except ClientError:
         return None
-    finally:
-        return None
+    return None
 
 def get_username(username="", dynamodb=None):
     """Getting username to chat_id mapping"""
@@ -305,22 +287,20 @@ def get_username(username="", dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
-        )
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME)
     table = dynamodb.Table('usernames')
     response = None
+    chat_id = None
     try:
         response = table.get_item(Key={'username': username})['Item']
-        chat_id = int(response.get('chat_id'))
+        chat_id = int(response['chat_id'])
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        print('Key Error! Item not found')
-        print(e)
-    finally:
-        return chat_id
+        logger.warning('Key Error! Item not found')
+    return chat_id
 
 def set_username(username="", chat_id=0, dynamodb=None):
     """Updating single bike's data"""
@@ -330,12 +310,11 @@ def set_username(username="", chat_id=0, dynamodb=None):
     if not dynamodb:
         dynamodb = boto3.resource(
             'dynamodb',
-            aws_access_key_id=ACCESS_KEY,
-            aws_secret_access_key=SECRET_KEY,
-            region_name=REGION_NAME,
-        )
+            aws_access_key_id=DB_ACCESS_KEY,
+            aws_secret_access_key=DB_SECRET_KEY,
+            region_name=DB_REGION_NAME)
     table = dynamodb.Table('usernames')
-    response=None
+    response = None
 
     try:
         response = table.update_item(
@@ -343,16 +322,14 @@ def set_username(username="", chat_id=0, dynamodb=None):
                 'username': username,
             },
             UpdateExpression='set chat_id=:chat_id',
-            ExpressionAttributeValues={f':chat_id':chat_id},
-            ReturnValues="UPDATED_NEW"
-        )
+            ExpressionAttributeValues={':chat_id': chat_id},
+            ReturnValues="UPDATED_NEW")
     except ClientError as e:
-        print(e.response['Error']['Message'])
+        logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        print('Key Error! Item not found')
-        print(e)
-    finally:
-        return response
+        logger.warning('Key Error! Item not found')
+    return response
+
 
 if __name__ == '__main__':
     print('Set up DB OK.')
