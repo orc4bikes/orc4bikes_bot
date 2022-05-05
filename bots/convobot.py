@@ -1,6 +1,5 @@
 from datetime import datetime
 import logging
-import os
 
 from telegram import (
     ChatAction,
@@ -19,36 +18,36 @@ from telegram.ext import (
 from bots.telebot import TeleBot
 
 from admin import (
-    DEV_ADMIN_GROUP_ID,
-    ADMIN_LIST,
+    BOT_ENV,
+    BOT_PROMO,
+)
+
+# Used to fill up text templates (required even when linter shows unused)
+from admin import (
+    ADMIN_HEAD,
+    ADMIN_HEAD_NAME,
+    ADMIN_HEAD_MOBILE,
+    ADMIN_SAFETY,
+    ADMIN_SAFETY_MOBILE,
+    ADMIN_SAFETY_NAME,
+    ADMIN_TREASURER,
+    ADMIN_TREASURER_MOBILE,
+    ADMIN_TREASURER_NAME,
+    ADMIN_TREASURER_URL,
 )
 
 from bot_text import (
-    FUN_URLS,
+    EMOJI,
     ROUTES_LIST,
     ROUTES_PICS,
-    ADMIN_TEXT,
-    EMOJI,
-    PAYMENT_URL,
+    TERMS_TEXT,
 )
 
 from functions import to_readable_td
-BOT_ENV = os.environ.get('BOT_ENV')
 
 logger = logging.getLogger()
 
 class ConvoBot(TeleBot):
-    def __init__(
-            self,
-            api_key,
-            admin_group_id=DEV_ADMIN_GROUP_ID,
-            admin_list=ADMIN_LIST,
-            admin_text=ADMIN_TEXT):
-        self.admin_group_id = admin_group_id
-        self.admin_list = admin_list
-        self.admin_text = admin_text
-        super().__init__(api_key)
-
 
     def routes_command(self, update, context):
         """Lists all curated routes available."""
@@ -109,7 +108,7 @@ class ConvoBot(TeleBot):
             [InlineKeyboardButton("Cancel", callback_data='CANCEL_PAYMENT')],
         ]
         text = "Please choose a top-up amount."
-        if self.promo:
+        if BOT_PROMO:
             text += "\nPROMO: D-d-double credits!"
         update.message.reply_text(
             text,
@@ -134,7 +133,7 @@ class ConvoBot(TeleBot):
             parse_mode='HTML')
 
         text1 = (
-            "[1] PayLah/PayNow to Lim Yu Jie, at <code>90817788</code>."
+            f"[1] PayLah/PayNow to {ADMIN_TREASURER_NAME}, at <code>{ADMIN_TREASURER_MOBILE}</code>."
             #, or shorturl.at/dBLW6'  ## TODO: shorturl not working!!
             "\n[2] Once done, send a screenshot to @orc4bikes_bot!!"
             '\n[3] You will receive "Transaction complete! You now have XXXX credits" for comfirmation'
@@ -150,7 +149,7 @@ class ConvoBot(TeleBot):
         query.message.reply_html(
             text1,
             reply_markup = InlineKeyboardMarkup([
-                [InlineKeyboardButton("Go to PayLah", callback_data='redirect_paylah', url=PAYMENT_URL)]
+                [InlineKeyboardButton("Go to PayLah", callback_data='redirect_paylah', url=ADMIN_TREASURER_URL)]
             ]))
         query.message.reply_text(text2)
         return 72
@@ -168,7 +167,7 @@ class ConvoBot(TeleBot):
 
         if not update.message.photo and not devskip:
             text = (
-                "Upon completion of payment (to <code>9081 7788</code>), please send a screenshot to me @orc4bikes_bot!!"
+                f"Upon completion of payment (to <code>{ADMIN_TREASURER_MOBILE}</code>), please send a screenshot to me @orc4bikes_bot!!"
                 "\nTo CONFIRM PAYMENT, send /done. To cancel, send /cancel"
                 "\n"
                 '\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits",'
@@ -185,7 +184,7 @@ class ConvoBot(TeleBot):
 
         context.user_data['photo'] = photo
         text = (
-            "^ This is your PayLah/PayNow confirmation to Lim Yu Jie, at <code>9081 7788</code>."
+            f"^ This is your PayLah/PayNow confirmation to {ADMIN_TREASURER_NAME} at <code>{ADMIN_TREASURER_MOBILE}</code>."
             "\nIf you are unsatisfied with your image, please send another one."
             "\nTo CONFIRM PAYMENT, send /done. To cancel, send /cancel"
             "\n"
@@ -228,7 +227,7 @@ class ConvoBot(TeleBot):
             f"Transaction complete! You now have {user_data['credits']} credits."
             "\nTo start your journey, /rent now!")
 
-        if self.promo:  # Promotion period, credits are doubled
+        if BOT_PROMO:  # Promotion period, credits are doubled
             user_data['credits'] += amount
             update.message.reply_text(
                 f"Promotion applied! An additional {amount} credits was added to your account."
@@ -343,7 +342,7 @@ class ConvoBot(TeleBot):
             query.message.reply_text(bike_data['message'])
 
         context.user_data['bike_name'] = bike_name
-        text = self.terms_text
+        text = TERMS_TEXT.format(**globals())
         keyboard = [
             [InlineKeyboardButton("Accept", callback_data='TERMS_YES')],
             [InlineKeyboardButton("Decline", callback_data='TERMS_NO')]

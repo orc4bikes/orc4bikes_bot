@@ -8,8 +8,9 @@ from telegram import (
 from bots.telebot import TeleBot
 
 from admin import (
-    DEV_ADMIN_GROUP_ID,
+    ADMIN_GROUP_ID,
     ADMIN_LIST,
+    ADMIN_DEV,
     TELE_API_TOKEN,
 )
 
@@ -47,27 +48,17 @@ def to_int(n):
     return int(n)
 
 class AdminBot(TeleBot):
-    def __init__(
-            self,
-            api_key,
-            admin_group_id=DEV_ADMIN_GROUP_ID,
-            admin_list=ADMIN_LIST,
-            admin_text=ADMIN_TEXT):
-        self.admin_group_id = admin_group_id
-        self.admin_list = admin_list
-        self.admin_text = admin_text
-        super().__init__(api_key)
 
     def admin_log(self, update, context, message, photo=None):
         """Send logs to admin chat group"""
         if photo:
             context.bot.send_photo(
-                chat_id=self.admin_group_id,
+                chat_id=ADMIN_GROUP_ID,
                 photo=photo,
                 caption=message)
         else:
             context.bot.send_message(
-                chat_id=self.admin_group_id,
+                chat_id=ADMIN_GROUP_ID,
                 text=message)
 
 
@@ -91,7 +82,7 @@ class AdminBot(TeleBot):
         def new_func(self, update, context, *args, **kwargs):
             """Checks whether the user is an admin, and more"""
 
-            if update.effective_chat.id not in self.admin_list:
+            if update.effective_chat.username not in ADMIN_LIST:
                 update.message.reply_text("You've found... something unauthorized? "
                                           "Please contact a orc4bikes committee member or an admin for help!")
                 return
@@ -117,12 +108,12 @@ class AdminBot(TeleBot):
                 logger.exception(e)
                 update.message.reply_text(
                     "Oops, this is embarrasing, an unexpected error has occurred."
-                    " Please raise a ticket with @heyzec, along with what you sent.")
+                    f" Please raise a ticket with @{ADMIN_DEV}, along with what you sent.")
         return new_func
 
     @admin_only
     def admin_command(self, update, context):
-        update.message.reply_text(self.admin_text)
+        update.message.reply_text(ADMIN_TEXT)
 
     def change_credits(self, username, user_data, change, admin_name):
         initial_amt = user_data['credits']
@@ -305,7 +296,7 @@ class AdminBot(TeleBot):
     @admin_only
     def logs_command(self, update, context):
         update.message.reply_text(
-            "This feature is temporarily unavailable. Please complain to @heyzec if you want the feature!")
+            f"This feature is temporarily unavailable. Please complain to @{ADMIN_DEV} if you want the feature!")
 
         # context.bot.send_document(
         #     chat_id=update.effective_chat.id,

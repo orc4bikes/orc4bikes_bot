@@ -1,8 +1,7 @@
 import logging
 import random
 import requests
-from requests.exceptions import RequestException
-from simplejson.errors import JSONDecodeError
+from requests.exceptions import RequestException, JSONDecodeError
 
 from telegram import (
     ChatAction,
@@ -13,15 +12,13 @@ from bots.telebot import TeleBot
 from bot_text import (
     CHEER_LIST,
     FUN_TEXT,
-    OHNO_LIST,
     FUN_URLS,
+    OHNO_LIST,
 )
 
 logger = logging.getLogger()
 
 class FunBot(TeleBot):
-    def __init__(self, api_key):
-        super().__init__(api_key)
 
     def fun_command(self, update, context):
         """Show user list of fun commands."""

@@ -1,6 +1,5 @@
 from datetime import datetime
 import logging
-import os
 
 from telegram import (
     ChatAction,
@@ -9,34 +8,21 @@ from telegram import (
 from bots.telebot import TeleBot
 
 from admin import (
-    DEV_ADMIN_GROUP_ID,
     ADMIN_LIST,
+    BOT_ENV,
 )
 
 from bot_text import (
-    ADMIN_TEXT,
     EMOJI,
     GUIDE_PIC,
+    HELP_TEXT,
 )
 
 from functions import to_readable_td
 
-BOT_ENV = os.environ.get('BOT_ENV')
-
 logger = logging.getLogger()
 
 class UserBot(TeleBot):
-    def __init__(
-            self,
-            api_key,
-            admin_group_id=DEV_ADMIN_GROUP_ID,
-            admin_list=ADMIN_LIST,
-            admin_text=ADMIN_TEXT):
-        self.admin_group_id = admin_group_id
-        self.admin_list = admin_list
-        self.admin_text = admin_text
-        super().__init__(api_key)
-
 
     def start_command(self, update, context):
         """Initializes the bot
@@ -46,7 +32,7 @@ class UserBot(TeleBot):
         """
         chat_id = update.effective_chat.id
 
-        if BOT_ENV == 'development' and chat_id not in self.admin_list:
+        if BOT_ENV == 'development' and chat_id not in ADMIN_LIST:
             update.message.reply_text(f"Hi {update.message.from_user.first_name}, please head over to @orc4bikes_bot!")
             return
 
@@ -88,7 +74,7 @@ class UserBot(TeleBot):
 
     def help_command(self, update, context):
         """Show a list of possible commands"""
-        update.message.reply_markdown_v2(self.help_text)
+        update.message.reply_markdown_v2(HELP_TEXT)
 
     def guide_command(self, update, context):
         """Shows you guide to renting bike"""

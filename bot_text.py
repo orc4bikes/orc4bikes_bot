@@ -62,7 +62,7 @@ _Quicktip: Press and hold command to get it pretyped on your keyboard\!_
 START_MESSAGE = "Please /start me privately to access this service!"
 
 BAN_MESSAGE = """You are on Santa's naughty list... What have you done?!
-If you believe this is a mistake, contact the current admins at @yonx30"""
+If you believe this is a mistake, contact the ORC4BIKES Head at @{ADMIN_HEAD}"""
 
 # HTML
 TERMS_TEXT = """<b>Bicycle Rental -- Terms of Use</b>
@@ -74,8 +74,8 @@ TERMS_TEXT = """<b>Bicycle Rental -- Terms of Use</b>
 6. You agree to take good care of YOURSELF and follow proper safety procedures.
 
 In case of emergencies, call ambulance 995, and inform either
- - Wu Yong Xin at <code>83538111</code> @yonx30 - ORC4BIKES Head, or
- - Samuel Yow at <code>83957445</code> @samyky23 - ORC4BIKES Safety
+ - {ADMIN_HEAD_NAME} at <code>{ADMIN_HEAD_MOBILE}</code> @{ADMIN_HEAD} - ORC4BIKES Head, or
+ - {ADMIN_SAFETY_NAME} at <code>{ADMIN_SAFETY_MOBILE}</code> @{ADMIN_SAFETY} - ORC4BIKES Safety
 
 If you agree, and ONLY if you agree, to the terms stated above, click "Accept".
 """

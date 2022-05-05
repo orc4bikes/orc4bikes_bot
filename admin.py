@@ -8,14 +8,30 @@ if os.environ.get('BOT_ENV') is None:
         # logger.critical("No environment variables found. Exiting.")
         sys.exit()
 
-ADMIN_LIST = [
-    # Your admins' chat_id here
-    int(s) for s in os.environ.get('ADMIN_LIST', '').strip().split(',')
-]
+BOT_ENV                = os.environ.get('BOT_ENV')
+BOT_PROMO              = bool(os.environ.get('BOT_PROMO'))
+BOT_GMT_OFFSET         = int(os.environ.get('BOT_GMT_OFFSET'))
+BOT_DEDUCT_RATE        = int(os.environ.get('BOT_DEDUCT_RATE'))
 
-# API token from telegram, to be retrieved from @botfather
-TELE_API_TOKEN = os.environ.get('TELE_API_TOKEN')  # API token for production
+DB_ACCESS_KEY          = os.environ.get('DB_ACCESS_KEY')
+DB_SECRET_KEY          = os.environ.get('DB_SECRET_KEY')
+DB_REGION_NAME         = os.environ.get('DB_REGION_NAME')
 
-# Chat ID for administrative purposes, a copy of rental logs will be sent here
-DEV_ADMIN_GROUP_ID = os.environ.get('DEV_ADMIN_GROUP_ID')  # group chat_id for development purposes
-ADMIN_GROUP_ID = os.environ.get('ADMIN_GROUP_ID')  # group chatchat_id for production
+TELE_API_TOKEN         = os.environ.get('TELE_API_TOKEN')
+LOGGING_URL            = os.environ.get('LOGGING_URL')
+
+ADMIN_GROUP_ID         = os.environ.get('ADMIN_GROUP_ID')      # group chat_id
+
+ADMIN_HEAD             = os.environ.get('ADMIN_HEAD')
+ADMIN_HEAD_MOBILE      = os.environ.get('ADMIN_HEAD_MOBILE')
+ADMIN_HEAD_NAME        = os.environ.get('ADMIN_HEAD_NAME')
+ADMIN_SAFETY           = os.environ.get('ADMIN_SAFETY')
+ADMIN_SAFETY_MOBILE    = os.environ.get('ADMIN_SAFETY_MOBILE')
+ADMIN_SAFETY_NAME      = os.environ.get('ADMIN_SAFETY_NAME')
+ADMIN_TREASURER        = os.environ.get('ADMIN_TREASURER')
+ADMIN_TREASURER_MOBILE = os.environ.get('ADMIN_TREASURER_MOBILE')
+ADMIN_TREASURER_NAME   = os.environ.get('ADMIN_TREASURER_NAME')
+ADMIN_TREASURER_URL    = os.environ.get('ADMIN_TREASURER_URL')
+ADMIN_DEV              = os.environ.get('ADMIN_DEV')
+
+ADMIN_LIST             = os.environ.get('ADMIN_LIST').strip().split(',')
