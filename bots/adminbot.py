@@ -57,11 +57,15 @@ class AdminBot(TeleBot):
     def admin_log(self, update, context, message, photo=None):
         """Send logs to admin chat group"""
         if photo:
-            update.message.reply_photo(
+            context.bot.send_photo(
+                chat_id=self.admin_group_id,
                 photo=photo,
                 caption=message)
         else:
-            update.message.reply_photo(message)
+            context.bot.send_message(
+                chat_id=self.admin_group_id,
+                text=message)
+
 
 
     def get_and_check_user(self, username):

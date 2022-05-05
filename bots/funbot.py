@@ -2,6 +2,7 @@ import logging
 import random
 import requests
 from requests.exceptions import RequestException
+from simplejson.errors import JSONDecodeError
 
 from bots.telebot import TeleBot
 
@@ -29,7 +30,7 @@ class FunBot(TeleBot):
             try:
                 img_url = requests.get(url).json()[key]
                 return img_url
-            except RequestException as e:
+            except (RequestException, JSONDecodeError) as e:
                 logger.exception(e)
         return None
 

@@ -60,11 +60,8 @@ class ConvoBot(TeleBot):
             ]
         ]
 
-        text = (
-            "Here are some available routes for ya!"
-            "\n\n"
-            '\n'.join(ROUTES_LIST.values())
-        )
+        text = "Here are some available routes for ya!"
+        text += '\n\n' + '\n'.join(ROUTES_LIST.values())
         update.message.reply_text(
             text,
             reply_markup=InlineKeyboardMarkup(keyboard))
