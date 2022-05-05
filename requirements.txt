@@ -1,8 +1,8 @@
-# Orcabikes Telegram Bot Project: Python libraries we'll be using for this project.
+# orc4bikes Telegram Bot - Python libraries needed:
 
 # Telegram Bot
-python-telegram-bot
-requests
+python-telegram-bot>=13.8  # For ChatAction.CHOOSE_STICKER
+requests>=2.27.0           # For requests.JSONDecodeError
 
 # For DynamoDB Database
 boto3==1.20.23

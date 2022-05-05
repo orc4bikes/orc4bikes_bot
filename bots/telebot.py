@@ -2,9 +2,9 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 import json
 import logging
-import os
-import requests
 from warnings import filterwarnings
+
+import requests
 
 from telegram.ext import (
     CommandHandler,
@@ -14,15 +14,18 @@ from telegram.ext import (
 
 import database.controller as db
 
-from admin import TELE_API_TOKEN
-
-from bot_text import (
-    START_MESSAGE,
-    BAN_MESSAGE,
+from admin import (
+    ADMIN_HEAD,
+    BOT_ENV,
+    BOT_GMT_OFFSET,
+    LOGGING_URL,
+    TELE_API_TOKEN,
 )
 
-LOGGING_URL = os.environ.get('LOGGING_URL')
-BOT_ENV = os.environ.get('BOT_ENV')
+from bot_text import (
+    BAN_MESSAGE,
+    START_MESSAGE,
+)
 
 logger = logging.getLogger()
 
@@ -46,15 +49,13 @@ class TeleBot:
     """Base Telegram bot for other classes to inherit.
     Provides data manipulation methods here
     """
-    GMT = 8
-    def __init__(self, api_key):
-        self.api_key = api_key
-        self.updater = Updater(token=api_key, use_context=True)
+    def __init__(self):
+        self.updater = Updater(token=TELE_API_TOKEN, use_context=True)
         self.dispatcher = self.updater.dispatcher
 
     def now(self, gmt=None):
         if gmt is None:
-            gmt = self.GMT
+            gmt = BOT_GMT_OFFSET
         return datetime.utcnow() + timedelta(hours=gmt)
 
     # def log_exception(self, e, text=""):
@@ -75,7 +76,9 @@ class TeleBot:
             update.effective_chat.send_message(START_MESSAGE)
             return False
         if user_data['is_ban']:
-            update.effective_chat.send_message(BAN_MESSAGE)
+            update.effective_chat.send_message(BAN_MESSAGE.format(**{
+                'ADMIN_HEAD': ADMIN_HEAD
+            }))
             return False
         return True
 
@@ -178,5 +181,5 @@ class TeleBot:
 
 if __name__ == '__main__':
     logger.info("Running the TeleBot!")
-    newbot = TeleBot(TELE_API_TOKEN)
+    newbot = TeleBot()
     newbot.main()

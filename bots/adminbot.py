@@ -1,11 +1,16 @@
 from datetime import datetime
 import logging
 
+from telegram import (
+    ChatAction,
+)
+
 from bots.telebot import TeleBot
 
 from admin import (
-    DEV_ADMIN_GROUP_ID,
+    ADMIN_GROUP_ID,
     ADMIN_LIST,
+    ADMIN_DEV,
     TELE_API_TOKEN,
 )
 
@@ -43,25 +48,19 @@ def to_int(n):
     return int(n)
 
 class AdminBot(TeleBot):
-    def __init__(
-            self,
-            api_key,
-            admin_group_id=DEV_ADMIN_GROUP_ID,
-            admin_list=ADMIN_LIST,
-            admin_text=ADMIN_TEXT):
-        self.admin_group_id = admin_group_id
-        self.admin_list = admin_list
-        self.admin_text = admin_text
-        super().__init__(api_key)
 
     def admin_log(self, update, context, message, photo=None):
         """Send logs to admin chat group"""
         if photo:
-            update.message.reply_photo(
+            context.bot.send_photo(
+                chat_id=ADMIN_GROUP_ID,
                 photo=photo,
                 caption=message)
         else:
-            update.message.reply_photo(message)
+            context.bot.send_message(
+                chat_id=ADMIN_GROUP_ID,
+                text=message)
+
 
 
     def get_and_check_user(self, username):
@@ -83,7 +82,7 @@ class AdminBot(TeleBot):
         def new_func(self, update, context, *args, **kwargs):
             """Checks whether the user is an admin, and more"""
 
-            if update.effective_chat.id not in self.admin_list:
+            if update.effective_chat.username not in ADMIN_LIST:
                 update.message.reply_text("You've found... something unauthorized? "
                                           "Please contact a orc4bikes committee member or an admin for help!")
                 return
@@ -109,17 +108,14 @@ class AdminBot(TeleBot):
                 logger.exception(e)
                 update.message.reply_text(
                     "Oops, this is embarrasing, an unexpected error has occurred."
-                    " Please raise a ticket with @heyzec, along with what you sent.")
+                    f" Please raise a ticket with @{ADMIN_DEV}, along with what you sent.")
         return new_func
 
     @admin_only
     def admin_command(self, update, context):
-        update.message.reply_text(
-            self.admin_text,
-            parse_mode='MarkdownV2')
+        update.message.reply_text(ADMIN_TEXT)
 
     def change_credits(self, username, user_data, change, admin_name):
-
         initial_amt = user_data['credits']
         user_data['credits'] += change
         final_amt = initial_amt + change
@@ -148,6 +144,7 @@ class AdminBot(TeleBot):
     def deduct_command(self, update, context):
         """Deduct specific amount from user credits"""
         keywords_check(context.args, 2)
+        update.message.reply_chat_action(ChatAction.TYPING)
         username, number = context.args
         user_data = self.get_and_check_user(username)
         number = to_int(number)
@@ -161,6 +158,7 @@ class AdminBot(TeleBot):
     def addcredit_command(self, update, context):
         """Topup specific amount to user credits"""
         keywords_check(context.args, 2)
+        update.message.reply_chat_action(ChatAction.TYPING)
         username, number = context.args
         user_data = self.get_and_check_user(username)
         number = to_int(number)
@@ -176,6 +174,7 @@ class AdminBot(TeleBot):
     def setcredit_command(self, update, context):
         """Set user credits to specified amount."""
         keywords_check(context.args, 2)
+        update.message.reply_chat_action(ChatAction.TYPING)
         username, number = context.args
         user_data = self.get_and_check_user(username)
         initial_amt = user_data['credits']
@@ -191,6 +190,7 @@ class AdminBot(TeleBot):
     @admin_only
     def user_command(self, update, context):
         keywords_check(context.args, 1)
+        update.message.reply_chat_action(ChatAction.TYPING)
         username = context.args[0]
         user_data = self.get_and_check_user(username)
 
@@ -205,6 +205,7 @@ class AdminBot(TeleBot):
     @admin_only
     def setpin_command(self, update, context):
         keywords_check(context.args, 2)
+        update.message.reply_chat_action(ChatAction.TYPING)
         bike_name, number = context.args
         bike = self.get_and_check_bike(bike_name)
 
@@ -221,25 +222,60 @@ class AdminBot(TeleBot):
 
     @admin_only
     def orcabikes_command(self, update, context):
+        update.message.reply_chat_action(ChatAction.TYPING)
         if len(context.args) == 0:
             bikes_data = self.get_bikes()
-
-            text = ""
-            text += '\n'.join(
+            text = '\n'.join(
                 (
                     f"{bike['name']} -- {bike['username'] or bike['status'] or EMOJI['tick']}"
+                    f"{EMOJI['msg'] if bike['message'] else ''}"
                 )
                 for bike in bikes_data)
-            update.message.reply_text(
-                text,
-                parse_mode='HTML')
+            text += (
+                f"\n\nBikes with {EMOJI['msg']} indicates a custom message is shown to user when they begin rental."
+                "\nUse /orcabikes <code>BIKENAME</code> show the message and for more info."
+            )
+            update.message.reply_html(text)
             return
 
+        bike_name = context.args[0]
+        bike = self.get_and_check_bike(bike_name)
+
+        if len(context.args) == 1:
+            if not bike['message']:
+                text = f"{bike_name} has no message."
+            else:
+                text = (
+                    f"{bike_name}'s message:"
+                    f"\n{bike['message']}"
+                )
+
+            text += "\n\nSend /orcabikes <code>BIKENAME</code> <code>MESSAGE</code> to update the bike's message!"
+            if bike['message']:
+                text += "\nSend /orcabikes <code>BIKENAME</code> remove to remove the bike's message."
+
+            update.message.reply_html(text)
+            return
+            
+        userinput = ' '.join(context.args[1:])
+        if userinput == 'remove':
+            bike['message'] = None
+            self.update_bike(bike)
+            update.message.reply_text(
+                f"Alrights, no message will be shown when users rent {bike_name}.")
+            return
+
+        bike['message'] = userinput
+        self.update_bike(bike)
+        update.message.reply_text(
+            f"{bike_name}'s message successfully updated! Users will now see this message:"
+            f"\n{userinput}")
 
 
     @admin_only
     def setstatus_command(self, update, context):
         keywords_check(context.args, 1)
+        update.message.reply_chat_action(ChatAction.TYPING)
         bike_name, *status = context.args
         bike = self.get_and_check_bike(bike_name)
         status = ' '.join(status) if status != [] else 0
@@ -260,7 +296,7 @@ class AdminBot(TeleBot):
     @admin_only
     def logs_command(self, update, context):
         update.message.reply_text(
-            "This feature is temporarily unavailable. Please complain to @heyzec if you want the feature!")
+            f"This feature is temporarily unavailable. Please complain to @{ADMIN_DEV} if you want the feature!")
 
         # context.bot.send_document(
         #     chat_id=update.effective_chat.id,
@@ -285,6 +321,7 @@ class AdminBot(TeleBot):
     @admin_only
     def forcereturn_command(self, update, context):
         keywords_check(context.args, 1)
+        update.message.reply_chat_action(ChatAction.TYPING)
         bike_name = context.args[0]
         bike = self.get_and_check_bike(bike_name)
 
@@ -360,6 +397,7 @@ class AdminBot(TeleBot):
     def ban_command(self, update, context):
         """Ban a user"""
         keywords_check(context.args, 1)
+        update.message.reply_chat_action(ChatAction.TYPING)
         username = context.args[0]
         user_data = self.get_and_check_user(username)
 
@@ -376,6 +414,7 @@ class AdminBot(TeleBot):
     def unban_command(self, update, context):
         """Unban a user"""
         keywords_check(context.args, 1)
+        update.message.reply_chat_action(ChatAction.TYPING)
         username = context.args[0]
         user_data = self.get_and_check_user(username)
 

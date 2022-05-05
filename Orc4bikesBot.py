@@ -15,15 +15,7 @@ from bots.convobot import ConvoBot
 from bots.feedbackbot import FeedbackBot
 
 from admin import (
-    DEV_ADMIN_GROUP_ID,
-    ADMIN_LIST,
-    TELE_API_TOKEN,
-)
-
-from bot_text import (
-    HELP_TEXT,
-    ADMIN_TEXT,
-    TERMS_TEXT,
+    BOT_DEDUCT_RATE,
 )
 
 from functions import to_readable_td
@@ -31,32 +23,11 @@ from functions import to_readable_td
 logger = logging.getLogger()
 
 class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FeedbackBot, FunBot, TeleBot):
-    DEDUCT_RATE = 20  # deduct 1 credit every 20 seconds or part thereof
-
-    def __init__(
-            self,
-            api_key,
-            admin_group_id=DEV_ADMIN_GROUP_ID,
-            help_text=HELP_TEXT,
-            admin_list=ADMIN_LIST,
-            admin_text=ADMIN_TEXT,
-            deduct_rate=DEDUCT_RATE,
-            terms_text=TERMS_TEXT,
-            promo=False):
-        logger.info("running Orc4bikesBot now")
-        super().__init__(api_key)
-        self.help_text = help_text
-        self.admin_group_id = admin_group_id
-        self.admin_list = admin_list
-        self.admin_text = admin_text
-        self.deduct_rate = deduct_rate
-        self.terms_text = terms_text
-        self.promo = promo
 
     def calc_deduct(self, time_diff):
         """Calculate credits deductable given a time period."""
-        deduction = time_diff.seconds // self.deduct_rate + int(time_diff.seconds % self.deduct_rate > 0)
-        deduction += time_diff.days * 86400 / self.deduct_rate
+        deduction = time_diff.seconds // BOT_DEDUCT_RATE + int(time_diff.seconds % BOT_DEDUCT_RATE > 0)
+        deduction += time_diff.days * 86400 / BOT_DEDUCT_RATE
         return Decimal(deduction)
 
     def echo_command(self, update, context):
@@ -79,9 +50,10 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FeedbackBot, FunBot, TeleBot):
         """Edit query so the user knows button is not accepted."""
         query = update.callback_query
         query.answer()
-        text = query.message.text
-        text += "\n\nSorry, this button has expired. Please send the previous command again."
-        query.edit_message_text(text)
+        query.edit_message_text(
+            f"{query.message.text_html}"
+            "\n\n<i>Sorry, this button has expired. Please send the previous command again.</i>",
+            parse_mode='HTML')
 
     def reminder(self, context):
         """Callback Reminder for return, every hour"""
@@ -147,5 +119,5 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FeedbackBot, FunBot, TeleBot):
         TeleBot.main(self)
 
 if __name__ == '__main__':
-    newbot = Orc4bikesBot(TELE_API_TOKEN, admin_group_id=DEV_ADMIN_GROUP_ID)
+    newbot = Orc4bikesBot()
     newbot.main()

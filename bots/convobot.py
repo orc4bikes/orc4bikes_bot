@@ -2,6 +2,7 @@ from datetime import datetime
 import logging
 
 from telegram import (
+    ChatAction,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
@@ -17,16 +18,29 @@ from telegram.ext import (
 from bots.telebot import TeleBot
 
 from admin import (
-    DEV_ADMIN_GROUP_ID,
-    ADMIN_LIST,
+    BOT_ENV,
+    BOT_PROMO,
+)
+
+# Used to fill up text templates (required even when linter shows unused)
+from admin import (
+    ADMIN_HEAD,
+    ADMIN_HEAD_NAME,
+    ADMIN_HEAD_MOBILE,
+    ADMIN_SAFETY,
+    ADMIN_SAFETY_MOBILE,
+    ADMIN_SAFETY_NAME,
+    ADMIN_TREASURER,
+    ADMIN_TREASURER_MOBILE,
+    ADMIN_TREASURER_NAME,
+    ADMIN_TREASURER_URL,
 )
 
 from bot_text import (
+    EMOJI,
     ROUTES_LIST,
     ROUTES_PICS,
-    ADMIN_TEXT,
-    EMOJI,
-    PAYMENT_URL,
+    TERMS_TEXT,
 )
 
 from functions import to_readable_td
@@ -34,17 +48,6 @@ from functions import to_readable_td
 logger = logging.getLogger()
 
 class ConvoBot(TeleBot):
-    def __init__(
-            self,
-            api_key,
-            admin_group_id=DEV_ADMIN_GROUP_ID,
-            admin_list=ADMIN_LIST,
-            admin_text=ADMIN_TEXT):
-        self.admin_group_id = admin_group_id
-        self.admin_list = admin_list
-        self.admin_text = admin_text
-        super().__init__(api_key)
-
 
     def routes_command(self, update, context):
         """Lists all curated routes available."""
@@ -60,11 +63,8 @@ class ConvoBot(TeleBot):
             ]
         ]
 
-        text = (
-            "Here are some available routes for ya!"
-            "\n\n"
-            '\n'.join(ROUTES_LIST.values())
-        )
+        text = "Here are some available routes for ya!"
+        text += '\n\n' + '\n'.join(ROUTES_LIST.values())
         update.message.reply_text(
             text,
             reply_markup=InlineKeyboardMarkup(keyboard))
@@ -75,7 +75,9 @@ class ConvoBot(TeleBot):
         query = update.callback_query
         query.answer()
         colour = query.data
-        query.edit_message_text(text=f"Selected option: {query.data}")
+        query.edit_message_text(
+            f"{query.message.text}\n\n<i>Selected option: {query.data}</i>",
+            parse_mode='HTML')
 
         if colour == 'all':
             for colour, url in ROUTES_PICS.items():
@@ -86,15 +88,15 @@ class ConvoBot(TeleBot):
             query.message.reply_photo(
                 photo=ROUTES_PICS[colour],
                 caption=ROUTES_LIST[colour])
-            text = (
-                "To see more routes, send /routes"
-                "\nTo start your journey, send /rent"
-            )
-            query.message.reply_text(text)
+
+        query.message.reply_text(
+            "To see more routes, send /routes"
+            "\nTo start your journey, send /rent")
         return -1
 
     def payment_command(self, update, context):
         """Payment: Returns available amounts to top up by."""
+        update.message.reply_chat_action(ChatAction.TYPING)
         if not self.check_user(update, context):
             return -1
         context.user_data.clear()
@@ -106,7 +108,7 @@ class ConvoBot(TeleBot):
             [InlineKeyboardButton("Cancel", callback_data='CANCEL_PAYMENT')],
         ]
         text = "Please choose a top-up amount."
-        if self.promo:
+        if BOT_PROMO:
             text += "\nPROMO: D-d-double credits!"
         update.message.reply_text(
             text,
@@ -126,24 +128,28 @@ class ConvoBot(TeleBot):
 
         amount = int(amount)
         context.user_data['amount'] = amount
-        query.edit_message_text(f'Selected amount: ${amount//100:.2f}')
+        query.edit_message_text(
+            f'{query.message.text}\n\n<i>Selected amount: ${amount//100:.2f}</i>',
+            parse_mode='HTML')
 
         text1 = (
-            "[1] PayLah/PayNow to Lim Yu Jie, at 90817788."
+            f"[1] PayLah/PayNow to {ADMIN_TREASURER_NAME}, at <code>{ADMIN_TREASURER_MOBILE}</code>."
             #, or shorturl.at/dBLW6'  ## TODO: shorturl not working!!
             "\n[2] Once done, send a screenshot to @orc4bikes_bot!!"
             '\n[3] You will receive "Transaction complete! You now have XXXX credits" for comfirmation'
         )
+        if BOT_ENV == 'development':
+            text1 += "\n<i>Development environment - Send /skip to skip uploading picture!</i>"
 
         text2 = (
             "If I don't respond after you send your screenshot, please try to /topup again."
             "\n\nTo stop, send /cancel"
         )
 
-        query.message.reply_text(
+        query.message.reply_html(
             text1,
             reply_markup = InlineKeyboardMarkup([
-                [InlineKeyboardButton("Go to PayLah", callback_data='redirect_paylah', url=PAYMENT_URL)]
+                [InlineKeyboardButton("Go to PayLah", callback_data='redirect_paylah', url=ADMIN_TREASURER_URL)]
             ]))
         query.message.reply_text(text2)
         return 72
@@ -154,32 +160,43 @@ class ConvoBot(TeleBot):
         if query:
             query.answer()
             return 72
-        if update.message.photo:
-            photo = update.message.photo[-1].file_id
-            context.user_data['photo'] = photo
+
+        devskip = False
+        if BOT_ENV == 'development':
+            devskip = update.message.text == '/skip'
+
+        if not update.message.photo and not devskip:
             text = (
-                "^ This is your PayLah/PayNow confirmation to Lim Yu Jie, at 9081 7788."
-                "\nIf you are unsatisfied with your image, please send another one."
+                f"Upon completion of payment (to <code>{ADMIN_TREASURER_MOBILE}</code>), please send a screenshot to me @orc4bikes_bot!!"
                 "\nTo CONFIRM PAYMENT, send /done. To cancel, send /cancel"
                 "\n"
-                '\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits", '
-                "your credits has NOT been topped up."
+                '\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits",'
+                " your credits has NOT been topped up."
             )
 
-            update.message.reply_photo(
-                photo=context.user_data['photo'],
-                caption=text)
+            update.message.reply_html(text)
+            return
+
+        if not update.message.photo:
+            photo = self.get_random_pic()
         else:
+            photo = update.message.photo[-1].file_id
 
-            text = (
-                "Upon completion of payment (to 9081 7788), please send a screenshot to me @orc4bikes_bot!!"
-                "\nTo CONFIRM PAYMENT, send /done. To cancel, send /cancel"
-                "\n"
-                '\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits", '
-                "your credits has NOT been topped up."
-            )
+        context.user_data['photo'] = photo
+        text = (
+            f"^ This is your PayLah/PayNow confirmation to {ADMIN_TREASURER_NAME} at <code>{ADMIN_TREASURER_MOBILE}</code>."
+            "\nIf you are unsatisfied with your image, please send another one."
+            "\nTo CONFIRM PAYMENT, send /done. To cancel, send /cancel"
+            "\n"
+            '\nNOTICE: If you do not see "Transaction complete! You now have XXXX credits",'
+            " your credits has NOT been topped up."
+        )
 
-            update.message.reply_text(text)
+        update.message.reply_photo(
+            photo=photo,
+            caption=text,
+            parse_mode='HTML')
+
         return 72
 
     def payment_done(self, update, context):
@@ -210,7 +227,7 @@ class ConvoBot(TeleBot):
             f"Transaction complete! You now have {user_data['credits']} credits."
             "\nTo start your journey, /rent now!")
 
-        if self.promo:  # Promotion period, credits are doubled
+        if BOT_PROMO:  # Promotion period, credits are doubled
             user_data['credits'] += amount
             update.message.reply_text(
                 f"Promotion applied! An additional {amount} credits was added to your account."
@@ -253,6 +270,7 @@ class ConvoBot(TeleBot):
         Get bikes in the format of InlineKeyboardMarkup buttons
         Usage: click button to rent
         """
+        update.message.reply_chat_action(ChatAction.TYPING)
         # Impose checks on user before starting
         if not self.check_user(update, context):
             return -1
@@ -261,7 +279,7 @@ class ConvoBot(TeleBot):
         status = user_data.get('status', None)
         if status is not None:  # Rental in progress
             update.message.reply_text(
-                "You are already renting! Please /return your current bike first")
+                "You are already renting! Please /return your current bike first.")
             return -1
         if user_data.get('credits', 0) < 1:  # Insufficient credits
             text = (
@@ -273,23 +291,23 @@ class ConvoBot(TeleBot):
 
         # Pass all checks, can rent. Get bikes
         bikes_data = self.get_bikes()
-        avail, not_avail = list(), list()
+        avail, not_avail = [], []
         for bike in bikes_data:
             if not bike['status']:
                 avail.append(bike)
             else:
                 not_avail.append(bike)
 
-        avail = '\n'.join(f"{b['name']} {EMOJI['tick']}" for b in avail)
-        not_avail = '\n'.join(f"{b['name']} {EMOJI['cross']} -- {'on rent' if b['username'] else b['status']}" for b in not_avail)
-        text = f'Bicycles:\n{avail}'
-        text += '\n\n' if avail else ''
-        text += f'{not_avail}'
-        text += "\n\nClick below to start renting now!" if avail else "\n\nSorry, no bikes are available..."
+        avail_text = '\n'.join(f"{b['name']} {EMOJI['tick']}" for b in avail)
+        not_avail_text = '\n'.join(f"{b['name']} {EMOJI['cross']} -- {'on rent' if b['username'] else b['status']}" for b in not_avail)
+        action_text = "Click below to start renting now!" if avail else "Sorry, no bikes are available..."
+        text = '\n\n'.join(["<b>Bicycles:</b>", avail_text, not_avail_text, action_text])
+
         avail_bikes = [bike['name'] for bike in bikes_data if not bike['status']]
         keyboard = [[InlineKeyboardButton(f"Rent {bike}", callback_data=bike)] for bike in avail_bikes]
         keyboard.append([InlineKeyboardButton("Cancel", callback_data='stoprent')])
-        update.message.reply_text(
+
+        update.message.reply_html(
             text,
             reply_markup=InlineKeyboardMarkup(keyboard))
         return 11
@@ -316,18 +334,21 @@ class ConvoBot(TeleBot):
                 f"Sorry, {bike_name} is not available. Please indicate which bike you would like to rent.")
             return -1
 
-        if bike_name == 'fold_blue':
-            query.message.reply_text(
-                "Dear user, we are aware that the Blue Foldable has a dent. No report is needed to be made, thank you!")
-        query.edit_message_text(text=f"Selected bike: {bike_name}")
+        query.edit_message_text(
+            f"{query.message.text_html}\n\n<i>Selected bike: {bike_name}</i>",
+            parse_mode='HTML')
+
+        if bike_data['message']:
+            query.message.reply_text(bike_data['message'])
+
         context.user_data['bike_name'] = bike_name
-        text = self.terms_text
+        text = TERMS_TEXT.format(**globals())
         keyboard = [
             [InlineKeyboardButton("Accept", callback_data='TERMS_YES')],
             [InlineKeyboardButton("Decline", callback_data='TERMS_NO')]
         ]
         query.message.reply_text(
-            text,
+            text, parse_mode='HTML',
             reply_markup=InlineKeyboardMarkup(keyboard))
         return 12
 
@@ -336,25 +357,38 @@ class ConvoBot(TeleBot):
         query = update.callback_query
         query.answer()
         answer = query.data
+        query.message.reply_chat_action(ChatAction.TYPING)
 
         if answer != 'TERMS_YES':
             query.message.reply_text(
                 "Terms of use has not been accepted. Cancelling rental now.")
-            query.edit_message_text(text=f"{self.terms_text}\n\nTo rent, please accept the terms above.")
+            query.edit_message_text(
+                f"{query.message.text_html}\n\n<i>To rent, please accept the terms above.</i>",
+                parse_mode='HTML')
             return -1
 
-        query.edit_message_text(text=f"{self.terms_text}\n\nYou have accepted the terms.")
+        query.edit_message_text(
+            f"{query.message.text_html}\n\n<i>You have accepted the terms.</i>",
+            parse_mode='HTML')
         text = (
             "Please send a picture of the bike you will be renting! Photo must include the BIKE and LOCK."
             "\n"
             "\nTo cancel, send /cancel"
         )
-        query.message.reply_text(text)
+        if BOT_ENV == 'development':
+            text += "\n<i>Development environment - Send /skip to skip uploading picture!</i>"
+
+        query.message.reply_html(text)
         return 13
 
     def rent_pic(self, update, context):
         """After photo is sent, save the photo and ask if would like to retake"""
-        if not update.message.photo:
+        update.message.reply_chat_action(ChatAction.UPLOAD_PHOTO)
+        devskip = False
+        if BOT_ENV == 'development':
+            devskip = update.message.text == '/skip'
+
+        if not update.message.photo and not devskip:
             text = (
                 "Please send a picture of the bike you will be renting! Photo must include the BIKE and LOCK."
                 # , As shown in the sample photo.'
@@ -371,7 +405,11 @@ class ConvoBot(TeleBot):
             """
             return
 
-        photo = update.message.photo[-1].file_id
+        if not update.message.photo:
+            photo = self.get_random_pic()
+        else:
+            photo = update.message.photo[-1].file_id
+
         context.user_data['photo'] = photo
         text = ("^ This is your image. If you are unsatisfied with your image, please send another one."
                 "\nTo CONFIRM RENTAL, send /done. To cancel, send /cancel")
@@ -380,6 +418,7 @@ class ConvoBot(TeleBot):
             caption=text)
 
     def rent_done(self, update, context):
+        update.message.reply_chat_action(ChatAction.TYPING)
         if not context.user_data['photo'] or not context.user_data['bike_name']:
             if context.user_data.get('bike_name', None) is None:  # Unable to get bike_name, restart rental process
                 update.message.reply_text(
@@ -422,6 +461,7 @@ class ConvoBot(TeleBot):
 
     def return_command(self, update, context):
         """Return the current bike"""
+        update.message.reply_chat_action(ChatAction.TYPING)
         if not self.check_user(update, context):
             return -1
         context.user_data.clear()
@@ -432,19 +472,34 @@ class ConvoBot(TeleBot):
             update.message.reply_text("You are not renting...")
             return -1
 
-        update.message.reply_text(
+        text = (
             "Please send a photo for proof of return! Photo must include the BIKE and LOCK."
-            "\nPicture must be a photo, not a file... \nTo continue rental, send /cancel")
+            "\nPicture must be a photo, not a file..."
+            "\nTo continue rental, send /cancel"
+        )
+        if BOT_ENV == 'development':
+            text += "\n<i>Development environment - Send /skip to skip uploading picture!</i>"
+
+        update.message.reply_text(text, parse_mode='HTML')
         return 91
 
     def return_pic(self, update, context):
         """After photo is sent, save the photo and ask for others"""
-        if not update.message.photo:
+        update.message.reply_chat_action(ChatAction.UPLOAD_PHOTO)
+        devskip = False
+        if BOT_ENV == 'development':
+            devskip = update.message.text == '/skip'
+
+        if not update.message.photo and not devskip:
             update.message.reply_text(
                 "Please send a photo for proof of return!\nTo continue rental, send /cancel")
             return 91
 
-        photo = update.message.photo[-1].file_id
+        if not update.message.photo:
+            photo = self.get_random_pic()
+        else:
+            photo = update.message.photo[-1].file_id
+
         context.user_data['photo'] = photo
         text = (
             "^ This is your image. If you are unsatisfied with your image, please send another one."
@@ -455,6 +510,7 @@ class ConvoBot(TeleBot):
             caption=text)
 
     def return_done(self, update, context):
+        update.message.reply_chat_action(ChatAction.TYPING)
         user_data = super().get_user(update, context)
         status = user_data.get('status', None)
         if context.user_data['photo']:
@@ -539,15 +595,32 @@ class ConvoBot(TeleBot):
     def report_desc(self, update, context):
         """After description is sent, save the description and ask for pics"""
         context.user_data['desc'] = update.message.text  # Update desc
-        update.message.reply_text(
+        text = (
             "Please attach a picture as well!"
             "\nPicture must be a photo, not a file..."
-            "\nTo stop, send /cancel")
+            "\nTo stop, send /cancel"
+        )
+        if BOT_ENV == 'development':
+            text += "\n<i>Development environment - Send /skip to skip uploading picture!</i>"
+        update.message.reply_html(text)
         return 82
 
     def report_pic(self, update, context):
         """After photo is sent, save the photo and ask for others"""
-        photo = update.message.photo[-1].file_id
+        update.message.reply_chat_action(ChatAction.UPLOAD_PHOTO)
+        devskip = False
+        if BOT_ENV == 'development':
+            devskip = update.message.text == '/skip'
+
+        if not update.message.photo and not devskip:
+            update.message.reply_text("Please send a picture!")
+            return
+
+        if not update.message.photo:
+            photo = self.get_random_pic()
+        else:
+            photo = update.message.photo[-1].file_id
+
         context.user_data['photo'] = photo
         text = (
             "Your report is:"
@@ -579,7 +652,7 @@ class ConvoBot(TeleBot):
         )
 
         update.message.reply_photo(
-            photo=context.user_data['photo'],
+            photo=photo,
             caption=text)
         return 83
 
@@ -641,6 +714,7 @@ class ConvoBot(TeleBot):
                 ],
                 13: [
                     MessageHandler(filters=~Filters.command, callback=self.rent_pic),
+                    CommandHandler('skip', self.rent_pic),
                     CommandHandler('done', callback=self.rent_done),
                 ],
 
@@ -658,6 +732,7 @@ class ConvoBot(TeleBot):
                 72: [
                     CallbackQueryHandler(self.payment_pic),
                     MessageHandler(filters=Filters.photo & ~Filters.command, callback=self.payment_pic),
+                    CommandHandler('skip', self.payment_pic),
                     CommandHandler('done', callback=self.payment_done),
                 ],
 
@@ -668,6 +743,7 @@ class ConvoBot(TeleBot):
                 ],
                 82: [
                     MessageHandler(filters=Filters.photo & ~Filters.command, callback=self.report_pic),
+                    CommandHandler('skip', self.report_pic),
                     CommandHandler('done', callback=self.report_done),
                 ],
                 83: [
@@ -678,6 +754,7 @@ class ConvoBot(TeleBot):
                 # 9-X: Returns
                 91: [
                     MessageHandler(~Filters.command, callback=self.return_pic),
+                    CommandHandler('skip', self.return_pic),
                     CommandHandler('done', callback=self.return_done)
                 ],
 

@@ -1,4 +1,3 @@
-import os
 import requests
 
 from telegram import (
@@ -8,7 +7,9 @@ from telegram import (
 
 from bots.telebot import TeleBot
 
-LOGGING_URL = os.environ.get('LOGGING_URL')
+from admin import (
+    LOGGING_URL,
+)
 
 class FeedbackBot(TeleBot):
     def save_feedback(self, feedback_data, filename=None):
