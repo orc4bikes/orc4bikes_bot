@@ -1,12 +1,13 @@
 import logging
-import os
 
 import boto3
 from botocore.exceptions import ClientError
 
-DB_ACCESS_KEY = os.environ.get('DB_ACCESS_KEY')
-DB_SECRET_KEY = os.environ.get('DB_SECRET_KEY')
-DB_REGION_NAME = os.environ.get('DB_REGION_NAME')
+from admin import (
+    DB_ACCESS_KEY,
+    DB_SECRET_KEY,
+    DB_REGION_NAME,
+)
 
 logger = logging.getLogger()
 

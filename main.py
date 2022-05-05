@@ -1,11 +1,5 @@
 import logging
-import os
-import sys
 
-from admin import (
-    ADMIN_GROUP_ID,
-    TELE_API_TOKEN
-)
 from Orc4bikesBot import Orc4bikesBot
 
 if __name__ == '__main__':
@@ -16,7 +10,6 @@ if __name__ == '__main__':
     logger.addHandler(stream_handler)
     logger.setLevel(logging.INFO)
 
-
-
-    newbot = Orc4bikesBot(TELE_API_TOKEN, admin_group_id=ADMIN_GROUP_ID, promo=False)
+    newbot = Orc4bikesBot()
+    logger.info("Running Orc4bikesBot now")
     newbot.main()
