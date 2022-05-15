@@ -1,9 +1,8 @@
-# orc4bikes Telegram Bot - Python libraries needed:
+# Python libraries needed
 
 # Telegram Bot
-python-telegram-bot>=13.8  # For ChatAction.CHOOSE_STICKER
-requests>=2.27.0           # For requests.JSONDecodeError
+python-telegram-bot==13.11
+requests==2.27.1
 
 # For DynamoDB Database
-boto3==1.20.23
-botocore==1.23.23
+boto3==1.23.1
