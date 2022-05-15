@@ -138,8 +138,8 @@ class ConvoBot(TeleBot):
             "\n[2] Once done, send a screenshot to @orc4bikes_bot!!"
             '\n[3] You will receive "Transaction complete! You now have XXXX credits" for comfirmation'
         )
-        if BOT_ENV == 'development':
-            text1 += "\n<i>Development environment - Send /skip to skip uploading picture!</i>"
+        if BOT_ENV != 'production':
+            text1 += "\n<i>Test environment - Send /skip to skip uploading picture!</i>"
 
         text2 = (
             "If I don't respond after you send your screenshot, please try to /topup again."
@@ -162,7 +162,7 @@ class ConvoBot(TeleBot):
             return 72
 
         devskip = False
-        if BOT_ENV == 'development':
+        if BOT_ENV != 'production':
             devskip = update.message.text == '/skip'
 
         if not update.message.photo and not devskip:
@@ -375,8 +375,8 @@ class ConvoBot(TeleBot):
             "\n"
             "\nTo cancel, send /cancel"
         )
-        if BOT_ENV == 'development':
-            text += "\n<i>Development environment - Send /skip to skip uploading picture!</i>"
+        if BOT_ENV != 'production':
+            text += "\n<i>Test environment - Send /skip to skip uploading picture!</i>"
 
         query.message.reply_html(text)
         return 13
@@ -385,7 +385,7 @@ class ConvoBot(TeleBot):
         """After photo is sent, save the photo and ask if would like to retake"""
         update.message.reply_chat_action(ChatAction.UPLOAD_PHOTO)
         devskip = False
-        if BOT_ENV == 'development':
+        if BOT_ENV != 'production':
             devskip = update.message.text == '/skip'
 
         if not update.message.photo and not devskip:
@@ -477,8 +477,8 @@ class ConvoBot(TeleBot):
             "\nPicture must be a photo, not a file..."
             "\nTo continue rental, send /cancel"
         )
-        if BOT_ENV == 'development':
-            text += "\n<i>Development environment - Send /skip to skip uploading picture!</i>"
+        if BOT_ENV != 'production':
+            text += "\n<i>Test environment - Send /skip to skip uploading picture!</i>"
 
         update.message.reply_text(text, parse_mode='HTML')
         return 91
@@ -487,7 +487,7 @@ class ConvoBot(TeleBot):
         """After photo is sent, save the photo and ask for others"""
         update.message.reply_chat_action(ChatAction.UPLOAD_PHOTO)
         devskip = False
-        if BOT_ENV == 'development':
+        if BOT_ENV != 'production':
             devskip = update.message.text == '/skip'
 
         if not update.message.photo and not devskip:
@@ -600,8 +600,8 @@ class ConvoBot(TeleBot):
             "\nPicture must be a photo, not a file..."
             "\nTo stop, send /cancel"
         )
-        if BOT_ENV == 'development':
-            text += "\n<i>Development environment - Send /skip to skip uploading picture!</i>"
+        if BOT_ENV != 'production':
+            text += "\n<i>Test environment - Send /skip to skip uploading picture!</i>"
         update.message.reply_html(text)
         return 82
 
@@ -609,7 +609,7 @@ class ConvoBot(TeleBot):
         """After photo is sent, save the photo and ask for others"""
         update.message.reply_chat_action(ChatAction.UPLOAD_PHOTO)
         devskip = False
-        if BOT_ENV == 'development':
+        if BOT_ENV != 'production':
             devskip = update.message.text == '/skip'
 
         if not update.message.photo and not devskip:

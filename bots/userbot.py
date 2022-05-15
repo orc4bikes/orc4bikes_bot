@@ -32,7 +32,7 @@ class UserBot(TeleBot):
         """
         chat_id = update.effective_chat.id
 
-        if BOT_ENV == 'development' and chat_id not in ADMIN_LIST:
+        if BOT_ENV != 'production' and chat_id not in ADMIN_LIST:
             update.message.reply_text(f"Hi {update.message.from_user.first_name}, please head over to @orc4bikes_bot!")
             return
 
