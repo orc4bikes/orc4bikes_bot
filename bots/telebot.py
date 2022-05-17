@@ -127,7 +127,7 @@ class TeleBot:
         """Updates rental logs with headers:
            bike,username,start_time,end_time
         """
-        file = 'rental' if BOT_ENV != 'development' else 'testing'
+        file = 'rental' if BOT_ENV == 'production' else 'testing'
 
         data = decimal_to_float(update_list)
         requests.post(f"{LOGGING_URL}?file={file}", json=data)
@@ -136,7 +136,7 @@ class TeleBot:
         """Updates report logs with headers:
            username,time,report
         """
-        file = 'report' if BOT_ENV != 'development' else 'testing'
+        file = 'report' if BOT_ENV == 'production' else 'testing'
         data = decimal_to_float(update_list)
         requests.post(f"{LOGGING_URL}?file={file}", json=data)
 
@@ -144,7 +144,7 @@ class TeleBot:
         """Updates finance logs with headers:
            username,time,initial_amt,change_amt,final_amt
         """
-        file = 'finance' if BOT_ENV != 'development' else 'testing'
+        file = 'finance' if BOT_ENV == 'production' else 'testing'
         data = decimal_to_float(update_list)
         requests.post(f"{LOGGING_URL}?file={file}", json=data)
 

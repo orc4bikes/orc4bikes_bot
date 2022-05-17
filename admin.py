@@ -9,7 +9,7 @@ if os.environ.get('BOT_ENV') is None:
         sys.exit()
 
 BOT_ENV                = os.environ.get('BOT_ENV')
-BOT_PROMO              = bool(os.environ.get('BOT_PROMO'))
+BOT_PROMO              = os.environ.get('BOT_PROMO').lower() in ('true', '1')
 BOT_GMT_OFFSET         = int(os.environ.get('BOT_GMT_OFFSET'))
 BOT_DEDUCT_RATE        = int(os.environ.get('BOT_DEDUCT_RATE'))
 
