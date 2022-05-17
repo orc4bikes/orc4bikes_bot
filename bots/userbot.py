@@ -74,7 +74,7 @@ class UserBot(TeleBot):
 
     def help_command(self, update, context):
         """Show a list of possible commands"""
-        update.message.reply_markdown_v2(HELP_TEXT)
+        update.message.reply_text(HELP_TEXT)
 
     def guide_command(self, update, context):
         """Shows you guide to renting bike"""
