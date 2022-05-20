@@ -14,6 +14,7 @@ from bot_text import (
     FUN_TEXT,
     FUN_URLS,
     OHNO_LIST,
+    OHYES_LIST,
 )
 
 logger = logging.getLogger()
@@ -182,7 +183,15 @@ class FunBot(TeleBot):
         """Sends a version of "Oh no"..."""
         text = random.choice(OHNO_LIST)
         update.message.reply_text(text)
-        raise ZeroDivisionError  # This function is now for testing
+        raise ZeroDivisionError("This function is for testing. If you see this line, that means"
+                                " a mock error has been triggered.")
+
+    def ohyes_command(self, update, context):
+        """Sends a version of "Oh yes"..."""
+        text = random.choice(OHYES_LIST)
+        update.message.reply_text(text)
+        logger.info("YAYYYY!")
+
 
     def initialize(self):
         self.addcmd('fun', self.fun_command)
@@ -199,5 +208,6 @@ class FunBot(TeleBot):
         self.addcmd('happybangday', self.bangday_command)  # bangday sticker
 
         self.addcmd('ohno', self.ohno_command)
+        self.addcmd('ohyes', self.ohyes_command)
 
         #self.addcmd('quote', self.quote_command)          # doesnt work on web...

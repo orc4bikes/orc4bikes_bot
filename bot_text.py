@@ -157,7 +157,30 @@ OHNO_LIST = [
     "oh no",
     "oh no...?",
     "Bless you",
-    "Are you sure you didn't mean 'Oh yes'?",
     "This is truly a disaster",
     "...",
+    "Are you sure you didn't mean /ohyes?",
+]
+
+OHYES_LIST = [
+    "Yay!"
+    "hooray",
+    "hoozah",
+    "subarashidesu",
+    "amazing",
+    "hell yeah",
+    "great!",
+    "wow",
+    "wow...",
+    "wow............",
+    "this... puts a smile on my face",
+    "hallelujah",
+    "banzai",
+    "oui oui",
+    "oui oui baguette",
+    "Are you sure you didn't mean /ohno?",
+]
+
+OHYES_LIST = [
+    "Yay!"
 ]
