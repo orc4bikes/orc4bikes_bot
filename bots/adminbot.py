@@ -257,7 +257,7 @@ class AdminBot(TeleBot):
 
             update.message.reply_html(text)
             return
-            
+
         userinput = ' '.join(context.args[1:])
         if userinput == 'remove':
             bike['message'] = None
@@ -402,7 +402,7 @@ class AdminBot(TeleBot):
         username = context.args[0]
         user_data = self.get_and_check_user(username)
 
-        is_banned = user_data['is_ban']
+        is_banned = user_data.get('is_ban')
         if is_banned:
             update.message.reply_text(f"@{username} is already banned.")
             return
@@ -419,7 +419,7 @@ class AdminBot(TeleBot):
         username = context.args[0]
         user_data = self.get_and_check_user(username)
 
-        is_banned = user_data['is_ban']
+        is_banned = user_data.get('is_ban')
         if not is_banned:
             update.message.reply_text(f"@{username} is already not banned.")
             return

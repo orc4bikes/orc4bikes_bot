@@ -75,7 +75,7 @@ class TeleBot:
         if user_data is None:
             update.effective_chat.send_message(START_MESSAGE)
             return False
-        if user_data['is_ban']:
+        if user_data.get('is_ban'):
             update.effective_chat.send_message(BAN_MESSAGE.format(**{
                 'ADMIN_HEAD': ADMIN_HEAD
             }))
