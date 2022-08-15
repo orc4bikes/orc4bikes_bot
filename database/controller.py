@@ -63,7 +63,7 @@ def get_user_data(chat_id=None, dynamodb=None):
     except ClientError as e:
         logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        logger.warning('Key Error! Item not found')
+        logger.warning(f'Key Error! Item {e} not found')
     finally:
         return response
 
@@ -124,7 +124,7 @@ def set_user_data(chat_id=None, user_data={}, dynamodb=None):
     except ClientError as e:
         logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        logger.warning('Key Error! Item not found')
+        logger.warning(f'Key Error! Item {e} not found')
     return response
 
 def create_bikes_table(dynamodb=None):
@@ -178,7 +178,7 @@ def get_bike_data(bike_name=None, dynamodb=None):
     except ClientError as e:
         logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        logger.warning('Key Error! Item not found')
+        logger.warning(f'Key Error! Item {e} not found')
     return response
 
 def get_all_bikes(dynamodb=None):
@@ -201,7 +201,7 @@ def get_all_bikes(dynamodb=None):
     except ClientError as e:
         logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        logger.warning('Key Error! Item not found')
+        logger.warning(f'Key Error! Item {e} not found')
     return data
 
 def set_bike_data(bike_name=None, bike_data={}, dynamodb=None):
@@ -246,7 +246,7 @@ def set_bike_data(bike_name=None, bike_data={}, dynamodb=None):
     except ClientError as e:
         logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        logger.warning('Key Error! Item not found')
+        logger.warning(f'Key Error! Item {e} not found')
     return response
 
 def create_usernames_table(dynamodb=None):
@@ -300,7 +300,7 @@ def get_username(username="", dynamodb=None):
     except ClientError as e:
         logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        logger.warning('Key Error! Item not found')
+        logger.warning(f'Key Error! Item {e} not found')
     return chat_id
 
 def set_username(username="", chat_id=0, dynamodb=None):
@@ -328,7 +328,7 @@ def set_username(username="", chat_id=0, dynamodb=None):
     except ClientError as e:
         logger.exception(e.response['Error']['Message'])
     except KeyError as e:
-        logger.warning('Key Error! Item not found')
+        logger.warning(f'Key Error! Item {e} not found')
     return response
 
 
