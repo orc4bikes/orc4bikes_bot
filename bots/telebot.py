@@ -94,10 +94,13 @@ class TeleBot:
         return user_data
 
     def update_user(self, user_data):
+        """Update users table"""
         chat_id = user_data.get('chat_id', None)
         if not chat_id:
             return None
         db.set_user_data(chat_id, user_data)
+        # Update the usernames table too
+        self.update_user_id(user_data['username'], chat_id)
 
     def get_user_id(self, username='') -> int:
         # table_data = dict()
@@ -106,6 +109,7 @@ class TeleBot:
         return db.get_username(username)
 
     def update_user_id(self, username, chat_id):
+        """Update usernames table"""
         db.set_username(username, chat_id)
 
     def get_bikes(self) -> dict:
