@@ -328,6 +328,7 @@ def set_username(username="", chat_id=0, dynamodb=None):
                 if item.get('username') != username:
                     table.delete_item(Key={'username': item.get('username')})
         except Exception as e:
+            print('Error in controller.set_username\n', e.response['Error']['Message'])
             logger.exception('Error in controller.set_username\n', e.response['Error']['Message'])
         response = table.update_item(
             Key={
@@ -337,8 +338,10 @@ def set_username(username="", chat_id=0, dynamodb=None):
             ExpressionAttributeValues={':chat_id': chat_id},
             ReturnValues="UPDATED_NEW")
     except ClientError as e:
+        print(e.response['Error']['Message'])
         logger.exception(e.response['Error']['Message'])
     except KeyError as e:
+        print(f'Key Error! Item {e} not found')
         logger.warning(f'Key Error! Item {e} not found')
     return response
 
