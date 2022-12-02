@@ -243,6 +243,7 @@ class ConvoBot(TeleBot):
             'final': user_data['credits'],
         }
         user_data['finance'].append(f_log)
+        user_data['username'] = update.message.from_user.username
         super().update_user(user_data)
 
         # Notify Admin group
@@ -438,6 +439,7 @@ class ConvoBot(TeleBot):
         curr_time = self.now().isoformat()
         user_data['status'] = curr_time
         user_data['bike_name'] = bike_name
+        user_data['username'] = update.message.from_user.username
         super().update_user(user_data)
 
         bike = self.get_bike(bike_name)
@@ -553,6 +555,7 @@ class ConvoBot(TeleBot):
             user_data['credits'] -= deduction
             user_data['finance'] = user_data.get('finance', [])
             user_data['finance'].append(f_log)
+            user_data['username'] = update.message.from_user.username
             super().update_user(user_data)
 
 

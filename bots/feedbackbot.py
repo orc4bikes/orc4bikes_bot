@@ -167,6 +167,7 @@ class FeedbackBot(TeleBot):
         user_data = self.get_user(username=update.message.from_user.username)
         if user_data is not None:
             user_data["credits"] += 1
+            user_data['username'] = update.message.from_user.username
             self.update_user(user_data)
             update.message.reply_text(
                 "One penny has been given for your thoughts!"

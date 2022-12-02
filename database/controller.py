@@ -2,6 +2,7 @@ import logging
 
 import boto3
 from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Key
 
 from admin import (
     DB_ACCESS_KEY,
@@ -304,7 +305,7 @@ def get_username(username="", dynamodb=None):
     return chat_id
 
 def set_username(username="", chat_id=0, dynamodb=None):
-    """Updating single bike's data"""
+    """Update username table to reflect correct username"""
     if not username:
         return None
     # create_bikes_table()
@@ -318,6 +319,16 @@ def set_username(username="", chat_id=0, dynamodb=None):
     response = None
 
     try:
+        try:
+            new_items = table.query(
+                IndexName='chat_id-index',
+                KeyConditionExpression=Key('chat_id').eq(chat_id)
+            )['Items']
+            for item in new_items:
+                if item.get('username') != username:
+                    table.delete_item(Key={'username': item.get('username')})
+        except Exception as e:
+            logger.exception('Error in controller.set_username\n', e.response['Error']['Message'])
         response = table.update_item(
             Key={
                 'username': username,

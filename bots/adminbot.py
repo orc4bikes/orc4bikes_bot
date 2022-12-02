@@ -387,7 +387,7 @@ class AdminBot(TeleBot):
         # Notify Admin group
         admin_text = (
             "[RENTAL - RETURN]"
-            f"\n@{update.message.from_user.username} returned {bike_name} at following time:"
+            f"\n@{user_data['username']} returned {bike_name} at following time:"
             f"\n{self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
             f"\nThis return was force-returned by @{admin_username}.\n{deduction_text}"
         )
