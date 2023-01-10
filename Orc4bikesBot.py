@@ -105,6 +105,7 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FeedbackBot, FunBot, TeleBot):
         AdminBot.initialize(self)     # All admin commands
         FunBot.initialize(self)       # Fun commands
         FeedbackBot.initialize(self)  # Feedback commands
+        self.scheduler()              # Scheduler
 
         # Check if user sends converation commands outside of ConversationHandler (ConvoBot)
         self.addcmd('cancel', self.convo_outside_command)
