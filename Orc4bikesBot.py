@@ -78,12 +78,13 @@ class Orc4bikesBot(ConvoBot, AdminBot, UserBot, FeedbackBot, FunBot, TeleBot):
                 f"\nThis trip: {deduction}"
                 f"\nProjected final: {user_data['credits'] - deduction}"
             )
+            status_text += "\n\n""Please remember to /return your bike! Check your bike status with /status."
             context.bot.send_message(
                 chat_id=chat_id,
                 text=status_text)
-            context.bot.send_message(
-                chat_id=chat_id,
-                text="Please remember to /return your bike! Check your bike status with /status.")
+            # context.bot.send_message(
+            #     chat_id=chat_id,
+            #     text="")
 
     def scheduler(self):
         """Scheduler for reminder to be run"""
