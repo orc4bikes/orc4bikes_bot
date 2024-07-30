@@ -9,6 +9,11 @@ from telegram import (
 
 from bots.telebot import TeleBot
 
+from bot_text import (
+    EMOJI,
+    TERMS_TEXT,
+)
+
 from admin import (
     ADMIN_LIST,
     BOT_ENV,
@@ -75,9 +80,7 @@ class UserBot(TeleBot):
             if username:
                 super().update_user_id(username, update.effective_chat.id)
 
-        """
-        Handle the parameters
-        """
+        # Handle parameters
         if context.args:
             param = context.args[0]
             print(context.args)
@@ -89,31 +92,50 @@ class UserBot(TeleBot):
 
     def qr_rent_command(self, update, context, bike_name):
         """
-        Do the usual check on the user first
+        The QR Rent command is invoked on calling the telegram bot URL with a qr_ start parameter. It follows the same process as the normal bike renting, but streamlines the process and skips some steps.
+
+        1. Checks: Impose checks on user before starting -- auto
+        2. Renting: Finds the correct bike data -- auto, skip showing the list of bikes + buttons. Bike is already validated to be available. Immediately show T&C.
+        3. Terms: Show the Terms + buttons -- user intervention. Upon accepting, skip rent pic as the scanning of QR code is already grounds for the fact that user is at the bike.
+        4. Pic: Skip pic. After accepting, immediately send rental started message + pin.
+
+        In all, we skip: 
+        1. Heading to Telegram bot
+        2. Choosing the bicycle to rent
+        3. Taking a picture
+        4. Manually calling /getpin
         """
-        update.message.reply_chat_action(ChatAction.TYPING)
-        # Impose checks on user before starting
-        if not self.check_user(update, context):
-            return -1
-        context.user_data.clear()
-        user_data = super().get_user(update, context)
-        status = user_data.get('status', None)
-        if status is not None:  # Rental in progress
-            update.message.reply_text(
-                "You are already renting! Please /return your current bike first.")
-            return -1
+
+        """
+        1. User Checks
+        """
+        # print("Step 1: User Checks")
+        # update.message.reply_chat_action(ChatAction.TYPING)
+        # # Impose checks on user before starting
+        # if not self.check_user(update, context):
+        #     return -1
+        # context.user_data.clear()
+        # user_data = super().get_user(update, context)
+        # status = user_data.get('status', None)
+        # if status is not None:  # Rental in progress
+        #     update.message.reply_text(
+        #         "You are already renting! Please /return your current bike first.")
+        #     return -1
         
-        if user_data.get('credits', 0) < 1:  # Insufficient credits
-            text = (
-                f"You cannot rent, as you don't have enough credits! Current credits: {user_data['credits']}"
-                "\nUse /history to check your previous transactions, or /topup to top up now!"
-            )
-            update.message.reply_text(text)
-            return -1
+        # if user_data.get('credits', 0) < 1:  # Insufficient credits
+        #     text = (
+        #         f"You cannot rent, as you don't have enough credits! Current credits: {user_data['credits']}"
+        #         "\nUse /history to check your previous transactions, or /topup to top up now!"
+        #     )
+        #     update.message.reply_text(text)
+        #     return -1
+        # print("Step 1 done.")
+        # print("===============")
         
         """
-        Handle the bike name from the parameter
+        2. Handle the bike name from the parameter
         """ 
+        print("Step 2: Handle the bike name from the parameter")
         if bike_name is None:
             args = update.message.text.split()
             if len(args) != 2:
@@ -121,27 +143,85 @@ class UserBot(TeleBot):
                 return
             bike_name = args[1]
 
-        bikes_data = self.get_bikes() 
-        bike_filter = list(filter(lambda i: i["name"] == bike_name, bikes_data))
-    
-        if len(bike_filter) > 0:
-            avail = bike_filter
-            not_avail = []
-            avail_text = '\n'.join(f"{b['name']} {EMOJI['tick']}" for b in avail)
-            not_avail_text = '\n'.join(f"{b['name']} {EMOJI['cross']} -- {'on rent' if b['username'] else b['status']}" for b in not_avail)
-            action_text = "Click below to start renting now!" if avail else "Sorry, no bikes are available..."
-            text = '\n\n'.join(["<b>Bicycles:</b>", avail_text, not_avail_text, action_text])
+        bike_data = self.get_bike(bike_name)
+        if bike_data is None:  # Bike doesn't exist
+            update.message.reply_text(
+                f"No such bike {bike_name} found. Please indicate which bike you would like to rent.")
+            return -1
 
-            avail_bikes = [bike['name'] for bike in avail if not bike['status']]
-            keyboard = [[InlineKeyboardButton(f"Rent {bike}", callback_data=bike)] for bike in avail_bikes]
-            keyboard.append([InlineKeyboardButton("Cancel", callback_data='stoprent')])
+        # Bike exists
+        if bike_data['status'] != 0:  # Bike is not available
+            update.message.reply_text(
+                f"Sorry, {bike_name} is not available. Please indicate which bike you would like to rent.")
+            return -1
+        
+        context.user_data['bike_name'] = bike_name
+        print(bike_name)
+        # Show terms
+        text = "This is TOC. You are assumed to have agreed." 
+        update.message.reply_text(
+            text, parse_mode='HTML',
+          )
+        
+        print("Step 2 done.")
+        print("===============")
+            
+        
+        """
+        3. Update bike status
+        """
+        print("Step 3: Update bike status")
+        update.message.reply_chat_action(ChatAction.TYPING)
+        if not context.user_data['bike_name']:
+            if context.user_data.get('bike_name', None) is None:  # Unable to get bike_name, restart rental process
+                update.message.reply_text(
+                    "Sorry, your operation timed out, as we are unable to get your bike name currently. "
+                    "Please try to /rent again!")
+                return -1
+            
+        bike_name = context.user_data['bike_name']
 
-            update.message.reply_html(
-                text,
-                reply_markup=InlineKeyboardMarkup(keyboard))
-            return 11
-        else:
-            update.message.reply_text("Bike not found.")
+        user_data = self.get_user(update, context)
+        curr_time = self.now().isoformat()
+        user_data['status'] = curr_time
+        user_data['bike_name'] = bike_name
+        user_data['username'] = update.message.from_user.username
+        super().update_user(user_data)
+
+        bike = self.get_bike(bike_name)
+        bike['username'] = user_data['username']
+        bike['status'] = curr_time
+        self.update_bike(bike)
+
+        print("Step 3 done.")
+        print("===============")
+        """
+        4. Get pin
+        """
+        print("Step 4: Get pin")
+        # Notify user
+        update.message.reply_text(
+            f"Rental started! Time of rental, {self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
+            )
+        
+        self.getpin_command(update, context)
+
+        # Notify Admin group
+        message = (
+            f"[RENTAL - RENT]"
+            f"\n@{user_data['username']} rented {bike_name} at {self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
+        )
+
+        context.user_data['photo'] = "###"
+        try:
+            self.admin_log(update, context, message, context.user_data['photo'])
+        except:
+            return
+
+        print("Step 4 done.")
+        print("===============")
+
+        return -1
 
     def help_command(self, update, context):
         """Show a list of possible commands"""
