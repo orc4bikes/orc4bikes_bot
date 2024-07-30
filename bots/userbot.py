@@ -3,6 +3,8 @@ import logging
 
 from telegram import (
     ChatAction,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
 )
 
 from bots.telebot import TeleBot
@@ -31,8 +33,9 @@ class UserBot(TeleBot):
         in the database with primary key as chat_id
         """
         chat_id = update.effective_chat.id
+        username = update.effective_chat.username
 
-        if BOT_ENV != 'production' and chat_id not in ADMIN_LIST:
+        if BOT_ENV != 'production' and chat_id not in ADMIN_LIST and username not in ADMIN_LIST:
             update.message.reply_text(f"Hi {update.message.from_user.first_name}, please head over to @orc4bikes_bot!")
             return
 
@@ -71,6 +74,74 @@ class UserBot(TeleBot):
             username = update.message.from_user.username
             if username:
                 super().update_user_id(username, update.effective_chat.id)
+
+        """
+        Handle the parameters
+        """
+        if context.args:
+            param = context.args[0]
+            print(context.args)
+            if param.startswith("qr_"):
+                qr_param = param[3:]  # Remove "qr_" prefix
+                self.qr_rent_command(update, context, qr_param)
+            else:
+                update.message.reply_text("Invalid start parameter.")
+
+    def qr_rent_command(self, update, context, bike_name):
+        """
+        Do the usual check on the user first
+        """
+        update.message.reply_chat_action(ChatAction.TYPING)
+        # Impose checks on user before starting
+        if not self.check_user(update, context):
+            return -1
+        context.user_data.clear()
+        user_data = super().get_user(update, context)
+        status = user_data.get('status', None)
+        if status is not None:  # Rental in progress
+            update.message.reply_text(
+                "You are already renting! Please /return your current bike first.")
+            return -1
+        
+        if user_data.get('credits', 0) < 1:  # Insufficient credits
+            text = (
+                f"You cannot rent, as you don't have enough credits! Current credits: {user_data['credits']}"
+                "\nUse /history to check your previous transactions, or /topup to top up now!"
+            )
+            update.message.reply_text(text)
+            return -1
+        
+        """
+        Handle the bike name from the parameter
+        """ 
+        if bike_name is None:
+            args = update.message.text.split()
+            if len(args) != 2:
+                update.message.reply_text("Usage: /qr bike_name")
+                return
+            bike_name = args[1]
+
+        bikes_data = self.get_bikes() 
+        bike_filter = list(filter(lambda i: i["name"] == bike_name, bikes_data))
+    
+        if len(bike_filter) > 0:
+            avail = bike_filter
+            not_avail = []
+            avail_text = '\n'.join(f"{b['name']} {EMOJI['tick']}" for b in avail)
+            not_avail_text = '\n'.join(f"{b['name']} {EMOJI['cross']} -- {'on rent' if b['username'] else b['status']}" for b in not_avail)
+            action_text = "Click below to start renting now!" if avail else "Sorry, no bikes are available..."
+            text = '\n\n'.join(["<b>Bicycles:</b>", avail_text, not_avail_text, action_text])
+
+            avail_bikes = [bike['name'] for bike in avail if not bike['status']]
+            keyboard = [[InlineKeyboardButton(f"Rent {bike}", callback_data=bike)] for bike in avail_bikes]
+            keyboard.append([InlineKeyboardButton("Cancel", callback_data='stoprent')])
+
+            update.message.reply_html(
+                text,
+                reply_markup=InlineKeyboardMarkup(keyboard))
+            return 11
+        else:
+            update.message.reply_text("Bike not found.")
 
     def help_command(self, update, context):
         """Show a list of possible commands"""
