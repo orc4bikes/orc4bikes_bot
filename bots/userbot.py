@@ -94,43 +94,37 @@ class UserBot(TeleBot):
         """
         The QR Rent command is invoked on calling the telegram bot URL with a qr_ start parameter. It follows the same process as the normal bike renting, but streamlines the process and skips some steps.
 
-        1. Checks: Impose checks on user before starting -- auto
-        2. Renting: Finds the correct bike data -- auto, skip showing the list of bikes + buttons. Bike is already validated to be available. Immediately show T&C.
-        3. Terms: Show the Terms + buttons -- user intervention. Upon accepting, skip rent pic as the scanning of QR code is already grounds for the fact that user is at the bike.
-        4. Pic: Skip pic. After accepting, immediately send rental started message + pin.
-
-        In all, we skip: 
-        1. Heading to Telegram bot
-        2. Choosing the bicycle to rent
-        3. Taking a picture
-        4. Manually calling /getpin
+        1. Checks: Impose checks on user before starting
+        2. Renting: Finds the correct bike data. Immediately show T&C.
+        3. Terms: Show the Terms without button.
+        4. Send rental started message and pin.
         """
 
         """
         1. User Checks
         """
-        # print("Step 1: User Checks")
-        # update.message.reply_chat_action(ChatAction.TYPING)
-        # # Impose checks on user before starting
-        # if not self.check_user(update, context):
-        #     return -1
-        # context.user_data.clear()
-        # user_data = super().get_user(update, context)
-        # status = user_data.get('status', None)
-        # if status is not None:  # Rental in progress
-        #     update.message.reply_text(
-        #         "You are already renting! Please /return your current bike first.")
-        #     return -1
+        print("Step 1: User Checks")
+        update.message.reply_chat_action(ChatAction.TYPING)
+        # Impose checks on user before starting
+        if not self.check_user(update, context):
+            return -1
+        context.user_data.clear()
+        user_data = super().get_user(update, context)
+        status = user_data.get('status', None)
+        if status is not None:  # Rental in progress
+            update.message.reply_text(
+                "You are already renting! Please /return your current bike first.")
+            return -1
         
-        # if user_data.get('credits', 0) < 1:  # Insufficient credits
-        #     text = (
-        #         f"You cannot rent, as you don't have enough credits! Current credits: {user_data['credits']}"
-        #         "\nUse /history to check your previous transactions, or /topup to top up now!"
-        #     )
-        #     update.message.reply_text(text)
-        #     return -1
-        # print("Step 1 done.")
-        # print("===============")
+        if user_data.get('credits', 0) < 1:  # Insufficient credits
+            text = (
+                f"You cannot rent, as you don't have enough credits! Current credits: {user_data['credits']}"
+                "\nUse /history to check your previous transactions, or /topup to top up now!"
+            )
+            update.message.reply_text(text)
+            return -1
+        print("Step 1 done.")
+        print("===============")
         
         """
         2. Handle the bike name from the parameter
@@ -156,17 +150,16 @@ class UserBot(TeleBot):
             return -1
         
         context.user_data['bike_name'] = bike_name
-        print(bike_name)
+
         # Show terms
-        text = "This is TOC. You are assumed to have agreed." 
+        text = "hello" #TERMS_TEXT.format(**globals())
         update.message.reply_text(
             text, parse_mode='HTML',
           )
         
         print("Step 2 done.")
         print("===============")
-            
-        
+             
         """
         3. Update bike status
         """
@@ -195,6 +188,7 @@ class UserBot(TeleBot):
 
         print("Step 3 done.")
         print("===============")
+
         """
         4. Get pin
         """
