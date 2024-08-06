@@ -3,9 +3,16 @@ import logging
 
 from telegram import (
     ChatAction,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
 )
 
 from bots.telebot import TeleBot
+
+from bot_text import (
+    EMOJI,
+    TERMS_TEXT,
+)
 
 from admin import (
     ADMIN_LIST,
@@ -31,8 +38,9 @@ class UserBot(TeleBot):
         in the database with primary key as chat_id
         """
         chat_id = update.effective_chat.id
+        username = update.effective_chat.username
 
-        if BOT_ENV != 'production' and chat_id not in ADMIN_LIST:
+        if BOT_ENV != 'production' and chat_id not in ADMIN_LIST and username not in ADMIN_LIST:
             update.message.reply_text(f"Hi {update.message.from_user.first_name}, please head over to @orc4bikes_bot!")
             return
 
@@ -71,6 +79,143 @@ class UserBot(TeleBot):
             username = update.message.from_user.username
             if username:
                 super().update_user_id(username, update.effective_chat.id)
+
+        # Handle parameters
+        if context.args:
+            param = context.args[0]
+            print(context.args)
+            if param.startswith("qr_"):
+                qr_param = param[3:]  # Remove "qr_" prefix
+                self.qr_rent_command(update, context, qr_param)
+            else:
+                update.message.reply_text("Invalid start parameter.")
+
+    def qr_rent_command(self, update, context, bike_name):
+        """
+        The QR Rent command is invoked on calling the telegram bot URL with a qr_ start parameter. It follows the same process as the normal bike renting, but streamlines the process and skips some steps.
+
+        1. Checks: Impose checks on user before starting
+        2. Renting: Finds the correct bike data. Immediately show T&C.
+        3. Terms: Show the Terms without button.
+        4. Send rental started message and pin.
+        """
+
+        """
+        1. User Checks
+        """
+        print("Step 1: User Checks")
+        update.message.reply_chat_action(ChatAction.TYPING)
+        # Impose checks on user before starting
+        if not self.check_user(update, context):
+            return -1
+        context.user_data.clear()
+        user_data = super().get_user(update, context)
+        status = user_data.get('status', None)
+        if status is not None:  # Rental in progress
+            update.message.reply_text(
+                "You are already renting! Please /return your current bike first.")
+            return -1
+        
+        if user_data.get('credits', 0) < 1:  # Insufficient credits
+            text = (
+                f"You cannot rent, as you don't have enough credits! Current credits: {user_data['credits']}"
+                "\nUse /history to check your previous transactions, or /topup to top up now!"
+            )
+            update.message.reply_text(text)
+            return -1
+        print("Step 1 done.")
+        print("===============")
+        
+        """
+        2. Handle the bike name from the parameter
+        """ 
+        print("Step 2: Handle the bike name from the parameter")
+        if bike_name is None:
+            args = update.message.text.split()
+            if len(args) != 2:
+                update.message.reply_text("Usage: /qr bike_name")
+                return
+            bike_name = args[1]
+
+        bike_data = self.get_bike(bike_name)
+        if bike_data is None:  # Bike doesn't exist
+            update.message.reply_text(
+                f"No such bike {bike_name} found. Please indicate which bike you would like to rent.")
+            return -1
+
+        # Bike exists
+        if bike_data['status'] != 0:  # Bike is not available
+            update.message.reply_text(
+                f"Sorry, {bike_name} is not available. Please indicate which bike you would like to rent.")
+            return -1
+        
+        context.user_data['bike_name'] = bike_name
+
+        # Show terms
+        text = "hello" #TERMS_TEXT.format(**globals())
+        update.message.reply_text(
+            text, parse_mode='HTML',
+          )
+        
+        print("Step 2 done.")
+        print("===============")
+             
+        """
+        3. Update bike status
+        """
+        print("Step 3: Update bike status")
+        update.message.reply_chat_action(ChatAction.TYPING)
+        if not context.user_data['bike_name']:
+            if context.user_data.get('bike_name', None) is None:  # Unable to get bike_name, restart rental process
+                update.message.reply_text(
+                    "Sorry, your operation timed out, as we are unable to get your bike name currently. "
+                    "Please try to /rent again!")
+                return -1
+            
+        bike_name = context.user_data['bike_name']
+
+        user_data = self.get_user(update, context)
+        curr_time = self.now().isoformat()
+        user_data['status'] = curr_time
+        user_data['bike_name'] = bike_name
+        user_data['username'] = update.message.from_user.username
+        super().update_user(user_data)
+
+        bike = self.get_bike(bike_name)
+        bike['username'] = user_data['username']
+        bike['status'] = curr_time
+        self.update_bike(bike)
+
+        print("Step 3 done.")
+        print("===============")
+
+        """
+        4. Get pin
+        """
+        print("Step 4: Get pin")
+        # Notify user
+        update.message.reply_text(
+            f"Rental started! Time of rental, {self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
+            )
+        
+        self.getpin_command(update, context)
+
+        # Notify Admin group
+        message = (
+            f"[RENTAL - RENT]"
+            f"\n@{user_data['username']} rented {bike_name} at {self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
+        )
+
+        context.user_data['photo'] = "###"
+        try:
+            self.admin_log(update, context, message, context.user_data['photo'])
+        except:
+            return
+
+        print("Step 4 done.")
+        print("===============")
+
+        return -1
 
     def help_command(self, update, context):
         """Show a list of possible commands"""
