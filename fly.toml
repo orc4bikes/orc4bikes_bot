@@ -1,0 +1,7 @@
+# fly.toml app configuration file generated for orc4bikes on 2024-08-10T15:22:27+08:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'orc4bikes'
+primary_region = 'sin'

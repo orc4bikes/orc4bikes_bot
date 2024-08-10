@@ -17,6 +17,20 @@ from bot_text import (
 from admin import (
     ADMIN_LIST,
     BOT_ENV,
+    ADMIN_DEV
+)
+
+from admin import (
+    ADMIN_HEAD,
+    ADMIN_HEAD_NAME,
+    ADMIN_HEAD_MOBILE,
+    ADMIN_SAFETY,
+    ADMIN_SAFETY_MOBILE,
+    ADMIN_SAFETY_NAME,
+    ADMIN_TREASURER,
+    ADMIN_TREASURER_MOBILE,
+    ADMIN_TREASURER_NAME,
+    ADMIN_TREASURER_URL,
 )
 
 from bot_text import (
@@ -152,7 +166,7 @@ class UserBot(TeleBot):
         context.user_data['bike_name'] = bike_name
 
         # Show terms
-        text = "hello" #TERMS_TEXT.format(**globals())
+        text = TERMS_TEXT.format(**globals())
         update.message.reply_text(
             text, parse_mode='HTML',
           )
