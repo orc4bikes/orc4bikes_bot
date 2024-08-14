@@ -346,7 +346,7 @@ class ConvoBot(TeleBot):
         text = TERMS_TEXT.format(**globals())
         query.message.reply_text(
             text, parse_mode='HTML')
-        return 12
+        self.terms_button(update, context)
 
     def terms_button(self, update, context):
         """After accepting terms, ask for photo."""
