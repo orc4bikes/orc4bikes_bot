@@ -77,7 +77,7 @@ In case of emergencies, call ambulance 995, and inform either
  - {ADMIN_HEAD_NAME} at <code>{ADMIN_HEAD_MOBILE}</code> @{ADMIN_HEAD} - ORC4BIKES Head, or
  - {ADMIN_SAFETY_NAME} at <code>{ADMIN_SAFETY_MOBILE}</code> @{ADMIN_SAFETY} - ORC4BIKES Safety
 
-If you agree, and ONLY if you agree, to the terms stated above, click "Accept".
+NOTE: THE USAGE OF THIS BOT ASSUMES THAT YOU AGREE TO THESE TERMS.
 """
 
 EMOJI = {

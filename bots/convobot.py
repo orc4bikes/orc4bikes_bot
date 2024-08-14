@@ -344,13 +344,8 @@ class ConvoBot(TeleBot):
 
         context.user_data['bike_name'] = bike_name
         text = TERMS_TEXT.format(**globals())
-        keyboard = [
-            [InlineKeyboardButton("Accept", callback_data='TERMS_YES')],
-            [InlineKeyboardButton("Decline", callback_data='TERMS_NO')]
-        ]
         query.message.reply_text(
-            text, parse_mode='HTML',
-            reply_markup=InlineKeyboardMarkup(keyboard))
+            text, parse_mode='HTML')
         return 12
 
     def terms_button(self, update, context):
@@ -360,17 +355,6 @@ class ConvoBot(TeleBot):
         answer = query.data
         query.message.reply_chat_action(ChatAction.TYPING)
 
-        if answer != 'TERMS_YES':
-            query.message.reply_text(
-                "Terms of use has not been accepted. Cancelling rental now.")
-            query.edit_message_text(
-                f"{query.message.text_html}\n\n<i>To rent, please accept the terms above.</i>",
-                parse_mode='HTML')
-            return -1
-
-        query.edit_message_text(
-            f"{query.message.text_html}\n\n<i>You have accepted the terms.</i>",
-            parse_mode='HTML')
         text = (
             "Please send a picture of the bike you will be renting! Photo must include the BIKE and LOCK."
             "\n"
