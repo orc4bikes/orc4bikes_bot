@@ -346,7 +346,7 @@ class ConvoBot(TeleBot):
         text = TERMS_TEXT.format(**globals())
         query.message.reply_text(
             text, parse_mode='HTML')
-        self.terms_button(update, context)
+        return 12
 
     def terms_button(self, update, context):
         """After accepting terms, ask for photo."""
@@ -369,6 +369,8 @@ class ConvoBot(TeleBot):
     def rent_pic(self, update, context):
         """After photo is sent, save the photo and ask if would like to retake"""
         update.message.reply_chat_action(ChatAction.UPLOAD_PHOTO)
+
+        print('ye')
         devskip = False
         if BOT_ENV != 'production':
             devskip = update.message.text == '/skip'
@@ -389,7 +391,6 @@ class ConvoBot(TeleBot):
             )
             """
             return
-
         if not update.message.photo:
             photo = self.get_random_pic()
         else:
@@ -398,6 +399,7 @@ class ConvoBot(TeleBot):
         context.user_data['photo'] = photo
         text = ("^ This is your image. If you are unsatisfied with your image, please send another one."
                 "\nTo CONFIRM RENTAL, send /done. To cancel, send /cancel")
+        
         update.message.reply_photo(
             photo=photo,
             caption=text)
