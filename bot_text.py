@@ -77,6 +77,22 @@ In case of emergencies, call ambulance 995, and inform either
  - {ADMIN_HEAD_NAME} at <code>{ADMIN_HEAD_MOBILE}</code> @{ADMIN_HEAD} - ORC4BIKES Head, or
  - {ADMIN_SAFETY_NAME} at <code>{ADMIN_SAFETY_MOBILE}</code> @{ADMIN_SAFETY} - ORC4BIKES Safety
 
+NOTE: THE USAGE OF THIS BOT ASSUMES THAT YOU AGREE TO THESE TERMS.
+"""
+
+
+TERMS_TEXT_WITH_BUTTONS = """<b>Bicycle Rental -- Terms of Use</b>
+1. You are not to HOG the bike.
+2. You must take GOOD CARE of the bike during the duration of rental.
+3. If you spot any DEFECTS, /report before your rental. Any defects found after your rental will be your responsibility.
+4. You will be FINANCIALLY held liable for any DAMAGES to the bike, and/or LOSS of equipment on the bike.
+5. orc4bikes reserve the right to amend the 'Terms of Use' at their discretion.
+6. You agree to take good care of YOURSELF and follow proper safety procedures.
+
+In case of emergencies, call ambulance 995, and inform either
+ - {ADMIN_HEAD_NAME} at <code>{ADMIN_HEAD_MOBILE}</code> @{ADMIN_HEAD} - ORC4BIKES Head, or
+ - {ADMIN_SAFETY_NAME} at <code>{ADMIN_SAFETY_MOBILE}</code> @{ADMIN_SAFETY} - ORC4BIKES Safety
+
 If you agree, and ONLY if you agree, to the terms stated above, click "Accept".
 """
 

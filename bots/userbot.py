@@ -339,7 +339,7 @@ class UserBot(TeleBot):
         pin = bike_data['pin']
         update.message.reply_text(
             f"Your bike pin is {pin}! Please do not share this pin..."
-            " Can't unlock? Please contact one of the admins!")
+            " Can't unlock? Please contact one of the admins! To return the bike, call /return.")
 
     def initialize(self):
         """Initializes all user commands"""
