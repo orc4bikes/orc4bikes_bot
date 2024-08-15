@@ -40,7 +40,8 @@ from bot_text import (
     EMOJI,
     ROUTES_LIST,
     ROUTES_PICS,
-    TERMS_TEXT,
+
+    TERMS_TEXT_WITH_BUTTONS
 )
 
 from functions import to_readable_td
@@ -343,9 +344,12 @@ class ConvoBot(TeleBot):
             query.message.reply_text(bike_data['message'])
 
         context.user_data['bike_name'] = bike_name
-        text = TERMS_TEXT.format(**globals())
+        text = TERMS_TEXT_WITH_BUTTONS.format(**globals())
+        keyboard = [            [InlineKeyboardButton("Accept", callback_data='TERMS_YES')],
+            [InlineKeyboardButton("Decline", callback_data='TERMS_NO')]        ]
+
         query.message.reply_text(
-            text, parse_mode='HTML')
+            text, parse_mode='HTML',            reply_markup=InlineKeyboardMarkup(keyboard)) 
         return 12
 
     def terms_button(self, update, context):
@@ -354,6 +358,19 @@ class ConvoBot(TeleBot):
         query.answer()
         answer = query.data
         query.message.reply_chat_action(ChatAction.TYPING)
+
+        if answer != 'TERMS_YES':
+            query.message.reply_text(
+                "Terms of use has not been accepted. Cancelling rental now.")
+            query.edit_message_text(
+                f"{query.message.text_html}\n\n<i>To rent, please accept the terms above.</i>",
+                parse_mode='HTML')
+            return -1
+
+        query.edit_message_text(
+            f"{query.message.text_html}\n\n<i>You have accepted the terms.</i>",
+            parse_mode='HTML')
+
 
         text = (
             "Please send a picture of the bike you will be renting! Photo must include the BIKE and LOCK."
@@ -370,7 +387,6 @@ class ConvoBot(TeleBot):
         """After photo is sent, save the photo and ask if would like to retake"""
         update.message.reply_chat_action(ChatAction.UPLOAD_PHOTO)
 
-        print('ye')
         devskip = False
         if BOT_ENV != 'production':
             devskip = update.message.text == '/skip'
