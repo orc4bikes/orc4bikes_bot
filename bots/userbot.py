@@ -216,7 +216,7 @@ class UserBot(TeleBot):
 
         # Notify Admin group
         message = (
-            f"[RENTAL - RENT]"
+            f"[RENTAL - RENT WITH QR CODE]"
             f"\n@{user_data['username']} rented {bike_name} at {self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
         )
 
