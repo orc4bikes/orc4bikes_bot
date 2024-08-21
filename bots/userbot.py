@@ -220,9 +220,8 @@ class UserBot(TeleBot):
             f"\n@{user_data['username']} rented {bike_name} at {self.now().strftime('%Y/%m/%d, %H:%M:%S')}"
         )
 
-        context.user_data['photo'] = "###"
         try:
-            self.admin_log(update, context, message, context.user_data['photo'])
+            self.admin_log(update, context, message)
         except:
             return
 
