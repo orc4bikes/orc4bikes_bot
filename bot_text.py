@@ -75,7 +75,9 @@ TERMS_TEXT = """<b>Bicycle Rental -- Terms of Use</b>
 
 In case of emergencies, call ambulance 995, and inform either
  - {ADMIN_HEAD_NAME} at <code>{ADMIN_HEAD_MOBILE}</code> @{ADMIN_HEAD} - ORC4BIKES Head, or
- - {ADMIN_SAFETY_NAME} at <code>{ADMIN_SAFETY_MOBILE}</code> @{ADMIN_SAFETY} - ORC4BIKES Safety
+
+To report any issues with the bot, inform
+ - {ADMIN_DEV} at @{ADMIN_SAFETY} - ORC4BIKES Dev
 
 NOTE: THE USAGE OF THIS BOT ASSUMES THAT YOU AGREE TO THESE TERMS.
 """
@@ -91,7 +93,9 @@ TERMS_TEXT_WITH_BUTTONS = """<b>Bicycle Rental -- Terms of Use</b>
 
 In case of emergencies, call ambulance 995, and inform either
  - {ADMIN_HEAD_NAME} at <code>{ADMIN_HEAD_MOBILE}</code> @{ADMIN_HEAD} - ORC4BIKES Head, or
- - {ADMIN_SAFETY_NAME} at <code>{ADMIN_SAFETY_MOBILE}</code> @{ADMIN_SAFETY} - ORC4BIKES Safety
+
+To report any issues with the bot, inform
+ - {ADMIN_DEV} at @{ADMIN_SAFETY} - ORC4BIKES Dev
 
 If you agree, and ONLY if you agree, to the terms stated above, click "Accept".
 """

@@ -101,8 +101,16 @@ class UserBot(TeleBot):
             if param.startswith("qr_"):
                 qr_param = param[3:]  # Remove "qr_" prefix
                 self.qr_rent_command(update, context, qr_param)
+            elif param.startswith("terms"):
+                self.link_terms_command(update, context)
             else:
                 update.message.reply_text("Invalid start parameter.")
+
+    def link_terms_command(self, update, context):
+        text = TERMS_TEXT.format(**globals())
+        update.message.reply_text(
+            text, parse_mode='HTML',
+          )
 
     def qr_rent_command(self, update, context, bike_name):
         """
