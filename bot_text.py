@@ -73,8 +73,8 @@ TERMS_TEXT = """<b>Bicycle Rental -- Terms of Use</b>
 5. orc4bikes reserve the right to amend the 'Terms of Use' at their discretion.
 6. You agree to take good care of YOURSELF and follow proper safety procedures.
 
-In case of emergencies, call ambulance 995, and inform either
- - {ADMIN_HEAD_NAME} at <code>{ADMIN_HEAD_MOBILE}</code> @{ADMIN_HEAD} - ORC4BIKES Head, or
+In case of emergencies, call ambulance 995, and inform:
+ - {ADMIN_HEAD_NAME} at <code>{ADMIN_HEAD_MOBILE}</code> @{ADMIN_HEAD} - ORC4BIKES Head
 
 To report any issues with the bot, inform @{ADMIN_DEV} - ORC4BIKES Developer
 
@@ -90,8 +90,8 @@ TERMS_TEXT_WITH_BUTTONS = """<b>Bicycle Rental -- Terms of Use</b>
 5. orc4bikes reserve the right to amend the 'Terms of Use' at their discretion.
 6. You agree to take good care of YOURSELF and follow proper safety procedures.
 
-In case of emergencies, call ambulance 995, and inform either
- - {ADMIN_HEAD_NAME} at <code>{ADMIN_HEAD_MOBILE}</code> @{ADMIN_HEAD} - ORC4BIKES Head, or
+In case of emergencies, call ambulance 995, and inform:
+ - {ADMIN_HEAD_NAME} at <code>{ADMIN_HEAD_MOBILE}</code> @{ADMIN_HEAD} - ORC4BIKES Head
 
 To report any issues with the bot, inform @{ADMIN_DEV} - ORC4BIKES Developer
 
