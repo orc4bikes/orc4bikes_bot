@@ -100,6 +100,7 @@ Get-Content .env | Where-Object { $_ -notmatch "^\s*#" -and $_ -notmatch "^\s*$"
 # macOS/Linux:
 grep -v '^#' .env | grep -v '^$' | flyctl secrets import
 ```
+Note: It is not necessary to re-deploy the application after importing secrets.
 
 #### Application Management
 ```bash
