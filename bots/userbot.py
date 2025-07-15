@@ -241,7 +241,11 @@ class UserBot(TeleBot):
 
     def help_command(self, update, context):
         """Show a list of possible commands"""
-        update.message.reply_text(HELP_TEXT)
+        reply_text = HELP_TEXT
+        if update.effective_chat.username in ADMIN_LIST:
+            reply_text += "\nAdmin-Exclusive 🔥:\n/admin - Show admin commands"
+
+        update.message.reply_text(reply_text)
 
     def guide_command(self, update, context):
         """Shows you guide to renting bike"""

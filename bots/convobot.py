@@ -151,7 +151,7 @@ class ConvoBot(TeleBot):
         query.message.reply_html(
             text1,
             reply_markup = InlineKeyboardMarkup([
-                [InlineKeyboardButton("Go to PayLah", callback_data='redirect_paylah', url=ADMIN_TREASURER_URL)]
+                [InlineKeyboardButton("View PayNow QR", callback_data='redirect_paylah', url=ADMIN_TREASURER_URL)]
             ]))
         query.message.reply_text(text2)
         return 72

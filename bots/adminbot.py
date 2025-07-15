@@ -81,8 +81,11 @@ class AdminBot(TeleBot):
     def admin_only(func):
         def new_func(self, update, context, *args, **kwargs):
             """Checks whether the user is an admin, and more"""
+            username = update.effective_chat.username
+            if username is None:
+                username = update.message.from_user.username
 
-            if update.effective_chat.username not in ADMIN_LIST:
+            if username not in ADMIN_LIST:
                 update.message.reply_text("You've found... something unauthorized? "
                                           "Please contact a orc4bikes committee member or an admin for help!")
                 return
@@ -293,7 +296,6 @@ class AdminBot(TeleBot):
         update.message.reply_text(
             f"Status for {bike_name} updated to {status}!")
 
-
     @admin_only
     def logs_command(self, update, context):
         update.message.reply_text(
@@ -428,6 +430,20 @@ class AdminBot(TeleBot):
         self.update_user(user_data)
         update.message.reply_text(f"@{username} is now UNBANNED.")
 
+    @admin_only
+    def getchatid_command(self, update, context):
+        """Hidden Command: Get the current chat ID - useful for setting up admin group"""
+        chat_id = update.effective_chat.id
+        chat_type = update.effective_chat.type
+        chat_title = getattr(update.effective_chat, 'title', 'N/A')
+        
+        text = f"Chat ID: `{chat_id}`\n"
+        text += f"Chat Type: {chat_type}\n"
+        if chat_title != 'N/A':
+            text += f"Chat Title: {chat_title}\n"
+        text += f"\nUse this ID in your ADMIN_GROUP_ID environment variable."
+        
+        update.message.reply_markdown(text)
 
     def initialize(self):
         """Initialze all admin commands"""
@@ -446,6 +462,7 @@ class AdminBot(TeleBot):
         self.addcmd('forcereturn', self.forcereturn_command)
 
         self.addcmd('logs', self.logs_command)
+        self.addcmd('getchatid', self.getchatid_command)
 
     def main(self):
         super().main()

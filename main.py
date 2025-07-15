@@ -45,6 +45,9 @@ def prep_logging():
 
 if __name__ == '__main__':
     logger = prep_logging()
+    
     newbot = Orc4bikesBot()
     logger.info("Running Orc4bikesBot now")
+    print("Running Orc4bikesBot now...")
+
     newbot.main()
