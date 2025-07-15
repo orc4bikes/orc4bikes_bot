@@ -19,6 +19,7 @@ DB_REGION_NAME         = os.environ.get('DB_REGION_NAME')
 
 TELE_API_TOKEN         = os.environ.get('TELE_API_TOKEN')
 LOGGING_URL            = os.environ.get('LOGGING_URL')
+QR_DATA_FILEPATH       = os.environ.get('QR_DATA_FILEPATH')
 
 ADMIN_GROUP_ID         = os.environ.get('ADMIN_GROUP_ID')      # group chat_id
 

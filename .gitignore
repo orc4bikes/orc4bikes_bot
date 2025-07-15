@@ -3,6 +3,7 @@ __pycache__/
 
 # ignore all admin and API token
 .env
+data.json
 
 # ignore user preferences
 .vscode
@@ -10,3 +11,4 @@ __pycache__/
 # others
 test.py
 venv/
+qr/

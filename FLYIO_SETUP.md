@@ -390,7 +390,15 @@ The bot runs as a single worker process that:
 - Handles bicycle rental operations for ORC4BIKES
 - Supports admin commands for management
 
-## Part 8: Troubleshooting & Debugging
+## Part 8: Generating new bicycle QR codes
+
+Brief outline of the process to generate new bike QR codes (local deployment):
+1. Create the qr/ directory within the home directory
+2. Run `pip install qrcode pillow`
+3. Ensure data.json file is present within the home directory in the required format
+4. Run `python scripts/generate_qr.py`
+
+## Part 9: Troubleshooting & Debugging
 
 ### Debugging Commands
 
@@ -418,7 +426,7 @@ flyctl machine list
 | App keeps restarting | Code errors | Check logs with `flyctl logs` |
 | Out of memory | Resource limits | Scale to larger machine or optimize code |
 
-## Part 9: Cost Considerations & Monitoring
+## Part 10: Cost Considerations & Monitoring
 
 ### Free Tier Limits
 - fly.io has a free tier that includes 256MB RAM and 1GB storage

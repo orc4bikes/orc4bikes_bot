@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+import json
 
 from telegram import (
     ChatAction,
@@ -31,7 +32,8 @@ from admin import (
     ADMIN_TREASURER_MOBILE,
     ADMIN_TREASURER_NAME,
     ADMIN_TREASURER_URL,
-    ADMIN_DEV
+    ADMIN_DEV,
+    QR_DATA_FILEPATH
 )
 
 from bot_text import (
@@ -101,7 +103,17 @@ class UserBot(TeleBot):
             print(context.args)
             if param.startswith("qr_"):
                 qr_param = param[3:]  # Remove "qr_" prefix
-                self.qr_rent_command(update, context, qr_param)
+                
+                # get json data
+                with open(QR_DATA_FILEPATH, "r") as file:
+                    data = json.load(file)
+
+                if qr_param not in data:
+                    update.message.reply_text("Invalid QR code. Please try again or try to rent the bike manually.")
+                    return
+                
+                bike_name = data[qr_param]
+                self.qr_rent_command(update, context, bike_name)
             elif param.startswith("terms"):
                 self.link_terms_command(update, context)
             else:

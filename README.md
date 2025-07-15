@@ -102,6 +102,7 @@ For complete deployment instructions including:
 - First-time setup
 - Environment variables configuration
 - Web interface management
+- Generating new bicycle QR codes
 - Troubleshooting
 
 **See [FLYIO_SETUP.md](FLYIO_SETUP.md) for detailed deployment guide.**
