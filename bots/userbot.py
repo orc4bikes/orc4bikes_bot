@@ -10,18 +10,18 @@ from telegram import (
 
 from bots.telebot import TeleBot
 
-from bot_text import (
+from src.bot_text import (
     EMOJI,
     TERMS_TEXT,
 )
 
-from admin import (
+from src.admin import (
     ADMIN_LIST,
     BOT_ENV,
     ADMIN_DEV
 )
 
-from admin import (
+from src.admin import (
     ADMIN_HEAD,
     ADMIN_HEAD_NAME,
     ADMIN_HEAD_MOBILE,
@@ -36,13 +36,13 @@ from admin import (
     QR_DATA_FILEPATH
 )
 
-from bot_text import (
+from src.bot_text import (
     EMOJI,
     GUIDE_PIC,
     HELP_TEXT,
 )
 
-from functions import to_readable_td
+from src.functions import to_readable_td
 
 logger = logging.getLogger()
 

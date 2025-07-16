@@ -1,8 +1,13 @@
 import json
+import os
+import sys
 from os import listdir
 from os.path import isfile, join
 
-from admin import ADMIN_LIST
+# Add the parent directory to the Python path so we can import from src
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from src.admin import ADMIN_LIST
 
 def update_all_users(field='credits', value=0):
     """Update all user in database"""

@@ -4,7 +4,7 @@ This guide explains how to deploy the @orc4bikes_bot Telegram bot to fly.io usin
 
 ## Prerequisites
 
-1. **Python 3.10.4** (as specified in `runtime.txt`)
+1. **Python 3.10.4** (as specified in `src/runtime.txt`)
 2. **fly.io account** - Sign up at [fly.io](https://fly.io)
 3. **flyctl CLI** - Install the fly.io command line tool
 4. **Git** - For version control and GitHub Actions (optional)
@@ -395,7 +395,7 @@ The bot runs as a single worker process that:
 Brief outline of the process to generate new bike QR codes (local deployment):
 1. Create the qr/ directory within the home directory
 2. Run `pip install qrcode pillow`
-3. Ensure data.json file is present within the home directory in the required format
+3. Ensure data.json file is present (location configured via QR_DATA_FILEPATH environment variable)
 4. Run `python scripts/generate_qr.py`
 
 ## Part 9: Troubleshooting & Debugging

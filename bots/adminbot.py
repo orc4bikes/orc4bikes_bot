@@ -7,19 +7,19 @@ from telegram import (
 
 from bots.telebot import TeleBot
 
-from admin import (
+from src.admin import (
     ADMIN_GROUP_ID,
     ADMIN_LIST,
     ADMIN_DEV,
     TELE_API_TOKEN,
 )
 
-from bot_text import (
+from src.bot_text import (
     ADMIN_TEXT,
     EMOJI,
 )
 
-from functions import to_readable_td
+from src.functions import to_readable_td
 
 logger = logging.getLogger()
 

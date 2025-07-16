@@ -17,13 +17,13 @@ from telegram.ext import (
 
 from bots.telebot import TeleBot
 
-from admin import (
+from src.admin import (
     BOT_ENV,
     BOT_PROMO,
 )
 
 # Used to fill up text templates (required even when linter shows unused)
-from admin import (
+from src.admin import (
     ADMIN_HEAD,
     ADMIN_HEAD_NAME,
     ADMIN_HEAD_MOBILE,
@@ -37,7 +37,7 @@ from admin import (
     ADMIN_DEV
 )
 
-from bot_text import (
+from src.bot_text import (
     EMOJI,
     ROUTES_LIST,
     ROUTES_PICS,
@@ -45,7 +45,7 @@ from bot_text import (
     TERMS_TEXT_WITH_BUTTONS
 )
 
-from functions import to_readable_td
+from src.functions import to_readable_td
 
 logger = logging.getLogger()
 

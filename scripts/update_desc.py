@@ -5,8 +5,8 @@ from telegram.ext import Updater
 
 # Hack to import from directory one level up, because this script is not in root directory of module
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from admin import TELE_API_TOKEN
-from bot_text import BOT_COMMANDS
+from src.admin import TELE_API_TOKEN
+from src.bot_text import BOT_COMMANDS
 
 
 def update_desc():

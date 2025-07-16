@@ -14,7 +14,7 @@ from telegram.ext import (
 
 import database.controller as db
 
-from admin import (
+from src.admin import (
     ADMIN_HEAD,
     BOT_ENV,
     BOT_GMT_OFFSET,
@@ -22,7 +22,7 @@ from admin import (
     TELE_API_TOKEN,
 )
 
-from bot_text import (
+from src.bot_text import (
     BAN_MESSAGE,
     START_MESSAGE,
 )

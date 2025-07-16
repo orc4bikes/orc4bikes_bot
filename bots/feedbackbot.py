@@ -7,7 +7,7 @@ from telegram import (
 
 from bots.telebot import TeleBot
 
-from admin import (
+from src.admin import (
     LOGGING_URL,
 )
 

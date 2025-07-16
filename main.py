@@ -1,7 +1,7 @@
 import logging
 import logging.handlers
 
-from Orc4bikesBot import Orc4bikesBot
+from src.Orc4bikesBot import Orc4bikesBot
 
 class ErrorDrivenHandler(logging.handlers.MemoryHandler):
     """Event driven handler, buffers INFO logs and emit only when ERROR logs occurs."""

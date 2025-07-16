@@ -26,7 +26,7 @@ Using telegram, users are able to check the availability of bikes, and rent them
 
 ### Local Development
 
-1. Download and install Python by following the instructions [here](https://www.python.org/downloads/). Ensure that the version is at least the major version declared in `runtime.txt`.
+1. Download and install Python by following the instructions [here](https://www.python.org/downloads/). Ensure that the version is at least the major version declared in `src/runtime.txt`.
 
 2. Install Python modules required.
 ```

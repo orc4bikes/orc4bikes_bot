@@ -4,7 +4,7 @@ import boto3
 from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
 
-from admin import (
+from src.admin import (
     DB_ACCESS_KEY,
     DB_SECRET_KEY,
     DB_REGION_NAME,

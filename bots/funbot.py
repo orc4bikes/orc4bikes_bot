@@ -9,7 +9,7 @@ from telegram import (
 
 from bots.telebot import TeleBot
 
-from bot_text import (
+from src.bot_text import (
     CHEER_LIST,
     FUN_TEXT,
     FUN_URLS,
